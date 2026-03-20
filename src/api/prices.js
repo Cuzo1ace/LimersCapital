@@ -103,16 +103,22 @@ export async function fetchSolanaMarketData() {
 
   // Add tokens that are on Jupiter but not CoinGecko
   const cgSymbols = new Set(cgData.map(t => (t.symbol || '').toUpperCase()));
+
+  // These tokens are always shown in the order book even if Jupiter has no live price
+  const PRIORITY_TOKENS = new Set(['GOLD', 'ZBTC']);
+
   for (const [symbol, info] of Object.entries(TOKEN_INFO)) {
     if (cgSymbols.has(symbol.toUpperCase())) continue;
     const jup = jupPrices[symbol];
-    if (jup && jup.price) {
+    const hasPriority = PRIORITY_TOKENS.has(symbol.toUpperCase());
+    // Include if Jupiter returned a price, OR if this is a priority token
+    if ((jup && jup.price) || hasPriority) {
       result.push({
         id: symbol.toLowerCase(),
         symbol: symbol.toLowerCase(),
         name: info.name,
         image: null,
-        current_price: jup.price,
+        current_price: jup?.price || null,
         price_change_percentage_24h: null, // Jupiter v2 doesn't provide this
         market_cap: null,
         total_volume: null,

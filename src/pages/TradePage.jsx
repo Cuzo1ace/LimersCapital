@@ -25,6 +25,7 @@ function generateOrderBook(price, depth = 6) {
 }
 
 const SOLFLARE_LINK = 'https://www.solflare.com/?af_qr=true&shortlink=carribean&c=Carribean&pid=Solana%20Carribean&af_xp=qr&source_caller=ui';
+const SOLFLARE_ORANGE = '#FC5602';
 const WAM_LINK = 'https://wam.money/';
 
 export default function TradePage() {
@@ -86,15 +87,44 @@ export default function TradePage() {
 
   return (
     <div>
+      {/* Solflare Affiliate Banner */}
+      <a href={SOLFLARE_LINK} target="_blank" rel="noopener noreferrer"
+        className="no-underline block mb-4">
+        <div className="rounded-2xl border p-4 flex items-center gap-4 transition-all hover:brightness-110 cursor-pointer"
+          style={{
+            background: 'linear-gradient(135deg, rgba(252,86,2,.12) 0%, rgba(252,86,2,.04) 100%)',
+            borderColor: 'rgba(252,86,2,.35)',
+          }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: SOLFLARE_ORANGE }}>
+            <span className="text-white font-black text-[1rem]">☀</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-sans font-bold text-[.88rem]" style={{ color: SOLFLARE_ORANGE }}>
+              New to Solana? Get Solflare Wallet
+            </div>
+            <div className="text-[.72rem] text-txt-2 truncate">
+              The #1 Solana wallet — secure, fast, built for DeFi & RWA trading ↗
+            </div>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+            <span className="text-[.68rem] uppercase tracking-widest font-mono px-3 py-1.5 rounded-lg border font-bold"
+              style={{ color: SOLFLARE_ORANGE, borderColor: 'rgba(252,86,2,.4)', background: 'rgba(252,86,2,.08)' }}>
+              Free Download ↗
+            </span>
+          </div>
+        </div>
+      </a>
+
       {/* Wallet Connection Banner */}
       {!walletConnected && (
         <div className="rounded-2xl border border-sea/30 p-4 md:p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-5"
           style={{ background: 'linear-gradient(135deg, rgba(0,200,180,.06), rgba(252,92,62,.04))' }}>
           <div className="text-3xl">🔗</div>
           <div className="flex-1">
-            <div className="font-sans font-bold text-[.92rem] text-txt mb-1">Connect your wallet to trade</div>
+            <div className="font-sans font-bold text-[.92rem] text-txt mb-1">Connect your Solflare wallet to trade</div>
             <div className="text-[.75rem] text-txt-2 leading-relaxed">
-              Connect Solflare to access your Solana wallet, or top up your TTD account with Wam. Paper trading is available without a wallet.
+              Use Solflare to access your Solana wallet, or top up your TTD account with Wam. Paper trading is available without a wallet.
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0 w-full sm:w-auto">
@@ -105,16 +135,13 @@ export default function TradePage() {
               <span className="w-4 h-4 rounded bg-[#FFD700] flex items-center justify-center text-[.5rem] font-black text-night">W</span>
               Top up with Wam
             </a>
-            <button onClick={() => {
-              // Scroll to header wallet button — wallet connection now handled via wallet-standard in Header
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-              className="flex items-center justify-center gap-2 bg-[linear-gradient(135deg,#FC5C3E,#FF8C42)] border-none
+            <a href={SOLFLARE_LINK} target="_blank" rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 border-none no-underline
                 text-white px-4 py-2.5 rounded-lg text-[.75rem] font-sans font-extrabold cursor-pointer
                 transition-all hover:-translate-y-0.5"
-              style={{ boxShadow: '0 0 20px rgba(252,92,62,.3)' }}>
-              Connect Wallet
-            </button>
+              style={{ background: `linear-gradient(135deg, ${SOLFLARE_ORANGE}, #FF8C42)`, boxShadow: '0 0 20px rgba(252,86,2,.35)' }}>
+              ☀ Get Solflare
+            </a>
           </div>
         </div>
       )}
@@ -408,6 +435,22 @@ export default function TradePage() {
           <div className="text-[.62rem] text-muted text-center leading-relaxed">
             ⚠️ Paper trading only — no real funds.{isTTSE ? ' TTSE stocks shown as tokenized simulation.' : ''}
           </div>
+
+          {/* Solflare affiliate CTA */}
+          {!isTTSE && (
+            <a href={SOLFLARE_LINK} target="_blank" rel="noopener noreferrer"
+              className="no-underline flex items-center justify-center gap-2 rounded-xl py-2.5 text-[.72rem] font-sans font-bold transition-all hover:brightness-110 border"
+              style={{
+                background: 'linear-gradient(135deg, rgba(252,86,2,.1), rgba(252,86,2,.05))',
+                borderColor: 'rgba(252,86,2,.3)',
+                color: SOLFLARE_ORANGE,
+              }}>
+              <span>☀</span>
+              <span>Trade live on Solflare Wallet</span>
+              <span className="text-[.6rem] opacity-70">↗</span>
+            </a>
+          )}
+
         </div>
       </div>
     </div>
