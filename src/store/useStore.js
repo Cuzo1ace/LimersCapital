@@ -340,6 +340,14 @@ const useStore = create(
         priceAlerts: s.priceAlerts.map(a => a.id === id ? { ...a, triggered: true } : a),
       })),
 
+      // ── Onboarding ─────────────────────────────────────────
+      hasSeenOnboarding: false,
+      setHasSeenOnboarding: (v) => set({ hasSeenOnboarding: v }),
+
+      // ── Theme ──────────────────────────────────────────────
+      theme: 'dark', // 'dark' | 'light'
+      setTheme: (t) => set({ theme: t }),
+
       // ── Listing Applications ───────────────────────────────
       listingApplications: [],
 
@@ -370,6 +378,8 @@ const useStore = create(
         listingApplications: state.listingApplications,
         watchlist: state.watchlist,
         priceAlerts: state.priceAlerts,
+        hasSeenOnboarding: state.hasSeenOnboarding,
+        theme: state.theme,
       }),
     }
   )

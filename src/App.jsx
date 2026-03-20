@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Header from './components/layout/Header';
 import PriceTicker from './components/PriceTicker';
@@ -19,6 +19,7 @@ import ListingPage from './pages/ListingPage';
 import useStore from './store/useStore';
 import LimerBridge from './components/solana/LimerBridge';
 import PriceAlertChecker from './components/PriceAlertChecker';
+import OnboardingTour from './components/OnboardingTour';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,12 +60,25 @@ function StreakCheck() {
   return null;
 }
 
+function ThemeSync() {
+  const theme = useStore(s => s.theme);
+  const prev = useRef(theme);
+  useEffect(() => {
+    document.documentElement.classList.remove('light', 'dark');
+    if (theme === 'light') document.documentElement.classList.add('light');
+    prev.current = theme;
+  }, [theme]);
+  return null;
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <StreakCheck />
+      <ThemeSync />
       <LimerBridge />
       <PriceAlertChecker />
+      <OnboardingTour />
       <Header />
       <PriceTicker />
       <main className="relative z-[1] px-3 py-4 md:p-7 max-w-[1440px] mx-auto">

@@ -28,7 +28,7 @@ function shortenAddress(addr) {
 }
 
 export default function Header() {
-  const { activeTab, setActiveTab, connectWallet, disconnectWallet } = useStore();
+  const { activeTab, setActiveTab, connectWallet, disconnectWallet, theme, setTheme } = useStore();
   const [showWalletMenu, setShowWalletMenu] = useState(false);
   const [showLimeMenu, setShowLimeMenu] = useState(false);
   const [showWalletPicker, setShowWalletPicker] = useState(false);
@@ -240,6 +240,15 @@ export default function Header() {
                 </div>
               )}
             </div>
+
+            {/* Theme toggle */}
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-muted hover:text-txt hover:border-white/20 transition-all cursor-pointer bg-transparent text-[.88rem]"
+            >
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
 
             {/* Live indicator */}
             <div className="flex items-center gap-1.5 bg-sea/10 border border-border rounded-full px-3 py-1.5 text-[.7rem] text-sea">

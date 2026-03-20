@@ -54,6 +54,14 @@ function generateOrderBook(price, depth = 6) {
 const SOLFLARE_LINK = 'https://www.solflare.com/?af_qr=true&shortlink=carribean&c=Carribean&pid=Solana%20Carribean&af_xp=qr&source_caller=ui';
 const SOLFLARE_ORANGE = '#FC5602';
 const WAM_LINK = 'https://wam.money/';
+const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+
+function jupiterUrl(side, tokenMint) {
+  if (!tokenMint) return 'https://jup.ag';
+  const input  = side === 'buy'  ? USDC_MINT   : tokenMint;
+  const output = side === 'buy'  ? tokenMint   : USDC_MINT;
+  return `https://jup.ag/swap/${input}-${output}`;
+}
 
 export default function TradePage() {
   const { balanceUSD, balanceTTD, holdings, trades, executeTrade, walletConnected, watchlist, toggleWatchlist } = useStore();
@@ -555,6 +563,25 @@ export default function TradePage() {
           <div className="text-[.62rem] text-muted text-center leading-relaxed">
             ⚠️ Paper trading only — no real funds.{isTTSE ? ' TTSE stocks shown as tokenized simulation.' : ''}
           </div>
+
+          {/* Jupiter deep link — real trade */}
+          {!isTTSE && selected && (
+            <a
+              href={jupiterUrl(side, SOL_TOKENS[selected.symbol] || SOL_TOKENS[selected.symbol?.replace('zBTC','zBTC')])}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="no-underline flex items-center justify-center gap-2 rounded-xl py-2.5 text-[.72rem] font-sans font-bold transition-all hover:brightness-110 border"
+              style={{
+                background: 'linear-gradient(135deg, rgba(0,200,180,.12), rgba(0,200,180,.05))',
+                borderColor: 'rgba(0,200,180,.35)',
+                color: '#00C8B4',
+              }}
+            >
+              <span>⚡</span>
+              <span>{side === 'buy' ? 'Buy' : 'Sell'} {selected.symbol} for real on Jupiter</span>
+              <span className="text-[.6rem] opacity-70">↗</span>
+            </a>
+          )}
 
           {/* Solflare affiliate CTA */}
           {!isTTSE && (

@@ -55,6 +55,31 @@ body::after {
   z-index: 0;
 }
 
+/* ── Light theme overrides ── */
+html.light body {
+  background: #EFF4FB;
+}
+html.light body::before {
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(0,150,135,.05) 40px),
+    repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(0,150,135,.05) 40px);
+}
+html.light body::after {
+  background:
+    radial-gradient(ellipse 120% 60% at 80% -10%, rgba(0,200,180,.08) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 50% at -10% 80%, rgba(45,155,86,.06) 0%, transparent 60%);
+}
+html.light {
+  --color-night: #EFF4FB;
+  --color-night-2: #E2EAF6;
+  --color-night-3: #CDD9EE;
+  --color-txt: #0E1E3A;
+  --color-txt-2: #2E4A78;
+  --color-muted: #6080A8;
+  --color-card: rgba(225, 236, 252, 0.9);
+  --color-border: rgba(0, 160, 145, 0.22);
+}
+
 /* Toast animation */
 @keyframes slideUp {
   from { transform: translateY(80px); opacity: 0; }
