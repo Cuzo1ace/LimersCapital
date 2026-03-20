@@ -97,6 +97,16 @@ html.light {
 }
 .ticker-scroll:hover { animation-play-state: paused; }
 
+@keyframes ticker-rev {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
+.ticker-scroll-rev {
+  animation: ticker-rev 60s linear infinite;
+  width: max-content;
+}
+.ticker-scroll-rev:hover { animation-play-state: paused; }
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 5px; background: var(--color-night-2); }
 ::-webkit-scrollbar-thumb { background: var(--color-night-3); border-radius: 99px; }
