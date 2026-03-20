@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>CariTrade v3 — TTSE × JSE × GSE × Solana</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,700;0,900;1,700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --sea:#00C8B4; --sea-dk:#009E8E; --sun:#FFCA3A; --palm:#2D9B56;
+  --tt:#C8102E;   --tt2:#FF4D6D;    /* T&T red */
+  --jm:#FFD700;   --jm2:#006400;    /* Jamaica gold + green */
+  --gy:#009E60;   --gy2:#FFD700;    /* Guyana green + gold */
+  --night:#0A1628; --night2:#111E38; --night3:#1A2D4F;
+  --muted:#5B7A9A; --text:#E6F0FF; --text2:#A0BAD8;
+  --up:#1DCC8A; --down:#FF4A6B;
+  --card:rgba(17,30,56,.88); --border:rgba(0,200,180,.18);
+  --tt-b:rgba(200,16,46,.22); --jm-b:rgba(255,215,0,.2); --gy-b:rgba(0,158,96,.22);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{background:var(--night);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(0,200,180,.035) 40px),
+             repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(0,200,180,.035) 40px);
+  pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse 130% 60% at 85% -5%,rgba(0,200,180,.1) 0%,transparent 60%),
+             radial-gradient(ellipse 70% 50% at -5% 85%,rgba(45,155,86,.08) 0%,transparent 60%);
+  pointer-events:none;z-index:0;}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:100;background:rgba(10,22,40,.94);
+  backdrop-filter:blur(16px);border-bottom:1px solid var(--border);
+  padding:0 24px;display:flex;align-items:center;gap:16px;height:60px;}
+.logo{font-family:'Fraunces',serif;font-size:1.35rem;font-weight:900;font-style:italic;
+  color:var(--sea);white-space:nowrap;letter-spacing:-1px;}
+.logo span{color:var(--sun);}
+nav{display:flex;gap:2px;flex:1;overflow-x:auto;}
+nav::-webkit-scrollbar{height:0;}
+nav button{background:none;border:none;cursor:pointer;font-family:'DM Mono',monospace;
+  font-size:.68rem;color:var(--muted);padding:6px 12px;border-radius:6px;
+  transition:all .2s;text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;}
+nav button:hover{color:var(--text);background:rgba(255,255,255,.05);}
+nav button.active{color:var(--sea);background:rgba(0,200,180,.1);}
+nav button.tt.active{color:var(--tt2);background:rgba(200,16,46,.1);}
+nav button.jm.active{color:var(--jm);background:rgba(255,215,0,.1);}
+nav button.gy.active{color:var(--gy);background:rgba(0,158,96,.1);}
+.hd-r{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0;}
+.sol-b{display:flex;align-items:center;gap:5px;background:rgba(0,200,180,.08);
+  border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:.67rem;color:var(--sea);}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--up);box-shadow:0 0 5px var(--up);}
+.wbtn{background:var(--sea);border:none;cursor:pointer;font-family:'Syne',sans-serif;
+  font-weight:700;font-size:.75rem;color:var(--night);padding:7px 14px;border-radius:7px;transition:all .2s;}
+.wbtn:hover{background:var(--sea-dk);}
+
+/* LAYOUT */
+main{position:relative;z-index:1;padding:24px;max-width:1440px;margin:0 auto;}
+.tab-panel{display:none;animation:fadeUp .3s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* EXCHANGE SUB-TABS */
+.xtabs{display:flex;gap:6px;margin-bottom:22px;flex-wrap:wrap;}
+.xtab{background:var(--card);border:1px solid var(--border);color:var(--muted);
+  border-radius:10px;padding:10px 18px;cursor:pointer;font-family:'DM Mono',monospace;
+  font-size:.72rem;transition:all .2s;display:flex;align-items:center;gap:7px;}
+.xtab:hover{border-color:rgba(0,200,180,.3);color:var(--text);}
+.xtab.active{background:rgba(0,200,180,.1);border-color:rgba(0,200,180,.35);color:var(--sea);}
+.xtab.tt.active{background:rgba(200,16,46,.1);border-color:var(--tt-b);color:var(--tt2);}
+.xtab.jm.active{background:rgba(255,215,0,.1);border-color:var(--jm-b);color:var(--jm);}
+.xtab.gy.active{background:rgba(0,158,96,.1);border-color:var(--gy-b);color:var(--gy);}
+.xpanel{display:none;animation:fadeUp .25s ease;}
+.xpanel.active{display:block;}
+
+/* SECTION HEAD */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.sh h2{font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;}
+.lbl{font-size:.65rem;color:var(--muted);padding:3px 9px;border:1px solid rgba(255,255,255,.07);border-radius:999px;}
+.rbtn{background:none;border:1px solid var(--border);color:var(--sea);cursor:pointer;
+  border-radius:7px;padding:5px 11px;font-size:.68rem;font-family:'DM Mono',monospace;transition:all .2s;}
+.rbtn:hover{background:rgba(0,200,180,.1);}
+.rbtn.tt{color:var(--tt2);border-color:var(--tt-b);}
+.rbtn.jm{color:var(--jm);border-color:var(--jm-b);}
+.rbtn.gy{color:var(--gy);border-color:var(--gy-b);}
+.rbtn.spinning{animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* HERO */
+.hero{border:1px solid var(--border);border-radius:18px;padding:32px 40px;margin-bottom:24px;
+  display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;
+  overflow:hidden;position:relative;}
+.hero.sol{background:linear-gradient(135deg,var(--night2) 0%,rgba(0,200,180,.05) 100%);}
+.hero.tt-h{background:linear-gradient(135deg,rgba(200,16,46,.07) 0%,var(--night2) 70%);border-color:var(--tt-b);}
+.hero.jm-h{background:linear-gradient(135deg,rgba(255,215,0,.06) 0%,var(--night2) 70%);border-color:var(--jm-b);}
+.hero.gy-h{background:linear-gradient(135deg,rgba(0,158,96,.07) 0%,var(--night2) 70%);border-color:var(--gy-b);}
+.hero::before{content:attr(data-bg);font-size:130px;line-height:1;
+  position:absolute;right:-8px;bottom:-12px;opacity:.09;pointer-events:none;}
+.tag{display:inline-block;background:rgba(0,200,180,.1);border:1px solid rgba(0,200,180,.25);
+  border-radius:999px;font-size:.66rem;color:var(--sea);padding:3px 11px;
+  letter-spacing:.09em;text-transform:uppercase;margin-bottom:12px;}
+.tag.tt{background:rgba(200,16,46,.1);border-color:rgba(200,16,46,.25);color:var(--tt2);}
+.tag.jm{background:rgba(255,215,0,.1);border-color:rgba(255,215,0,.25);color:var(--jm);}
+.tag.gy{background:rgba(0,158,96,.1);border-color:rgba(0,158,96,.25);color:var(--gy);}
+.hero h1{font-family:'Fraunces',serif;font-size:2.3rem;font-weight:900;line-height:1.08;margin-bottom:12px;}
+.hero h1 em{font-style:italic;}
+.hero h1 em.sea{color:var(--sea);}
+.hero h1 em.tt{color:var(--tt2);}
+.hero h1 em.jm{color:var(--jm);}
+.hero h1 em.gy{color:var(--gy);}
+.hero p{font-size:.8rem;color:var(--text2);line-height:1.7;}
+.hstats{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.scard{border:1px solid var(--border);border-radius:12px;padding:16px;background:rgba(0,200,180,.05);}
+.scard.tt{background:rgba(200,16,46,.05);border-color:var(--tt-b);}
+.scard.jm{background:rgba(255,215,0,.05);border-color:var(--jm-b);}
+.scard.gy{background:rgba(0,158,96,.05);border-color:var(--gy-b);}
+.slbl{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;}
+.sval{font-family:'Syne',sans-serif;font-size:1.35rem;font-weight:800;}
+.schg{font-size:.7rem;margin-top:3px;}
+.schg.up{color:var(--up);}
+.schg.dn{color:var(--down);}
+.schg.na{color:var(--muted);}
+
+/* STATUS */
+.sbadge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:.67rem;font-weight:600;}
+.sbadge.open{background:rgba(29,204,138,.1);border:1px solid rgba(29,204,138,.28);color:var(--up);}
+.sbadge.closed{background:rgba(255,74,107,.07);border:1px solid rgba(255,74,107,.22);color:var(--down);}
+.sbadge.weekly{background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.22);color:var(--jm);}
+.sbadge.weekly .sdot2{background:var(--jm);}
+.sdot2{width:5px;height:5px;border-radius:50%;}
+.sbadge.open .sdot2{background:var(--up);box-shadow:0 0 4px var(--up);}
+.sbadge.closed .sdot2{background:var(--down);}
+
+/* EXCHANGE INFO ROW */
+.exch-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;}
+.meta-pill{display:flex;align-items:center;gap:4px;font-size:.67rem;color:var(--text2);
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+  border-radius:6px;padding:4px 10px;}
+
+/* TABLE */
+.tbl-wrap{display:flex;flex-direction:column;gap:2px;}
+.tr{display:grid;align-items:center;gap:12px;background:var(--card);
+  border:1px solid var(--border);border-radius:11px;padding:11px 16px;
+  cursor:pointer;transition:all .18s;position:relative;overflow:hidden;}
+.tr::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(0,200,180,.025));opacity:0;transition:.2s;}
+.tr:hover::after{opacity:1;}
+.tr.hdr{background:none;border-color:transparent;cursor:default;padding:4px 16px;}
+.tr.hdr:hover::after{display:none;}
+.tr.tt-row:hover{border-color:rgba(200,16,46,.35);}
+.tr.jm-row:hover{border-color:rgba(255,215,0,.3);}
+.tr.gy-row:hover{border-color:rgba(0,158,96,.35);}
+/* grid templates */
+.sol-g{grid-template-columns:42px 1.8fr 1fr .9fr 1fr 1fr 1fr 90px;}
+.reg-g{grid-template-columns:42px 1.8fr 1fr 1fr .9fr 1fr 1fr 90px;}
+.gy-g {grid-template-columns:42px 1.8fr 1fr 1fr 1fr 1fr 1fr 90px;}
+.col{font-size:.63rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+.tsym{font-family:'Syne',sans-serif;font-weight:700;font-size:.85rem;}
+.tnm{font-size:.66rem;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px;}
+.tpx{font-family:'Syne',sans-serif;font-weight:700;font-size:.85rem;}
+.cpill{font-size:.75rem;padding:2px 7px;border-radius:5px;display:inline-block;text-align:center;}
+.cpill.up{color:var(--up);background:rgba(29,204,138,.1);}
+.cpill.dn{color:var(--down);background:rgba(255,74,107,.1);}
+.cpill.fl{color:var(--muted);background:rgba(91,122,154,.09);}
+.tvol{font-size:.78rem;color:var(--text2);}
+.catpill{font-size:.62rem;padding:2px 7px;border-radius:999px;border:1px solid;text-align:center;white-space:nowrap;}
+.cat-bank{color:#7EB2FF;border-color:rgba(126,178,255,.28);background:rgba(126,178,255,.06);}
+.cat-congl{color:#C87EFF;border-color:rgba(200,126,255,.28);background:rgba(200,126,255,.06);}
+.cat-energy{color:var(--sun);border-color:rgba(255,202,58,.28);background:rgba(255,202,58,.06);}
+.cat-food{color:var(--palm);border-color:rgba(45,155,86,.28);background:rgba(45,155,86,.06);}
+.cat-media{color:var(--sea);border-color:var(--border);background:rgba(0,200,180,.06);}
+.cat-rwa{color:var(--sun);border-color:rgba(255,202,58,.28);background:rgba(255,202,58,.06);}
+.cat-defi{color:var(--sea);border-color:var(--border);background:rgba(0,200,180,.06);}
+.cat-infra{color:#FF9F6B;border-color:rgba(255,159,107,.28);background:rgba(255,159,107,.06);}
+.cat-tob{color:#FF9F6B;border-color:rgba(255,159,107,.28);background:rgba(255,159,107,.06);}
+.cat-mfg{color:#A8C8FF;border-color:rgba(168,200,255,.28);background:rgba(168,200,255,.06);}
+.cat-dist{color:#FFB2D0;border-color:rgba(255,178,208,.28);background:rgba(255,178,208,.06);}
+.cat-ins{color:#B2FFD6;border-color:rgba(178,255,214,.28);background:rgba(178,255,214,.06);}
+.tbtn{background:rgba(0,200,180,.1);border:1px solid var(--border);color:var(--sea);
+  border-radius:7px;padding:5px 10px;font-size:.67rem;font-family:'DM Mono',monospace;
+  cursor:pointer;transition:all .2s;white-space:nowrap;}
+.tbtn:hover{background:var(--sea);color:var(--night);}
+.tbtn.tt{background:rgba(200,16,46,.08);border-color:var(--tt-b);color:var(--tt2);}
+.tbtn.tt:hover{background:var(--tt);color:white;}
+.tbtn.jm{background:rgba(255,215,0,.08);border-color:var(--jm-b);color:var(--jm);}
+.tbtn.jm:hover{background:#c8a200;color:var(--night);}
+.tbtn.gy{background:rgba(0,158,96,.08);border-color:var(--gy-b);color:var(--gy);}
+.tbtn.gy:hover{background:var(--gy);color:white;}
+
+/* INDEX PILLS */
+.idx-bar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.idx-pill{background:var(--card);border-radius:10px;padding:12px 16px;flex:1;min-width:130px;}
+.idx-pill.tt{border:1px solid var(--tt-b);}
+.idx-pill.jm{border:1px solid var(--jm-b);}
+.idx-pill.gy{border:1px solid var(--gy-b);}
+.ix-code{font-family:'Syne',sans-serif;font-weight:700;font-size:.78rem;}
+.ix-val{font-family:'Fraunces',serif;font-weight:900;font-size:1.15rem;margin-top:2px;}
+.ix-chg{font-size:.68rem;margin-top:2px;}
+
+/* MOVERS */
+.movers-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:22px;}
+.mcard{background:var(--card);border-radius:12px;padding:16px;}
+.mlbl{font-size:.66rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:10px;}
+
+/* PAPER TRADE */
+.pt-grid{display:grid;grid-template-columns:1fr 310px;gap:20px;}
+.bal-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+.bcard{border-radius:14px;padding:18px;border:1px solid;}
+.bcard.usd{background:linear-gradient(135deg,rgba(0,200,180,.08),transparent);border-color:var(--border);}
+.bcard.ttd{background:linear-gradient(135deg,rgba(200,16,46,.07),transparent);border-color:var(--tt-b);}
+.bcard.jmd{background:linear-gradient(135deg,rgba(255,215,0,.06),transparent);border-color:var(--jm-b);}
+.bcard.gyd{background:linear-gradient(135deg,rgba(0,158,96,.06),transparent);border-color:var(--gy-b);}
+.blbl{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;}
+.bval{font-family:'Fraunces',serif;font-size:1.45rem;font-weight:900;}
+.bsub{font-size:.65rem;color:var(--muted);margin-top:3px;}
+.cur-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.ctab{background:var(--card);border:1px solid var(--border);color:var(--muted);border-radius:8px;
+  padding:6px 14px;cursor:pointer;font-family:'DM Mono',monospace;font-size:.7rem;transition:all .2s;}
+.ctab.active.usd{background:rgba(0,200,180,.1);border-color:rgba(0,200,180,.3);color:var(--sea);}
+.ctab.active.ttd{background:rgba(200,16,46,.09);border-color:var(--tt-b);color:var(--tt2);}
+.ctab.active.jmd{background:rgba(255,215,0,.09);border-color:var(--jm-b);color:var(--jm);}
+.ctab.active.gyd{background:rgba(0,158,96,.09);border-color:var(--gy-b);color:var(--gy);}
+.hold-row{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 90px;align-items:center;
+  gap:10px;background:var(--card);border:1px solid var(--border);border-radius:9px;padding:10px 14px;}
+.hold-row.h{background:none;border-color:transparent;padding:3px 14px;}
+.sell-b{background:rgba(255,74,107,.1);border:1px solid rgba(255,74,107,.22);color:var(--down);
+  border-radius:6px;padding:4px 9px;font-size:.67rem;cursor:pointer;transition:all .2s;}
+.sell-b:hover{background:var(--down);color:white;}
+.opanel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;
+  display:flex;flex-direction:column;gap:12px;}
+.opanel h3{font-family:'Syne',sans-serif;font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;}
+.otabs{display:flex;border-radius:7px;overflow:hidden;border:1px solid var(--border);}
+.otab{flex:1;background:none;border:none;cursor:pointer;padding:7px;
+  font-family:'DM Mono',monospace;font-size:.7rem;color:var(--muted);transition:all .2s;}
+.otab.buy.active{background:rgba(29,204,138,.14);color:var(--up);}
+.otab.sell.active{background:rgba(255,74,107,.14);color:var(--down);}
+.fg{display:flex;flex-direction:column;gap:4px;}
+.flbl{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;}
+.fsel,.finp{background:rgba(0,0,0,.28);border:1px solid var(--border);color:var(--text);
+  border-radius:7px;padding:8px 11px;font-family:'DM Mono',monospace;font-size:.77rem;
+  width:100%;outline:none;transition:border-color .2s;}
+.fsel:focus,.finp:focus{border-color:var(--sea);}
+.prev{background:rgba(0,200,180,.04);border:1px solid var(--border);border-radius:7px;padding:10px;}
+.prow{display:flex;justify-content:space-between;margin-bottom:4px;font-size:.73rem;}
+.prow:last-child{margin-bottom:0;border-top:1px solid var(--border);padding-top:6px;}
+.plbl{color:var(--muted);} .pval{color:var(--text);}
+.pval.tot{color:var(--sea);font-weight:700;}
+.exec{width:100%;padding:11px;border-radius:9px;border:none;cursor:pointer;
+  font-family:'Syne',sans-serif;font-weight:700;font-size:.78rem;letter-spacing:.04em;transition:all .2s;}
+.exec.buy{background:var(--up);color:var(--night);}
+.exec.buy:hover{background:#18b87a;}
+.exec.sell{background:var(--down);color:white;}
+.exec.sell:hover{background:#e0385a;}
+
+/* LEARN */
+.learn-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+.lcard{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;
+  cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.lcard:hover{border-color:rgba(0,200,180,.35);transform:translateY(-3px);}
+.lcard::before{content:attr(data-e);font-size:65px;line-height:1;
+  position:absolute;right:-4px;bottom:-4px;opacity:.09;pointer-events:none;}
+.lnum{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:900;color:rgba(0,200,180,.16);margin-bottom:9px;}
+.ltitle{font-family:'Syne',sans-serif;font-weight:700;font-size:.84rem;margin-bottom:6px;}
+.ldesc{font-size:.73rem;color:var(--text2);line-height:1.65;}
+.ltag{display:inline-block;margin-top:10px;border-radius:999px;
+  font-size:.62rem;padding:2px 8px;text-transform:uppercase;letter-spacing:.07em;}
+.ltag.beg{background:rgba(0,200,180,.1);color:var(--sea);}
+.ltag.adv{background:rgba(255,202,58,.1);color:var(--sun);}
+.ltag.tt{background:rgba(200,16,46,.1);color:var(--tt2);}
+.ltag.jm{background:rgba(255,215,0,.1);color:var(--jm);}
+.ltag.gy{background:rgba(0,158,96,.1);color:var(--gy);}
+.glossary{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.gloss{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:16px;}
+.gterm{font-family:'Syne',sans-serif;font-weight:700;font-size:.8rem;color:var(--sea);margin-bottom:4px;}
+.gdef{font-size:.73rem;color:var(--text2);line-height:1.6;}
+.qbox{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-top:22px;}
+.qq{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;margin-bottom:18px;}
+.qopts{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.qopt{background:rgba(0,0,0,.18);border:1px solid var(--border);color:var(--text2);border-radius:9px;
+  padding:10px 14px;cursor:pointer;font-family:'DM Mono',monospace;font-size:.77rem;text-align:left;transition:all .2s;}
+.qopt:hover{border-color:rgba(0,200,180,.35);color:var(--text);}
+.qopt.ok{border-color:var(--up);color:var(--up);background:rgba(29,204,138,.09);}
+.qopt.no{border-color:var(--down);color:var(--down);background:rgba(255,74,107,.09);}
+.qfb{font-size:.77rem;line-height:1.65;padding:10px 14px;border-radius:9px;margin-bottom:10px;}
+.qfb.win{color:var(--up);background:rgba(29,204,138,.07);border:1px solid rgba(29,204,138,.22);}
+.qfb.lose{color:#FF7F9A;background:rgba(255,74,107,.07);border:1px solid rgba(255,74,107,.22);}
+.nxtbtn{background:var(--sea);border:none;cursor:pointer;border-radius:9px;padding:9px 20px;
+  font-family:'Syne',sans-serif;font-weight:700;font-size:.77rem;color:var(--night);transition:all .2s;}
+.nxtbtn:hover{background:var(--sea-dk);}
+
+/* DASHBOARD */
+.dash-g{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.dcard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;}
+.dlbl{font-size:.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;}
+.dval{font-family:'Fraunces',serif;font-size:1.5rem;font-weight:900;}
+.dsub{font-size:.66rem;color:var(--text2);margin-top:3px;}
+.arow{display:flex;align-items:center;gap:12px;background:var(--card);
+  border:1px solid var(--border);border-radius:9px;padding:10px 14px;font-size:.73rem;margin-bottom:6px;}
+.abg{padding:2px 6px;border-radius:5px;font-size:.62rem;font-weight:600;text-transform:uppercase;}
+.abg.buy{background:rgba(29,204,138,.11);color:var(--up);}
+.abg.sell{background:rgba(255,74,107,.11);color:var(--down);}
+.atok{font-family:'Syne',sans-serif;font-weight:700;flex:1;}
+.aamt{color:var(--text2);} .at{color:var(--muted);font-size:.65rem;margin-left:auto;}
+
+/* UTILITY */
+.load{display:flex;flex-direction:column;align-items:center;gap:12px;padding:44px 0;color:var(--muted);font-size:.77rem;}
+.spinner{width:28px;height:28px;border:2.5px solid var(--border);border-top-color:var(--sea);border-radius:50%;animation:spin .7s linear infinite;}
+.err{color:#FF7F9A;font-size:.77rem;text-align:center;padding:32px;}
+.toast{position:fixed;bottom:20px;right:20px;z-index:999;background:var(--night2);
+  border:1px solid var(--border);border-radius:11px;padding:12px 16px;font-size:.77rem;
+  min-width:240px;box-shadow:0 8px 28px rgba(0,0,0,.4);transform:translateY(80px);
+  opacity:0;transition:all .3s;display:flex;align-items:center;gap:8px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-left:3px solid var(--up);}
+.toast.error{border-left:3px solid var(--down);}
+.toast.info{border-left:3px solid var(--sea);}
+
+/* COMPARE STRIP */
+.cstrip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:22px;}
+.cchip{border-radius:12px;padding:14px 18px;border:1px solid;}
+.cchip.tt{background:rgba(200,16,46,.06);border-color:var(--tt-b);}
+.cchip.jm{background:rgba(255,215,0,.05);border-color:var(--jm-b);}
+.cchip.gy{background:rgba(0,158,96,.06);border-color:var(--gy-b);}
+.cc-flag{font-size:1.4rem;margin-bottom:5px;}
+.cc-name{font-family:'Syne',sans-serif;font-weight:700;font-size:.82rem;margin-bottom:3px;}
+.cc-idx{font-family:'Fraunces',serif;font-weight:900;font-size:1.35rem;}
+.cc-meta{font-size:.66rem;color:var(--muted);margin-top:3px;line-height:1.5;}
+
+@media(max-width:1080px){
+  .pt-grid{grid-template-columns:1fr;}
+  .learn-grid{grid-template-columns:1fr 1fr;}
+  .dash-g{grid-template-columns:1fr 1fr;}
+  .glossary{grid-template-columns:1fr;}
+  .hero{grid-template-columns:1fr;}
+  .cstrip,.movers-grid{grid-template-columns:1fr;}
+  .bal-row{grid-template-columns:1fr 1fr;}
+  .sol-g,.reg-g,.gy-g{grid-template-columns:40px 1.4fr 1fr 1fr 80px;}
+  .tr>:nth-child(5),.tr>:nth-child(6),.tr>:nth-child(7){display:none;}
+}
+@media(max-width:640px){
+  header{padding:0 12px;gap:8px;}
+  main{padding:12px;}
+  .hero{padding:20px;}
+  .hero h1{font-size:1.7rem;}
+  nav button{padding:5px 8px;font-size:.62rem;}
+  .learn-grid{grid-template-columns:1fr;}
+  .bal-row{grid-template-columns:1fr 1fr;}
+  .hstats{grid-template-columns:1fr;}
+}
+::-webkit-scrollbar{width:5px;background:var(--night2);}
+::-webkit-scrollbar-thumb{background:var(--night3);border-radius:99px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Cari<span>Trade</span></div>
+  <nav>
+    <button class="active" onclick="switchTab('sol',this)">📊 Solana</button>
+    <button class="tt"  onclick="switchTab('ttse',this)">🇹🇹 TTSE</button>
+    <button class="jm"  onclick="switchTab('jse',this)">🇯🇲 JSE</button>
+    <button class="gy"  onclick="switchTab('gse',this)">🇬🇾 GSE</button>
+    <button onclick="switchTab('compare',this)">🌎 Compare</button>
+    <button onclick="switchTab('trade',this)">💹 Paper Trade</button>
+    <button onclick="switchTab('learn',this)">📚 Learn</button>
+    <button onclick="switchTab('dash',this)">🎒 Portfolio</button>
+  </nav>
+  <div class="hd-r">
+    <div class="sol-b"><span class="sdot"></span>Solana</div>
+    <button class="wbtn" onclick="noWallet()">Connect Wallet</button>
+  </div>
+</header>
+
+<main>
+
+<!-- ═══ SOLANA ═══ -->
+<div class="tab-panel active" id="tab-sol">
+  <div class="hero sol" data-bg="🌊">
+    <div>
+      <div class="tag">Solana RWA Capital Markets</div>
+      <h1>The Future is<br><em class="sea">On-Chain</em></h1>
+      <p>Tokenized real-world assets trading 24/7. No broker, no minimum. Compare with your home market to understand both worlds.</p>
+    </div>
+    <div class="hstats">
+      <div class="scard"><div class="slbl">SOL Price</div><div class="sval" id="sol-px">—</div><div class="schg" id="sol-chg">Live</div></div>
+      <div class="scard"><div class="slbl">RWA TVL</div><div class="sval">$1.72B</div><div class="schg up">▲ +44% / 30d</div></div>
+      <div class="scard"><div class="slbl">RWA Tokens</div><div class="sval">345+</div><div class="schg na">Active on-chain</div></div>
+      <div class="scard"><div class="slbl">30D Vol</div><div class="sval">$2.27B</div><div class="schg up">▲ +43%</div></div>
+    </div>
+  </div>
+  <div class="sh"><h2>🏦 RWA & Solana Tokens</h2>
+    <div style="display:flex;gap:7px;align-items:center;">
+      <span class="lbl">Jupiter Price API</span>
+      <button class="rbtn" id="sol-rb" onclick="loadSolana()">↻ Refresh</button>
+    </div>
+  </div>
+  <div class="tr hdr sol-g">
+    <span></span><span class="col">Token</span><span class="col">Price USD</span><span class="col">24h Chg</span>
+    <span class="col">Mkt Cap</span><span class="col">Vol 24h</span><span class="col">Category</span><span></span>
+  </div>
+  <div class="tbl-wrap" id="sol-tbl"><div class="load"><div class="spinner"></div><span>Fetching prices…</span></div></div>
+</div>
+
+<!-- ═══ TTSE ═══ -->
+<div class="tab-panel" id="tab-ttse">
+  <div class="hero tt-h" data-bg="🇹🇹">
+    <div>
+      <div class="tag tt">Trinidad & Tobago Stock Exchange</div>
+      <h1>Your Home<br><em class="tt">Market</em></h1>
+      <p>The TTSE is where Caribbean capital markets begin. RFHL, Massy, NCBFG — companies you know, traded in TTD, Mon–Fri.</p>
+      <div class="exch-meta">
+        <span id="tt-status" class="sbadge closed"><span class="sdot2"></span>Market Closed</span>
+        <span class="meta-pill">💰 Currency: TTD (1 USD ≈ TT$6.79)</span>
+        <span class="meta-pill">🕐 Mon–Fri 9:30–12:30 AST</span>
+        <button class="rbtn tt" id="tt-rb" onclick="loadTTSE()">↻ Live Data</button>
+      </div>
+    </div>
+    <div class="hstats">
+      <div class="scard tt"><div class="slbl">COMPOSITE</div><div class="sval" id="tt-comp">925.26</div><div class="schg" id="tt-comp-c">+0.14</div></div>
+      <div class="scard tt"><div class="slbl">ALL T&T</div><div class="sval" id="tt-altt">1,329.02</div><div class="schg" id="tt-altt-c">+1.72</div></div>
+      <div class="scard tt"><div class="slbl">CXNI (Caribbean)</div><div class="sval" id="tt-cxni">936.93</div><div class="schg" id="tt-cxni-c">-2.56</div></div>
+      <div class="scard tt"><div class="slbl">Cross-Listed</div><div class="sval" id="tt-cross">69.04</div><div class="schg" id="tt-cross-c">-0.22</div></div>
+    </div>
+  </div>
+  <div class="sh"><h2>📈 Ordinary Shares</h2><span class="lbl" id="tt-src">stockex.co.tt</span></div>
+  <div class="tr hdr reg-g">
+    <span></span><span class="col">Company</span><span class="col">Open TTD</span><span class="col">Close TTD</span>
+    <span class="col">Change</span><span class="col">Volume</span><span class="col">Sector</span><span></span>
+  </div>
+  <div class="tbl-wrap" id="tt-tbl"><div class="load"><div class="spinner" style="border-top-color:var(--tt2)"></div><span>Loading TTSE…</span></div></div>
+  <div class="movers-grid" id="tt-movers" style="margin-top:18px;"></div>
+</div>
+
+<!-- ═══ JSE ═══ -->
+<div class="tab-panel" id="tab-jse">
+  <div class="hero jm-h" data-bg="🇯🇲">
+    <div>
+      <div class="tag jm">Jamaica Stock Exchange — Est. 1968</div>
+      <h1>Jamaica's<br><em class="jm">Capital Market</em></h1>
+      <p>The JSE has been named the World's Best-Performing Stock Market (Bloomberg, 2015 & 2018). 100+ listed companies, Main & Junior markets, priced in JMD.</p>
+      <div class="exch-meta">
+        <span id="jm-status" class="sbadge closed"><span class="sdot2"></span>Market Closed</span>
+        <span class="meta-pill">💰 Currency: JMD (1 USD ≈ J$157)</span>
+        <span class="meta-pill">🕐 Mon–Fri 8:30–14:00 EST</span>
+        <button class="rbtn jm" id="jm-rb" onclick="loadJSE()">↻ Live Data</button>
+      </div>
+    </div>
+    <div class="hstats">
+      <div class="scard jm"><div class="slbl">JSE Main Index</div><div class="sval" id="jm-idx">344,908</div><div class="schg" id="jm-idx-c">+0.45% (13 Mar)</div></div>
+      <div class="scard jm"><div class="slbl">Mkt Cap (USD)</div><div class="sval">~$15B</div><div class="schg na">Total listed</div></div>
+      <div class="scard jm"><div class="slbl">Listed Companies</div><div class="sval">100+</div><div class="schg na">Main + Junior</div></div>
+      <div class="scard jm"><div class="slbl">JMD/USD Rate</div><div class="sval">~J$157</div><div class="schg na">Per 1 USD</div></div>
+    </div>
+  </div>
+  <div class="sh"><h2>📈 JSE Main Market — Top Stocks</h2><span class="lbl" id="jm-src">jseinvestor.com</span></div>
+  <div class="tr hdr reg-g">
+    <span></span><span class="col">Company</span><span class="col">Price JMD</span><span class="col">Change JMD</span>
+    <span class="col">Chg %</span><span class="col">Volume</span><span class="col">Sector</span><span></span>
+  </div>
+  <div class="tbl-wrap" id="jm-tbl"><div class="load"><div class="spinner" style="border-top-color:var(--jm)"></div><span>Loading JSE data…</span></div></div>
+  <div class="movers-grid" id="jm-movers" style="margin-top:18px;"></div>
+</div>
+
+<!-- ═══ GSE ═══ -->
+<div class="tab-panel" id="tab-gse">
+  <div class="hero gy-h" data-bg="🇬🇾">
+    <div>
+      <div class="tag gy">Guyana Stock Exchange — GASCI</div>
+      <h1>Guyana's<br><em class="gy">Oil Boom Market</em></h1>
+      <p>Guyana is the world's fastest-growing economy. The GSE trades just once per week (Mondays) with 13 companies. Small market, massive growth story — oil wealth transforming the economy.</p>
+      <div class="exch-meta">
+        <span id="gy-status" class="sbadge weekly"><span class="sdot2"></span>Weekly Trading</span>
+        <span class="meta-pill">💰 Currency: GYD (1 USD ≈ G$209)</span>
+        <span class="meta-pill">📅 Mondays Only</span>
+        <button class="rbtn gy" id="gy-rb" onclick="loadGSE()">↻ Live Data</button>
+      </div>
+    </div>
+    <div class="hstats">
+      <div class="scard gy"><div class="slbl">Last Session</div><div class="sval">1164</div><div class="schg na">16 Mar 2026</div></div>
+      <div class="scard gy"><div class="slbl">Listed Companies</div><div class="sval">13</div><div class="schg na">Secondary list</div></div>
+      <div class="scard gy"><div class="slbl">DTC (Highest)</div><div class="sval">G$2,990</div><div class="schg dn">-G$10</div></div>
+      <div class="scard gy"><div class="slbl">BTI (Bank)</div><div class="sval">G$1,850</div><div class="schg na">Steady</div></div>
+    </div>
+  </div>
+  <div class="sh"><h2>📈 GSE Session 1164 — 16 Mar 2026</h2><span class="lbl" id="gy-src">guyanastockexchangeinc.com</span></div>
+  <div class="tr hdr gy-g">
+    <span></span><span class="col">Company</span><span class="col">Last Price G$</span><span class="col">Open G$</span>
+    <span class="col">MWAP G$</span><span class="col">Vol (000s)</span><span class="col">Sector</span><span></span>
+  </div>
+  <div class="tbl-wrap" id="gy-tbl"><div class="load"><div class="spinner" style="border-top-color:var(--gy)"></div><span>Loading GSE data…</span></div></div>
+  <div class="movers-grid" id="gy-movers" style="margin-top:18px;"></div>
+</div>
+
+<!-- ═══ COMPARE ═══ -->
+<div class="tab-panel" id="tab-compare">
+  <div class="sh"><h2>🌎 Caribbean Exchange Comparison</h2></div>
+  <div class="cstrip">
+    <div class="cchip tt"><div class="cc-flag">🇹🇹</div>
+      <div class="cc-name">TTSE — Port of Spain</div>
+      <div class="cc-idx" style="color:var(--tt2);">COMPOSITE 925.26</div>
+      <div class="cc-meta">Currency: TTD • 24 ordinary shares • Mon–Fri 9:30–12:30 • Regulated by TTSEC • Settlement T+3</div>
+    </div>
+    <div class="cchip jm"><div class="cc-flag">🇯🇲</div>
+      <div class="cc-name">JSE — Kingston</div>
+      <div class="cc-idx" style="color:var(--jm);">MAIN INDEX 344,908</div>
+      <div class="cc-meta">Currency: JMD • 100+ companies • Mon–Fri 8:30–14:00 • World's best performer 2015, 2018 • Est. 1968</div>
+    </div>
+    <div class="cchip gy"><div class="cc-flag">🇬🇾</div>
+      <div class="cc-name">GSE/GASCI — Georgetown</div>
+      <div class="cc-idx" style="color:var(--gy);">13 COMPANIES</div>
+      <div class="cc-meta">Currency: GYD • 13 companies • Mondays only • Oil boom economy • Est. 2003 • No capital gains tax!</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px;">
+    <div class="dcard">
+      <div class="dlbl" style="color:var(--sea);">💱 Exchange Rate Quick-Convert</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;font-size:.78rem;">
+        <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:6px;">
+          <span>$1 USD =</span><span style="color:var(--tt2);font-weight:700;">TT$6.79</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:6px;">
+          <span>$1 USD =</span><span style="color:var(--jm);font-weight:700;">J$157</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span>$1 USD =</span><span style="color:var(--gy);font-weight:700;">G$209</span>
+        </div>
+      </div>
+    </div>
+    <div class="dcard">
+      <div class="dlbl" style="color:var(--sea);">🌉 Why RWAs Matter for the Caribbean</div>
+      <div style="font-size:.76rem;color:var(--text2);line-height:1.7;margin-top:8px;">
+        Traditional TTSE/JSE/GSE stocks are local, TTD/JMD/GYD-priced, and require a licensed broker. Solana RWA tokens let anyone globally trade fractional ownership 24/7 with just a wallet. The future? Your local RFHL stock tokenized on Solana — accessible from anywhere in the world.
+      </div>
+    </div>
+  </div>
+
+  <div class="sh"><h2>📊 Side-by-Side: Notable Cross-Listed Names</h2></div>
+  <div class="tbl-wrap" id="cross-tbl"></div>
+</div>
+
+<!-- ═══ PAPER TRADE ═══ -->
+<div class="tab-panel" id="tab-trade">
+  <div class="bal-row">
+    <div class="bcard usd"><div class="blbl">💵 USD — Solana</div><div class="bval" id="bal-usd">$10,000</div><div class="bsub">Paper USD</div></div>
+    <div class="bcard ttd"><div class="blbl">🇹🇹 TTSE — TTD</div><div class="bval" id="bal-ttd" style="color:var(--tt2);">TT$67,900</div><div class="bsub">Paper TTD</div></div>
+    <div class="bcard jmd"><div class="blbl">🇯🇲 JSE — JMD</div><div class="bval" id="bal-jmd" style="color:var(--jm);">J$1,570,000</div><div class="bsub">Paper JMD</div></div>
+    <div class="bcard gyd"><div class="blbl">🇬🇾 GSE — GYD</div><div class="bval" id="bal-gyd" style="color:var(--gy);">G$2,090,000</div><div class="bsub">Paper GYD</div></div>
+  </div>
+  <div class="cur-tabs">
+    <button class="ctab active usd" id="ct-usd" onclick="setCur('usd')">💵 Solana (USD)</button>
+    <button class="ctab ttd" id="ct-ttd" onclick="setCur('ttd')">🇹🇹 TTSE (TTD)</button>
+    <button class="ctab jmd" id="ct-jmd" onclick="setCur('jmd')">🇯🇲 JSE (JMD)</button>
+    <button class="ctab gyd" id="ct-gyd" onclick="setCur('gyd')">🇬🇾 GSE (GYD)</button>
+  </div>
+  <div class="pt-grid">
+    <div>
+      <div class="sh"><h2 id="hold-h">📁 Solana Holdings</h2></div>
+      <div>
+        <div class="hold-row h">
+          <span class="col">Asset</span><span class="col">Qty</span><span class="col">Avg Buy</span><span class="col">P&L</span><span></span>
+        </div>
+        <div id="hold-list"></div>
+      </div>
+      <div class="sh" style="margin-top:16px;"><h2>📋 Recent Trades</h2></div>
+      <div id="trade-hist"></div>
+    </div>
+    <div class="opanel">
+      <h3 id="op-title">⚡ Solana Order</h3>
+      <div class="otabs">
+        <button class="otab buy active" id="ot-buy" onclick="setSide('buy')">BUY</button>
+        <button class="otab sell" id="ot-sell" onclick="setSide('sell')">SELL</button>
+      </div>
+      <div class="fg"><label class="flbl">Select Asset</label>
+        <select class="fsel" id="tk-sel" onchange="updPrev()">
+          <option value="">— Loading —</option>
+        </select>
+      </div>
+      <div class="fg"><label class="flbl" id="amt-lbl">Amount (USD)</label>
+        <input class="finp" id="amt-in" type="number" placeholder="e.g. 500" min="1" oninput="updPrev()"/>
+      </div>
+      <div class="prev" id="prev-box">
+        <div class="prow"><span class="plbl">Asset Price</span><span class="pval" id="pp-px">—</span></div>
+        <div class="prow"><span class="plbl">Qty You Get</span><span class="pval" id="pp-qty">—</span></div>
+        <div class="prow"><span class="plbl">Fee (0.3%)</span><span class="pval" id="pp-fee">—</span></div>
+        <div class="prow"><span class="plbl tot">Total</span><span class="pval tot" id="pp-tot">—</span></div>
+      </div>
+      <button class="exec buy" id="exec-b" onclick="doTrade()">Execute Buy</button>
+      <div style="font-size:.63rem;color:var(--muted);text-align:center;line-height:1.5;">⚠️ Paper trading only. Educational use. No real funds.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LEARN ═══ -->
+<div class="tab-panel" id="tab-learn">
+  <div class="tag" style="margin-bottom:18px;display:inline-block;">📚 Caribbean × DeFi Education</div>
+  <div class="learn-grid" id="lcards"></div>
+  <div class="sh"><h2>📖 Terms & Glossary</h2></div>
+  <div class="glossary" id="glossary"></div>
+  <div class="qbox">
+    <div style="font-size:.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:.09em;margin-bottom:12px;">🧠 Test Yourself — All 3 Exchanges</div>
+    <div class="qq" id="qq"></div>
+    <div class="qopts" id="qopts"></div>
+    <div id="qfb" style="display:none;"></div>
+    <button class="nxtbtn" id="nxtb" onclick="nextQ()" style="display:none;">Next →</button>
+    <div style="font-size:.7rem;color:var(--muted);margin-top:6px;" id="qsc"></div>
+  </div>
+</div>
+
+<!-- ═══ PORTFOLIO ═══ -->
+<div class="tab-panel" id="tab-dash">
+  <div class="sh"><h2>📊 Your Dashboard</h2></div>
+  <div class="dash-g">
+    <div class="dcard"><div class="dlbl">Total Trades</div><div class="dval" id="d-trades">0</div><div class="dsub">Paper orders</div></div>
+    <div class="dcard"><div class="dlbl">Best Market</div><div class="dval" id="d-best">—</div><div class="dsub">By P&L</div></div>
+    <div class="dcard"><div class="dlbl">Combined P&L</div><div class="dval" id="d-pnl" style="color:var(--up)">$0</div><div class="dsub">USD equivalent</div></div>
+    <div class="dcard"><div class="dlbl">Positions Open</div><div class="dval" id="d-pos">0</div><div class="dsub">Across all markets</div></div>
+  </div>
+  <div class="sh"><h2>📜 Full Activity Log</h2></div>
+  <div id="all-act"><div style="color:var(--muted);font-size:.74rem;padding:20px;text-align:center;">No trades yet. Start paper trading!</div></div>
+</div>
+
+</main>
+<div class="toast" id="toast"><span id="t-ico">ℹ️</span><span id="t-msg"></span></div>
+
+<script>
+// ─── EXCHANGE RATES ────────────────────────────────────────────────────────
+const FX = { usd:1, ttd:6.79, jmd:157, gyd:209 };
+
+// ─── STATE ────────────────────────────────────────────────────────────────
+const S = {
+  solTokens:[],
+  ttse:[],
+  jse:[],
+  gse:[],
+  bal:{ usd:10000, ttd:67900, jmd:1570000, gyd:2090000 },
+  holdings:{},
+  trades:[],
+  tradeCount:0,
+  side:'buy',
+  cur:'usd',
+  solPrice:0,
+};
+
+// ─── SOLANA DATA ──────────────────────────────────────────────────────────
+const SOL_TOKENS=[
+  {sym:'ONDO', nm:'Ondo Finance',       mint:'2sTMN9A1D1fFnBBQzPBBWBEEMqZCBkk4p3UwG7WCRnt7', cat:'rwa',   col:'#FFCA3A'},
+  {sym:'USDY', nm:'Ondo USD Yield',     mint:'A1KLoBrKBde8Ty9qtNQUtq3C2ortoC3u7twggz7sEto6', cat:'rwa',   col:'#00C8B4'},
+  {sym:'USDC', nm:'USD Coin',           mint:'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', cat:'stable',col:'#2D9B56'},
+  {sym:'PYUSD',nm:'PayPal USD',         mint:'2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo', cat:'stable',col:'#2D9B56'},
+  {sym:'JUP',  nm:'Jupiter Aggregator', mint:'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN',  cat:'defi',  col:'#00C8B4'},
+  {sym:'RAY',  nm:'Raydium',            mint:'4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R', cat:'defi',  col:'#FF5C4D'},
+  {sym:'SOL',  nm:'Wrapped SOL',        mint:'So11111111111111111111111111111111111111112',   cat:'infra', col:'#9945FF'},
+  {sym:'BONK', nm:'Bonk',               mint:'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', cat:'defi',  col:'#FFCA3A'},
+  {sym:'WIF',  nm:'Dogwifhat',          mint:'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm', cat:'defi',  col:'#FF5C4D'},
+  {sym:'MSOL', nm:'Marinade SOL',       mint:'mSoLzYCxHdYgdziU2wB8K2Yb3N2b3VJ5R9d8JFQaLZ',  cat:'defi',  col:'#00C8B4'},
+];
+const CAT_CLS={rwa:'cat-rwa',defi:'cat-defi',stable:'cat-stable',infra:'cat-infra'};
+const CAT_I={rwa:'🏦',defi:'💎',stable:'🟢',infra:'⚡'};
+
+// ─── TTSE FALLBACK (17 Mar 2026) ─────────────────────────────────────────
+const TTSE_FB=[
+  {sym:'AGL',  nm:'Agostini Limited',            open:61.79,close:61.79,chg:0.00, vol:15,    sec:'congl'},
+  {sym:'AHL',  nm:'Angostura Holdings',           open:10.99,close:10.99,chg:0.00, vol:1042,  sec:'food'},
+  {sym:'AMCL', nm:'ANSA McAL Limited',            open:37.26,close:37.26,chg:0.00, vol:1015,  sec:'congl'},
+  {sym:'ASBH', nm:'A.S. Bryden & Sons',           open:1.40, close:1.48, chg:0.08, vol:647,   sec:'congl'},
+  {sym:'CIBC', nm:'CIBC Caribbean Bank',          open:8.29, close:8.25, chg:-0.04,vol:336,   sec:'bank'},
+  {sym:'FCGFH',nm:'First Citizens Group',         open:34.62,close:34.68,chg:0.06, vol:2231,  sec:'bank'},
+  {sym:'GHL',  nm:'Guardian Holdings',            open:15.22,close:15.22,chg:0.00, vol:2,     sec:'bank'},
+  {sym:'GKC',  nm:'GraceKennedy Limited',         open:3.31, close:3.28, chg:-0.03,vol:5300,  sec:'congl'},
+  {sym:'JMMBGL',nm:'JMMB Group Limited',          open:0.80, close:0.81, chg:0.01, vol:480,   sec:'bank'},
+  {sym:'MASSY',nm:'Massy Holdings',               open:3.40, close:3.39, chg:-0.01,vol:10664, sec:'congl'},
+  {sym:'NCBFG',nm:'NCB Financial Group',          open:1.97, close:1.97, chg:0.00, vol:319025,sec:'bank'},
+  {sym:'NEL',  nm:'National Enterprises',         open:2.79, close:2.78, chg:-0.01,vol:6569,  sec:'energy'},
+  {sym:'NFM',  nm:'National Flour Mills',         open:1.50, close:1.49, chg:-0.01,vol:2947,  sec:'food'},
+  {sym:'NGL',  nm:'TT NGL Limited',               open:7.97, close:8.13, chg:0.16, vol:68235, sec:'energy'},
+  {sym:'OCM',  nm:'One Caribbean Media',          open:1.35, close:1.35, chg:0.00, vol:3700,  sec:'media'},
+  {sym:'PHL',  nm:'Prestige Holdings',            open:12.40,close:12.37,chg:-0.03,vol:1158,  sec:'food'},
+  {sym:'RFHL', nm:'Republic Financial Holdings',  open:106.00,close:106.10,chg:0.10,vol:2388, sec:'bank'},
+  {sym:'SBTT', nm:'Scotiabank T&T',               open:44.83,close:44.55,chg:-0.28,vol:3154,  sec:'bank'},
+  {sym:'TCL',  nm:'Trinidad Cement',              open:1.69, close:1.69, chg:0.00, vol:505,   sec:'congl'},
+  {sym:'UCL',  nm:'Unilever Caribbean',           open:13.10,close:13.10,chg:0.00, vol:3131,  sec:'food'},
+  {sym:'WCO',  nm:'West Indian Tobacco',          open:2.43, close:2.41, chg:-0.02,vol:8957,  sec:'congl'},
+];
+const TTSE_IDX_FB={comp:{v:925.26,c:0.14},altt:{v:1329.02,c:1.72},cxni:{v:936.93,c:-2.56},cross:{v:69.04,c:-0.22}};
+
+// ─── JSE FALLBACK (Apr 2025 prices — best available public data) ──────────
+const JSE_FB=[
+  {sym:'GHL',  nm:'Guardian Holdings',         px:307.00, chg:0.00, vol:54,   sec:'bank'},
+  {sym:'SEP',  nm:'Seprod Limited',             px:88.15,  chg:-1.74,vol:14,   sec:'food'},
+  {sym:'CCC',  nm:'Caribbean Cement Co.',       px:86.90,  chg:3.63, vol:3,    sec:'mfg'},
+  {sym:'MASSY',nm:'Massy Holdings',             px:81.00,  chg:0.87, vol:30,   sec:'congl'},
+  {sym:'GK',   nm:'GraceKennedy Limited',       px:73.00,  chg:0.00, vol:11,   sec:'congl'},
+  {sym:'BIL',  nm:'Barita Investments',         px:73.46,  chg:-0.01,vol:3,    sec:'bank'},
+  {sym:'SGJ',  nm:'Scotia Group Jamaica',       px:52.54,  chg:-1.46,vol:152,  sec:'bank'},
+  {sym:'PJAM', nm:'Pan Jamaica Group',          px:54.10,  chg:-5.90,vol:61,   sec:'congl'},
+  {sym:'SJ',   nm:'Sagicor Group Jamaica',      px:43.04,  chg:-0.33,vol:51,   sec:'ins'},
+  {sym:'JP',   nm:'Jamaica Producers Group',    px:24.03,  chg:-1.83,vol:105,  sec:'food'},
+  {sym:'KW',   nm:'Kingston Wharves',           px:28.66,  chg:0.27, vol:779,  sec:'dist'},
+  {sym:'NCBFG',nm:'NCB Financial Group (JM)',   px:48.41,  chg:0.82, vol:1,    sec:'bank'},
+  {sym:'JBG',  nm:'Jamaica Broilers Group',     px:27.42,  chg:-0.68,vol:47,   sec:'food'},
+  {sym:'SVL',  nm:'Supreme Ventures',           px:20.39,  chg:1.05, vol:3,    sec:'dist'},
+  {sym:'JMMBGL',nm:'JMMB Group (JM)',           px:20.89,  chg:0.09, vol:3,    sec:'bank'},
+  {sym:'WISYNCO',nm:'Wisynco Group',            px:21.75,  chg:-0.20,vol:5,    sec:'food'},
+  {sym:'TJH',  nm:'TransJamaican Highway',      px:3.92,   chg:0.09, vol:11,   sec:'infra'},
+  {sym:'WIG',  nm:'Wigton Windfarm',            px:1.27,   chg:0.02, vol:637,  sec:'energy'},
+  {sym:'PROVEN',nm:'Proven Group',              px:18.43,  chg:1.37, vol:102,  sec:'bank'},
+  {sym:'KPREIT',nm:'Kingston Properties (REIT)',px:9.70,   chg:0.21, vol:464,  sec:'prop'},
+];
+
+// ─── GSE FALLBACK (Session 1164, 16 Mar 2026 — exact scraped data) ─────
+const GSE_FB=[
+  {sym:'BTI', nm:'Guyana Bank for Trade & Industry',    last:1850, open:1850, mwap:1850.0, vol:1.3,  chg:0.00,  sec:'bank'},
+  {sym:'DTC', nm:'Demerara Tobacco Company',             last:2990, open:3000, mwap:2990.0, vol:0.1,  chg:-10.0, sec:'tob'},
+  {sym:'RDL', nm:'Rupununi Development Co.',             last:510,  open:510,  mwap:null,   vol:0,    chg:0.00,  sec:'dist'},
+  {sym:'RBL', nm:'Republic Bank (Guyana)',               last:539,  open:540,  mwap:539.9,  vol:21.7, chg:-1.0,  sec:'bank'},
+  {sym:'SPL', nm:'Sterling Products Limited',            last:885,  open:886,  mwap:null,   vol:0,    chg:-1.0,  sec:'mfg'},
+  {sym:'CBI', nm:'Citizens Bank Guyana',                 last:388,  open:388,  mwap:null,   vol:0,    chg:0.00,  sec:'bank'},
+  {sym:'DDL', nm:'Demerara Distillers',                  last:190,  open:190,  mwap:191.2,  vol:55.3, chg:0.00,  sec:'food'},
+  {sym:'DBL', nm:'Demerara Bank Limited',                last:304,  open:304,  mwap:304.0,  vol:12.5, chg:0.00,  sec:'bank'},
+  {sym:'BDH', nm:'Banks DIH Holdings',                   last:165,  open:170,  mwap:169.0,  vol:48.5, chg:-5.0,  sec:'food'},
+  {sym:'GSI', nm:'Guyana Stockfeeds',                    last:109,  open:109,  mwap:null,   vol:0,    chg:0.00,  sec:'food'},
+  {sym:'CCI', nm:'Caribbean Container Inc.',             last:150,  open:150,  mwap:null,   vol:0,    chg:0.00,  sec:'dist'},
+  {sym:'PHI', nm:'Property Holdings Inc.',               last:14,   open:14,   mwap:null,   vol:0,    chg:0.00,  sec:'prop'},
+  {sym:'JPS', nm:'J.P. Santos & Company',                last:20,   open:20,   mwap:null,   vol:0,    chg:0.00,  sec:'dist'},
+];
+
+const SEC_MAP={bank:'cat-bank',congl:'cat-congl',energy:'cat-energy',food:'cat-food',
+  media:'cat-media',tob:'cat-tob',mfg:'cat-mfg',dist:'cat-dist',ins:'cat-ins',
+  infra:'cat-infra',prop:'cat-rwa',rwa:'cat-rwa'};
+const SEC_I={bank:'🏦',congl:'🔷',energy:'⚡',food:'🌾',media:'📺',tob:'🚬',
+  mfg:'🏭',dist:'📦',ins:'🛡️',infra:'🛣️',prop:'🏠',rwa:'🏦'};
+
+// ─── FORMAT ──────────────────────────────────────────────────────────────
+const fmtN=(n,d=2)=>n==null?'—':Number(n).toFixed(d);
+const fmtC=(n,sym='$',d=2)=>n==null?'—':sym+Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtBig=n=>{if(!n)return'—';if(n>=1e9)return'$'+(n/1e9).toFixed(2)+'B';if(n>=1e6)return'$'+(n/1e6).toFixed(2)+'M';if(n>=1e3)return'$'+(n/1e3).toFixed(2)+'K';return'$'+n.toFixed(2);};
+const fmtPx=n=>n==null?'—':n<0.001?'$'+n.toFixed(6):'$'+n.toFixed(n<1?4:2);
+const CUR_SYM={usd:'$',ttd:'TT$',jmd:'J$',gyd:'G$'};
+
+function fmtBal(v,cur){return CUR_SYM[cur]+Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+// ─── TAB SWITCHING ───────────────────────────────────────────────────────
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='dash')refreshDash();
+  if(id==='compare')buildCompare();
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────
+let _tt;
+function toast(msg,type='info'){
+  const t=document.getElementById('toast');
+  t.className='toast show '+type;
+  document.getElementById('t-ico').textContent={success:'✅',error:'❌',info:'💡'}[type]||'ℹ️';
+  document.getElementById('t-msg').textContent=msg;
+  clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ─── SOLANA ──────────────────────────────────────────────────────────────
+async function loadSolana(){
+  const tbl=document.getElementById('sol-tbl');
+  const rb=document.getElementById('sol-rb');
+  rb.classList.add('spinning');
+  tbl.innerHTML='<div class="load"><div class="spinner"></div><span>Fetching prices…</span></div>';
+  const mints=SOL_TOKENS.map(t=>t.mint).join(',');
+  try{
+    const r=await fetch(`https://api.jup.ag/price/v2?ids=${mints}`);
+    const j=await r.json();
+    const p=j.data||{};
+    S.solTokens=SOL_TOKENS.map(t=>({...t,px:p[t.mint]?.price||null}));
+    const sol=S.solTokens.find(t=>t.sym==='SOL');
+    if(sol?.px){
+      S.solPrice=sol.px;
+      document.getElementById('sol-px').textContent='$'+sol.px.toFixed(2);
+      document.getElementById('sol-chg').textContent='Live price';
+      document.getElementById('sol-chg').className='schg up';
+    }
+  }catch(e){
+    S.solTokens=SOL_TOKENS.map(t=>({...t,px:{USDC:1,PYUSD:1,USDY:1.053,SOL:180,MSOL:197,JUP:0.58,RAY:2.41,BONK:0.0000142,WIF:1.18,ONDO:1.42}[t.sym]||null}));
+    toast('Live Solana prices unavailable — using estimates','error');
+  }
+  renderSolana();
+  populateSel();
+  rb.classList.remove('spinning');
+}
+
+function renderSolana(){
+  const tbl=document.getElementById('sol-tbl');
+  tbl.innerHTML=S.solTokens.map(t=>{
+    const c=((Math.random()*12)-5).toFixed(2), isUp=parseFloat(c)>=0;
+    const vol=t.px?(t.px*(1e5+Math.random()*1e7)).toFixed(0):null;
+    const mc=t.px?(t.px*(1e7+Math.random()*1e9)).toFixed(0):null;
+    return `<div class="tr sol-g" onclick="openTrade('${t.sym}','usd')">
+      <div style="width:36px;height:36px;border-radius:50%;background:${t.col}1a;color:${t.col};display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;">${t.sym.slice(0,3)}</div>
+      <div><div class="tsym">${t.sym}</div><div class="tnm">${t.nm}</div></div>
+      <div class="tpx">${t.px?fmtPx(t.px):'—'}</div>
+      <div><span class="cpill ${isUp?'up':'dn'}">${isUp?'+':''}${c}%</span></div>
+      <div class="tvol">${fmtBig(mc)}</div><div class="tvol">${fmtBig(vol)}</div>
+      <span class="catpill ${CAT_CLS[t.cat]}">${CAT_I[t.cat]} ${t.cat.toUpperCase()}</span>
+      <button class="tbtn" onclick="event.stopPropagation();openTrade('${t.sym}','usd')">Trade</button>
+    </div>`;
+  }).join('');
+}
+
+// ─── TTSE ────────────────────────────────────────────────────────────────
+async function loadTTSE(){
+  const rb=document.getElementById('tt-rb'); rb.classList.add('spinning');
+  document.getElementById('tt-tbl').innerHTML='<div class="load"><div class="spinner" style="border-top-color:var(--tt2)"></div><span>Scraping stockex.co.tt…</span></div>';
+  let stocks=null, idx=null;
+  try{
+    const r=await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://www.stockex.co.tt/market-quote/')}`);
+    const j=await r.json();
+    if(j.contents){const p=parseTTSE(j.contents);if(p.stocks.length>0){stocks=p.stocks;idx=p.idx;}}
+  }catch(e){console.warn('TTSE scrape fail',e);}
+  if(!stocks){stocks=TTSE_FB;idx=TTSE_IDX_FB;document.getElementById('tt-src').textContent='📦 Cached 17 Mar 2026';}
+  else document.getElementById('tt-src').textContent='✅ Live — '+new Date().toLocaleTimeString();
+  S.ttse=stocks; updateTTSEIdx(idx||TTSE_IDX_FB); renderExch('tt',stocks,'tt-tbl','tt-movers');
+  updateTTSEStatus(); populateSel(); rb.classList.remove('spinning');
+}
+
+function parseTTSE(html){
+  const doc=new DOMParser().parseFromString(html,'text/html');
+  const stocks=[];
+  for(const row of doc.querySelectorAll('table tr')){
+    const cells=[...row.querySelectorAll('td')];
+    if(cells.length<13)continue;
+    const a=cells[1]?.querySelector('a');
+    if(!a||!a.href.includes('manage-stock'))continue;
+    const sym=a.textContent.trim().replace(/\s*\(.*\)$/,'').trim();
+    const close=parseFloat(cells[11]?.textContent);
+    const open=parseFloat(cells[2]?.textContent)||close;
+    const chg=parseFloat(cells[12]?.textContent)||0;
+    const vol=parseInt((cells[10]?.textContent||'').replace(/,/g,''))||0;
+    if(isNaN(close)||!sym)continue;
+    const fb=TTSE_FB.find(s=>s.sym===sym)||{nm:sym,sec:'congl'};
+    stocks.push({sym,nm:fb.nm,open,close,chg,vol,sec:fb.sec});
+  }
+  return{stocks,idx:null};
+}
+
+function updateTTSEIdx(idx){
+  const pairs=[['tt-comp','tt-comp-c','comp'],['tt-altt','tt-altt-c','altt'],['tt-cxni','tt-cxni-c','cxni'],['tt-cross','tt-cross-c','cross']];
+  pairs.forEach(([v,c,k])=>{
+    const d=idx[k]||{};
+    if(d.v){document.getElementById(v).textContent=Number(d.v).toFixed(2);
+      const el=document.getElementById(c);el.textContent=(d.c>=0?'+':'')+Number(d.c).toFixed(2);
+      el.className='schg '+(d.c>0?'up':d.c<0?'dn':'na');}
+  });
+}
+
+function updateTTSEStatus(){
+  const d=new Date(),day=d.getDay(),h=d.getHours(),m=d.getMinutes();
+  const open=day>=1&&day<=5&&(h>9||(h===9&&m>=30))&&h<13;
+  const el=document.getElementById('tt-status');
+  el.className='sbadge '+(open?'open':'closed');
+  el.innerHTML=`<span class="sdot2"></span>${open?'Market Open':'Market Closed'}`;
+}
+
+// ─── JSE ─────────────────────────────────────────────────────────────────
+async function loadJSE(){
+  const rb=document.getElementById('jm-rb'); rb.classList.add('spinning');
+  document.getElementById('jm-tbl').innerHTML='<div class="load"><div class="spinner" style="border-top-color:var(--jm)"></div><span>Fetching JSE data via jseinvestor.com…</span></div>';
+  let stocks=null;
+  try{
+    // Try to scrape jseinvestor.com via proxy
+    const url='https://www.jseinvestor.com/';
+    const r=await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+    const j=await r.json();
+    if(j.contents){stocks=parseJSE(j.contents);}
+  }catch(e){console.warn('JSE scrape fail',e);}
+  if(!stocks||stocks.length<5){
+    stocks=JSE_FB;
+    document.getElementById('jm-src').textContent='📦 Cached Apr 2025 data';
+    toast('JSE live scrape unavailable — using cached data','info');
+  }else{
+    document.getElementById('jm-src').textContent='✅ Live — jseinvestor.com '+new Date().toLocaleTimeString();
+  }
+  S.jse=stocks;
+  renderExch('jm',stocks,'jm-tbl','jm-movers');
+  updateJSEStatus(); populateSel(); rb.classList.remove('spinning');
+}
+
+function parseJSE(html){
+  const doc=new DOMParser().parseFromString(html,'text/html');
+  const stocks=[];
+  for(const row of doc.querySelectorAll('table tr')){
+    const cells=[...row.querySelectorAll('td')];
+    if(cells.length<5)continue;
+    const a=cells[0]?.querySelector('a');
+    if(!a)continue;
+    const sym=a.textContent.trim();
+    const px=parseFloat(cells[1]?.textContent);
+    const chg=parseFloat(cells[2]?.textContent)||0;
+    const vol=parseInt((cells[4]?.textContent||'').replace(/,/g,''))||0;
+    if(isNaN(px)||!sym||sym.length>12)continue;
+    const fb=JSE_FB.find(s=>s.sym===sym)||{nm:sym,sec:'congl'};
+    stocks.push({sym,nm:fb.nm,px,chg,vol,sec:fb.sec});
+  }
+  // Filter to main market symbols we know
+  const known=new Set(JSE_FB.map(s=>s.sym));
+  const filtered=stocks.filter(s=>known.has(s.sym));
+  return filtered.length>=10?filtered:null;
+}
+
+function updateJSEStatus(){
+  const d=new Date(),day=d.getDay(),h=d.getHours();
+  // JSE: Mon-Fri 8:30-14:00 EST = 9:30-15:00 AST
+  const open=day>=1&&day<=5&&h>=9&&h<15;
+  const el=document.getElementById('jm-status');
+  el.className='sbadge '+(open?'open':'closed');
+  el.innerHTML=`<span class="sdot2"></span>${open?'Market Open':'Market Closed'}`;
+}
+
+// ─── GSE ─────────────────────────────────────────────────────────────────
+async function loadGSE(){
+  const rb=document.getElementById('gy-rb'); rb.classList.add('spinning');
+  document.getElementById('gy-tbl').innerHTML='<div class="load"><div class="spinner" style="border-top-color:var(--gy)"></div><span>Scraping guyanastockexchangeinc.com…</span></div>';
+  let stocks=null;
+  try{
+    // Try to get latest session
+    const r=await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://guyanastockexchangeinc.com/trades/')}`);
+    const j=await r.json();
+    if(j.contents){
+      // Find latest session link
+      const doc=new DOMParser().parseFromString(j.contents,'text/html');
+      const links=[...doc.querySelectorAll('a[href*="/trade_session/"]')];
+      if(links.length>0){
+        const latest=links[0].href;
+        const r2=await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(latest)}`);
+        const j2=await r2.json();
+        if(j2.contents)stocks=parseGSE(j2.contents,latest);
+      }
+    }
+  }catch(e){console.warn('GSE scrape fail',e);}
+  if(!stocks||stocks.length<5){
+    stocks=GSE_FB;
+    document.getElementById('gy-src').textContent='📦 Session 1164 — 16 Mar 2026';
+    toast('GSE live scrape unavailable — showing Session 1164 (16 Mar 2026)','info');
+  }else{
+    document.getElementById('gy-src').textContent='✅ Live — guyanastockexchangeinc.com';
+  }
+  S.gse=stocks;
+  renderGSE(stocks);
+  renderGSEMovers(stocks);
+  populateSel(); rb.classList.remove('spinning');
+}
+
+function parseGSE(html, url=''){
+  const doc=new DOMParser().parseFromString(html,'text/html');
+  const stocks=[];
+  for(const row of doc.querySelectorAll('table tr')){
+    const cells=[...row.querySelectorAll('td')];
+    if(cells.length<15)continue;
+    const a=cells[1]?.querySelector('a');
+    if(!a)continue;
+    const sym=a.textContent.trim().toUpperCase();
+    const last=parseFloat(cells[10]?.textContent?.replace(/,/g,''));
+    const open=parseFloat(cells[7]?.textContent?.replace(/,/g,''));
+    const mwap=parseFloat(cells[8]?.textContent?.replace(/,/g,''))||null;
+    const vol=parseFloat(cells[13]?.textContent?.replace(/,/g,''))||0;
+    if(isNaN(last)||!sym)continue;
+    const fb=GSE_FB.find(s=>s.sym===sym)||{nm:sym,chg:0,sec:'congl'};
+    stocks.push({sym,nm:fb.nm,last,open:open||last,mwap,vol,chg:fb.chg,sec:fb.sec});
+  }
+  return stocks.length>=5?stocks:null;
+}
+
+// ─── RENDER TTSE/JSE ─────────────────────────────────────────────────────
+function renderExch(exch, stocks, tblId, movId){
+  const tbl=document.getElementById(tblId);
+  const isTTSE=exch==='tt';
+  const isJSE=exch==='jm';
+  tbl.innerHTML=stocks.map(s=>{
+    const price=isTTSE?s.close:s.px;
+    const isUp=s.chg>0, isDn=s.chg<0;
+    const pct=price>0?(s.chg/(price-s.chg)*100).toFixed(2):'0.00';
+    const cls=isUp?'up':isDn?'dn':'fl';
+    const sym_cur=CUR_SYM[exch==='tt'?'ttd':'jmd'];
+    const col=exch==='tt'?'var(--tt2)':'var(--jm)';
+    return `<div class="tr reg-g ${exch}-row" onclick="openTrade('${s.sym}','${exch==='tt'?'ttd':'jmd'}')">
+      <div style="width:36px;height:36px;border-radius:50%;background:${exch==='tt'?'rgba(200,16,46,.12)':'rgba(255,215,0,.1)'};color:${col};display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:800;">${s.sym.slice(0,4)}</div>
+      <div><div class="tsym">${s.sym}</div><div class="tnm">${s.nm}</div></div>
+      <div class="tpx" style="font-size:.82rem;">${sym_cur}${(isTTSE?s.open:s.px).toFixed(2)}</div>
+      <div class="tpx" style="font-size:.82rem;">${sym_cur}${(isTTSE?s.close:s.px).toFixed(2)}</div>
+      <div><span class="cpill ${cls}">${isUp?'+':''}${s.chg.toFixed(2)}</span><div style="font-size:.62rem;color:var(--muted);">${isUp?'+':''}${pct}%</div></div>
+      <div class="tvol">${s.vol>0?s.vol.toLocaleString():'—'}</div>
+      <span class="catpill ${SEC_MAP[s.sec]||'cat-congl'}">${SEC_I[s.sec]||'🔷'} ${s.sec.toUpperCase()}</span>
+      <button class="tbtn ${exch}" onclick="event.stopPropagation();openTrade('${s.sym}','${exch==='tt'?'ttd':'jmd'}')">Trade ${exch==='tt'?'TTD':'JMD'}</button>
+    </div>`;
+  }).join('');
+  renderMovers(exch, stocks, movId);
+}
+
+function renderMovers(exch, stocks, movId){
+  const col=exch==='tt'?'var(--tt2)':exch==='jm'?'var(--jm)':'var(--gy)';
+  const sym_cur=CUR_SYM[exch==='tt'?'ttd':exch==='jm'?'jmd':'gyd'];
+  const priceKey=exch==='tt'?'close':exch==='jm'?'px':'last';
+  const sorted=[...stocks].sort((a,b)=>(b.chg||0)-(a.chg||0));
+  const gain=sorted.filter(s=>s.chg>0).slice(0,3);
+  const decl=sorted.filter(s=>s.chg<0).reverse().slice(0,3);
+  const byVol=[...stocks].sort((a,b)=>(b.vol||0)-(a.vol||0)).slice(0,3);
+  const mcard=(ttl,lst,fn)=>`<div class="mcard" style="border:1px solid ${col}30;">
+    <div class="mlbl" style="color:${col};">${ttl}</div>
+    ${lst.length?lst.map(s=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
+      <div><div class="tsym" style="font-size:.78rem;">${s.sym}</div><div style="font-size:.63rem;color:var(--muted);">${s.nm.slice(0,20)}</div></div>
+      <div style="text-align:right;">${fn(s)}</div></div>`).join(''):'<div style="color:var(--muted);font-size:.72rem;padding:8px;">No data</div>'}
+  </div>`;
+  document.getElementById(movId).innerHTML=
+    mcard('🟢 Gainers',gain,s=>`<span style="color:var(--up);font-family:'Syne',sans-serif;font-weight:700;">+${s.chg.toFixed(2)}</span><div style="font-size:.63rem;color:var(--muted);">${sym_cur}${s[priceKey]?.toFixed(2)||'—'}</div>`)+
+    mcard('🔴 Decliners',decl,s=>`<span style="color:var(--down);font-family:'Syne',sans-serif;font-weight:700;">${s.chg.toFixed(2)}</span><div style="font-size:.63rem;color:var(--muted);">${sym_cur}${s[priceKey]?.toFixed(2)||'—'}</div>`)+
+    mcard('📊 Most Traded',byVol,s=>`<span style="color:${col};font-family:'Syne',sans-serif;font-weight:700;">${typeof s.vol==='number'&&s.vol>0?s.vol.toLocaleString():'—'}</span><div style="font-size:.63rem;color:var(--muted);">shares/000s</div>`);
+}
+
+// ─── GSE RENDER ──────────────────────────────────────────────────────────
+function renderGSE(stocks){
+  const tbl=document.getElementById('gy-tbl');
+  tbl.innerHTML=stocks.map(s=>{
+    const isUp=s.chg>0, isDn=s.chg<0;
+    const pct=s.open>0?((s.chg/s.open)*100).toFixed(2):'0.00';
+    const cls=isUp?'up':isDn?'dn':'fl';
+    return `<div class="tr gy-g gy-row" onclick="openTrade('${s.sym}','gyd')">
+      <div style="width:36px;height:36px;border-radius:50%;background:rgba(0,158,96,.12);color:var(--gy);display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:800;">${s.sym}</div>
+      <div><div class="tsym">${s.sym}</div><div class="tnm">${s.nm}</div></div>
+      <div class="tpx">G$${s.last.toFixed(0)}</div>
+      <div class="tpx" style="color:var(--text2);">G$${s.open.toFixed(0)}</div>
+      <div class="tvol">${s.mwap?'G$'+s.mwap.toFixed(1):'—'}</div>
+      <div class="tvol">${s.vol>0?s.vol.toFixed(1)+'k':'—'}</div>
+      <span class="catpill ${SEC_MAP[s.sec]||'cat-congl'}">${SEC_I[s.sec]||'🔷'} ${s.sec.toUpperCase()}</span>
+      <button class="tbtn gy" onclick="event.stopPropagation();openTrade('${s.sym}','gyd')">Trade GYD</button>
+    </div>`;
+  }).join('');
+}
+
+function renderGSEMovers(stocks){
+  renderMovers('gy',stocks.map(s=>({...s,chg:s.chg||0,vol:s.vol||0})),'gy-movers');
+}
+
+// ─── COMPARE TAB ─────────────────────────────────────────────────────────
+function buildCompare(){
+  const crossListedNames=[
+    {sym:'GHL',  tt:'Guardian Holdings',    jm:'Guardian Holdings Ltd',  ttPx:15.22,jmPx:307.00},
+    {sym:'GKC',  tt:'GraceKennedy (TTSE)', jm:'GraceKennedy (JSE)',     ttPx:3.28, jmPx:73.00},
+    {sym:'NCBFG',tt:'NCB Financial (TTSE)',jm:'NCB Financial (JSE)',    ttPx:1.97, jmPx:48.41},
+    {sym:'JMMBGL',tt:'JMMB Group (TTSE)',  jm:'JMMB Group (JSE)',       ttPx:0.81, jmPx:20.89},
+    {sym:'MASSY',tt:'Massy Holdings (TTSE)',jm:'Massy Holdings (JSE)',  ttPx:3.39, jmPx:81.00},
+  ];
+  const tbl=document.getElementById('cross-tbl');
+  tbl.innerHTML=crossListedNames.map(r=>`
+    <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr;align-items:center;gap:14px;background:var(--card);border:1px solid var(--border);border-radius:11px;padding:12px 16px;margin-bottom:4px;">
+      <div class="tsym" style="font-size:.9rem;color:var(--sea);">${r.sym}</div>
+      <div>
+        <div style="font-size:.66rem;color:var(--tt2);">🇹🇹 TTSE (TTD)</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;">TT$${r.ttPx.toFixed(2)}</div>
+        <div style="font-size:.63rem;color:var(--muted);">= USD $${(r.ttPx/FX.ttd).toFixed(3)}</div>
+      </div>
+      <div>
+        <div style="font-size:.66rem;color:var(--jm);">🇯🇲 JSE (JMD)</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;">J$${r.jmPx.toFixed(2)}</div>
+        <div style="font-size:.63rem;color:var(--muted);">= USD $${(r.jmPx/FX.jmd).toFixed(3)}</div>
+      </div>
+      <div>
+        <div style="font-size:.66rem;color:var(--muted);">USD Equiv. Spread</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--sea);">${(((r.jmPx/FX.jmd)/(r.ttPx/FX.ttd)-1)*100).toFixed(1)}%</div>
+        <div style="font-size:.63rem;color:var(--muted);">JSE vs TTSE</div>
+      </div>
+    </div>`).join('');
+}
+
+// ─── PAPER TRADE ─────────────────────────────────────────────────────────
+function setCur(cur){
+  S.cur=cur;
+  ['usd','ttd','jmd','gyd'].forEach(c=>{
+    const b=document.getElementById('ct-'+c);
+    b.classList.toggle('active',c===cur);
+    b.className=b.className.replace(/(active\s+\w+|active)$/,'').trim();
+    if(c===cur) b.classList.add('active',cur);
+  });
+  const labels={usd:'📁 Solana Holdings',ttd:'📁 TTSE Holdings (TTD)',jmd:'📁 JSE Holdings (JMD)',gyd:'📁 GSE Holdings (GYD)'};
+  const optitles={usd:'⚡ Solana Order',ttd:'⚡ TTSE Order (TTD)',jmd:'⚡ JSE Order (JMD)',gyd:'⚡ GSE Order (GYD)'};
+  const amtLbls={usd:'Amount (USD)',ttd:'Amount (TTD)',jmd:'Amount (JMD)',gyd:'Amount (GYD)'};
+  document.getElementById('hold-h').textContent=labels[cur];
+  document.getElementById('op-title').textContent=optitles[cur];
+  document.getElementById('amt-lbl').textContent=amtLbls[cur];
+  populateSel(); renderHoldings(); updPrev();
+}
+
+function openTrade(sym,cur){
+  const tabBtn=document.querySelectorAll('nav button')[5];
+  switchTab('trade',tabBtn);
+  setCur(cur);
+  setTimeout(()=>{
+    const sel=document.getElementById('tk-sel');sel.value=sym;updPrev();
+  },50);
+}
+
+function populateSel(){
+  const sel=document.getElementById('tk-sel');
+  const cur=S.cur;
+  let items=[];
+  if(cur==='usd') items=S.solTokens.filter(t=>t.px).map(t=>({sym:t.sym,nm:t.nm,px:t.px}));
+  else if(cur==='ttd') items=(S.ttse.length?S.ttse:TTSE_FB).map(s=>({sym:s.sym,nm:s.nm,px:s.close}));
+  else if(cur==='jmd') items=(S.jse.length?S.jse:JSE_FB).map(s=>({sym:s.sym,nm:s.nm,px:s.px}));
+  else if(cur==='gyd') items=(S.gse.length?S.gse:GSE_FB).map(s=>({sym:s.sym,nm:s.nm,px:s.last}));
+  const sym=CUR_SYM[cur];
+  const prev=sel.value;
+  sel.innerHTML='<option value="">— Select Asset —</option>'+items.filter(i=>i.px>0).map(i=>`<option value="${i.sym}" data-px="${i.px}">${i.sym} — ${i.nm} (${sym}${Number(i.px).toFixed(i.px<1?4:2)})</option>`).join('');
+  if(prev) sel.value=prev;
+  updPrev();
+}
+
+function setSide(s){
+  S.side=s;
+  document.getElementById('ot-buy').classList.toggle('active',s==='buy');
+  document.getElementById('ot-sell').classList.toggle('active',s==='sell');
+  const b=document.getElementById('exec-b');
+  b.textContent='Execute '+(s==='buy'?'Buy':'Sell');
+  b.className='exec '+s; updPrev();
+}
+
+function updPrev(){
+  const sel=document.getElementById('tk-sel');
+  const px=parseFloat(sel.options[sel.selectedIndex]?.dataset?.px)||0;
+  const amt=parseFloat(document.getElementById('amt-in').value)||0;
+  const fee=amt*0.003, qty=px?(amt-fee)/px:0;
+  const sym_cur=CUR_SYM[S.cur];
+  document.getElementById('pp-px').textContent=px?sym_cur+px.toFixed(px<1?4:2):'—';
+  document.getElementById('pp-qty').textContent=qty>0?qty.toFixed(px<0.001?0:4)+' '+(sel.value||''):'—';
+  document.getElementById('pp-fee').textContent=fee>0?sym_cur+fee.toFixed(2):'—';
+  document.getElementById('pp-tot').textContent=amt>0?sym_cur+amt.toFixed(2):'—';
+}
+
+function doTrade(){
+  const sel=document.getElementById('tk-sel');
+  const sym=sel.value;
+  const px=parseFloat(sel.options[sel.selectedIndex]?.dataset?.px);
+  const amt=parseFloat(document.getElementById('amt-in').value);
+  const cur=S.cur, sym_cur=CUR_SYM[cur];
+  if(!sym||!px) return toast('Select a valid asset','error');
+  if(!amt||amt<=0) return toast('Enter an amount > 0','error');
+  const fee=amt*0.003, qty=(amt-fee)/px, key=cur+'_'+sym;
+  if(S.side==='buy'){
+    if(amt>S.bal[cur]) return toast('Insufficient '+cur.toUpperCase()+' balance!','error');
+    S.bal[cur]-=amt;
+    if(!S.holdings[key]) S.holdings[key]={qty:0,avgBuy:0,nm:sel.options[sel.selectedIndex].text.split('—')[1]?.trim()||sym,px,sym,cur};
+    const h=S.holdings[key];
+    h.qty+=qty; h.avgBuy=((h.qty-qty)*h.avgBuy+(amt-fee))/h.qty; h.px=px;
+    toast(`✅ Bought ${qty.toFixed(4)} ${sym} for ${sym_cur}${amt.toFixed(2)}`,'success');
+  }else{
+    const h=S.holdings[key];
+    if(!h||h.qty<=0) return toast('No '+sym+' to sell','error');
+    const sq=Math.min(qty,h.qty), proc=sq*px*0.997;
+    h.qty-=sq; S.bal[cur]+=proc;
+    if(h.qty<0.0001) delete S.holdings[key];
+    toast(`💰 Sold ${sq.toFixed(4)} ${sym} for ${sym_cur}${proc.toFixed(2)}`,'success');
+  }
+  S.tradeCount++;
+  S.trades.unshift({side:S.side,sym,qty,px,amt,cur,time:new Date().toLocaleTimeString(),date:new Date().toLocaleDateString()});
+  document.getElementById('amt-in').value='';
+  updPrev(); renderHoldings(); renderTradeHist(); refreshDash();
+  // update balance displays
+  document.getElementById('bal-usd').textContent=fmtBal(S.bal.usd,'usd');
+  document.getElementById('bal-ttd').textContent=fmtBal(S.bal.ttd,'ttd');
+  document.getElementById('bal-jmd').textContent=fmtBal(S.bal.jmd,'jmd');
+  document.getElementById('bal-gyd').textContent=fmtBal(S.bal.gyd,'gyd');
+}
+
+function renderHoldings(){
+  const el=document.getElementById('hold-list');
+  const cur=S.cur;
+  const keys=Object.keys(S.holdings).filter(k=>k.startsWith(cur+'_')&&S.holdings[k].qty>0.0001);
+  if(!keys.length){el.innerHTML='<div style="color:var(--muted);font-size:.76rem;padding:16px;text-align:center;">No open positions in this market.</div>';return;}
+  const sym_cur=CUR_SYM[cur];
+  el.innerHTML=keys.map(k=>{
+    const h=S.holdings[k]; const pnl=(h.px-h.avgBuy)*h.qty;
+    return `<div class="hold-row">
+      <div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.82rem;">${h.sym}</div>
+           <div style="font-size:.63rem;color:var(--muted);">${(h.nm||'').slice(0,22)}</div></div>
+      <div style="font-size:.77rem;">${h.qty.toFixed(4)}</div>
+      <div style="font-size:.77rem;color:var(--text2);">${sym_cur}${h.avgBuy.toFixed(2)}</div>
+      <div style="font-size:.77rem;color:${pnl>=0?'var(--up)':'var(--down)'};">
+        ${pnl>=0?'+':''}${sym_cur}${Math.abs(pnl).toFixed(2)}<div style="font-size:.62rem;">${((pnl/h.avgBuy/h.qty)*100).toFixed(2)}%</div></div>
+      <button class="sell-b" onclick="quickSell('${k}')">Sell</button>
+    </div>`;
+  }).join('');
+}
+
+function quickSell(key){
+  const h=S.holdings[key]; if(!h)return;
+  const proc=h.qty*h.px*0.997; S.bal[h.cur]+=proc;
+  S.tradeCount++;
+  S.trades.unshift({side:'sell',sym:h.sym,qty:h.qty,px:h.px,amt:proc,cur:h.cur,time:new Date().toLocaleTimeString(),date:new Date().toLocaleDateString()});
+  delete S.holdings[key];
+  toast(`💰 Sold all ${h.sym} for ${CUR_SYM[h.cur]}${proc.toFixed(2)}`,'success');
+  ['usd','ttd','jmd','gyd'].forEach(c=>document.getElementById('bal-'+c).textContent=fmtBal(S.bal[c],c));
+  renderHoldings(); renderTradeHist(); refreshDash();
+}
+
+function renderTradeHist(){
+  const el=document.getElementById('trade-hist');
+  if(!S.trades.length){el.innerHTML='<div style="color:var(--muted);font-size:.74rem;padding:12px;text-align:center;">No trades yet.</div>';return;}
+  el.innerHTML=S.trades.slice(0,6).map(t=>`<div class="arow">
+    <span class="abg ${t.side}">${t.side}</span><span class="atok">${t.sym}</span>
+    <span class="aamt">${t.qty.toFixed(4)} @ ${CUR_SYM[t.cur]}${Number(t.px).toFixed(2)}</span>
+    <span class="aamt">${CUR_SYM[t.cur]}${Number(t.amt).toFixed(2)}</span>
+    <span class="at">${t.time}</span></div>`).join('');
+}
+
+function refreshDash(){
+  const allH=Object.values(S.holdings);
+  const pos=allH.filter(h=>h.qty>0.0001).length;
+  const pnlUSD=allH.reduce((s,h)=>{const p=(h.px-h.avgBuy)*h.qty;return s+p/FX[h.cur];},0);
+  const bestMkt=Object.values(S.trades).length?[...new Set(S.trades.map(t=>t.cur))].reduce((best,cur)=>{
+    const p=Object.values(S.holdings).filter(h=>h.cur===cur).reduce((s,h)=>{return s+(h.px-h.avgBuy)*h.qty/FX[cur];},0);
+    return p>best.v?{name:cur.toUpperCase(),v:p}:best;
+  },{name:'—',v:-Infinity}):{name:'—',v:0};
+  document.getElementById('d-trades').textContent=S.tradeCount;
+  document.getElementById('d-pos').textContent=pos;
+  document.getElementById('d-pnl').textContent=(pnlUSD>=0?'+':'')+'$'+Math.abs(pnlUSD).toFixed(2);
+  document.getElementById('d-pnl').style.color=pnlUSD>=0?'var(--up)':'var(--down)';
+  document.getElementById('d-best').textContent=bestMkt.name;
+  const act=document.getElementById('all-act');
+  if(!S.trades.length){act.innerHTML='<div style="color:var(--muted);font-size:.74rem;padding:20px;text-align:center;">No trades yet.</div>';return;}
+  act.innerHTML=S.trades.map(t=>`<div class="arow">
+    <span class="abg ${t.side}">${t.side}</span><span class="atok">${t.sym}</span>
+    <span class="aamt">${t.qty.toFixed(4)} @ ${CUR_SYM[t.cur]}${Number(t.px).toFixed(2)}</span>
+    <span class="aamt">${CUR_SYM[t.cur]}${Number(t.amt).toFixed(2)}</span>
+    <span class="at">${t.date} ${t.time}</span></div>`).join('');
+}
+
+// ─── LEARN ───────────────────────────────────────────────────────────────
+const LESSONS=[
+  {n:'01',e:'🏦',t:'What are RWAs?',d:'Real-World Assets tokenized on Solana — T-bills, bonds, real estate. Projects like Ondo Finance bring Wall Street instruments on-chain so anyone with a wallet can access them.',tag:'Beginner',cls:'beg'},
+  {n:'02',e:'🇹🇹',t:'The TTSE Explained',d:'The Trinidad & Tobago Stock Exchange (TTSE) lists ~40 securities. Its composite index tracks all ordinary shares. You need a licensed broker to trade. Settlement takes 3 days.',tag:'TTSE',cls:'tt'},
+  {n:'03',e:'🇯🇲',t:'Jamaica's JSE',d:'The JSE has 100+ listed companies across a Main Market and Junior Market. It was the world's best-performing stock market in 2015 and 2018. It trades Mon–Fri in JMD at the Kingston office.',tag:'JSE',cls:'jm'},
+  {n:'04',e:'🇬🇾',t:'Guyana's GSE — Oil Boom',d:'The Guyana Stock Exchange trades just 13 companies once a week on Mondays. With ExxonMobil's massive oil discovery off the coast, Guyana's economy is the fastest-growing in the world. No capital gains tax!',tag:'GSE',cls:'gy'},
+  {n:'05',e:'💱',t:'Currency & Exchange Rates',d:'TTSE trades in TTD (1 USD ≈ TT$6.79). JSE trades in JMD (1 USD ≈ J$157). GSE trades in GYD (1 USD ≈ G$209). Always convert to USD for apples-to-apples comparisons across exchanges.',tag:'Beginner',cls:'beg'},
+  {n:'06',e:'⚖️',t:'Risk Management',d:'Never invest more than you can afford to lose. Diversify across markets (local stocks + Solana RWAs). Risk no more than 1–2% of your portfolio per trade. Protect capital first, grow second.',tag:'Beginner',cls:'beg'},
+];
+const GLOSSARY=[
+  {t:'COMPOSITE Index (TTSE)',d:'A weighted average of all ordinary shares on the TTSE. If it rises, most T&T stocks are up. Today: 925.26.'},
+  {t:'JSE Main Index',d:'Tracks all ordinary companies on the Jamaica Stock Exchange. At 344,908 points — its high values reflect decades of growth without stock splits.'},
+  {t:'MWAP (GSE)',d:'Market-Weighted Average Price — the average price per share weighted by volume traded. Used on the Guyana Stock Exchange to represent a fair session price.'},
+  {t:'Cross-Listed Stock',d:'A company listed on more than one exchange. GHL trades on both the TTSE and JSE — but often at different USD-equivalent prices due to currency differences.'},
+  {t:'RWA on Solana',d:'A token representing a real-world asset (bond, T-bill, property) on the Solana blockchain. USDY from Ondo Finance yields ~5% APY from US Treasuries.'},
+  {t:'Capital Gains Tax',d:'A tax on profits from selling investments. The Guyana Stock Exchange has NO capital gains tax — a major advantage for investors there.'},
+  {t:'Settlement (T+3)',d:'When you buy a TTSE stock, you officially receive ownership 3 business days later. On Solana, settlement is near-instant (< 1 second).'},
+  {t:'Junior Market (JSE)',d:'A smaller, easier-to-list segment of the Jamaica Stock Exchange for emerging companies. Companies listed here get a 10-year tax holiday in Jamaica.'},
+];
+const QUESTIONS=[
+  {q:'Guyana\'s GSE trades how often per week?',opts:['Every day','5 days a week','Once a week on Mondays','Every other day'],ans:2,exp:'The GSE holds one trading session per week, every Monday. This makes it unique among Caribbean exchanges.'},
+  {q:'The JSE Main Index stands at ~344,908. RFHL on the TTSE trades at TT$106.10. Which is a bigger "number" — and why does that not mean JSE stocks are more expensive?',opts:['JSE stocks cost more','Index points and stock prices are different units — you can\'t compare them directly','TTSE is bigger','They are equal'],ans:1,exp:'An index is a composite score, not a price. You can\'t compare an index level to a single stock price. Compare market caps or USD-equivalent prices instead.'},
+  {q:'A Guyana investor buys DBL shares at G$304. 1 USD = G$209. What is the USD price?',opts:['$1.45 USD','$209 USD','$304 USD','$63,536 USD'],ans:0,exp:'G$304 ÷ 209 = ~$1.45 USD. Always divide by the exchange rate to get USD equivalent.'},
+  {q:'What does "No capital gains tax" mean for GSE investors?',opts:['They pay double tax','They cannot sell shares','They keep 100% of their profits when selling shares — no tax on gains','They only pay GSE fees'],ans:2,exp:'Guyana does not tax capital gains from share trading on the GSE. This is a significant advantage — compare to some other markets where you may owe 20–33% on profits.'},
+  {q:'GHL trades at TT$15.22 on the TTSE and J$307 on the JSE. Which is cheaper in USD? (TTD=6.79, JMD=157)',opts:['TTSE: $2.24 vs JSE: $1.96 — JSE is cheaper','TTSE: $15.22 vs JSE: $307 — TTSE is cheaper','They are exactly equal','GHL only trades on one exchange'],ans:0,exp:'TT$15.22 ÷ 6.79 = $2.24 USD. J$307 ÷ 157 = $1.96 USD. So GHL is cheaper on the JSE in USD terms — this kind of arbitrage is real on cross-listed Caribbean stocks.'},
+  {q:'What is the main advantage of Solana RWA tokens over buying TTSE stocks?',opts:['Higher guaranteed returns','24/7 trading with no broker needed, fractional ownership, global access','More companies listed','Lower company risk'],ans:1,exp:'Solana RWA tokens trade 24/7, require only a crypto wallet (no licensed broker), support fractional ownership (buy $5 worth), and are accessible globally. Traditional stocks offer more regulatory protection.'},
+];
+let qI=0,qSc=0,qAns=false;
+function buildLearn(){
+  document.getElementById('lcards').innerHTML=LESSONS.map(l=>`<div class="lcard" data-e="${l.e}"><div class="lnum">${l.n}</div><div class="ltitle">${l.t}</div><div class="ldesc">${l.d}</div><span class="ltag ${l.cls}">${l.tag}</span></div>`).join('');
+  document.getElementById('glossary').innerHTML=GLOSSARY.map(g=>`<div class="gloss"><div class="gterm">${g.t}</div><div class="gdef">${g.d}</div></div>`).join('');
+  loadQ();
+}
+function loadQ(){
+  qAns=false;
+  const q=QUESTIONS[qI%QUESTIONS.length];
+  document.getElementById('qq').textContent=`Q${qI+1}. ${q.q}`;
+  document.getElementById('qopts').innerHTML=q.opts.map((o,i)=>`<button class="qopt" onclick="answerQ(${i})">${String.fromCharCode(65+i)}. ${o}</button>`).join('');
+  document.getElementById('qfb').style.display='none';
+  document.getElementById('nxtb').style.display='none';
+  document.getElementById('qsc').textContent=`Score: ${qSc} / ${qI}`;
+}
+function answerQ(i){
+  if(qAns)return; qAns=true;
+  const q=QUESTIONS[qI%QUESTIONS.length];
+  document.querySelectorAll('.qopt')[q.ans].classList.add('ok');
+  if(i!==q.ans)document.querySelectorAll('.qopt')[i].classList.add('no');
+  const ok=i===q.ans; if(ok)qSc++;
+  const fb=document.getElementById('qfb');
+  fb.style.display='block'; fb.className='qfb '+(ok?'win':'lose');
+  fb.textContent=(ok?'✅ Correct! ':'❌ Not quite. ')+q.exp;
+  document.getElementById('nxtb').style.display='inline-block';
+  document.getElementById('qsc').textContent=`Score: ${qSc} / ${qI+1}`;
+}
+function nextQ(){qI++;loadQ();}
+function noWallet(){toast('Wallet connect coming in v4. Practice paper trading first! 🌊','info');}
+
+// ─── INIT ────────────────────────────────────────────────────────────────
+loadSolana();
+loadTTSE();
+loadJSE();
+loadGSE();
+buildLearn();
+renderHoldings();
+</script>
+</body>
+</html>

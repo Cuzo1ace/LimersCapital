@@ -1,0 +1,596 @@
+{
+  "address": "HuCCEkDvYdm1EMs3EH9wzLYi53aVkE7orkGXma8azhFk",
+  "metadata": {
+    "name": "limer",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Limer Capital on-chain user profiles, gamification, and trade tracking"
+  },
+  "instructions": [
+    {
+      "name": "award_lp",
+      "docs": [
+        "Award Limer Points. Applies the on-chain multiplier."
+      ],
+      "discriminator": [
+        162,
+        109,
+        68,
+        205,
+        170,
+        253,
+        247,
+        193
+      ],
+      "accounts": [
+        {
+          "name": "user_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "user_profile"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "base_amount",
+          "type": "u64"
+        },
+        {
+          "name": "multiplier_pct",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "award_xp",
+      "docs": [
+        "Award XP to the user. Caller must be the profile owner."
+      ],
+      "discriminator": [
+        166,
+        38,
+        214,
+        182,
+        43,
+        11,
+        145,
+        119
+      ],
+      "accounts": [
+        {
+          "name": "user_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "user_profile"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "check_in_daily",
+      "docs": [
+        "Daily check-in: updates streak and awards streak bonus."
+      ],
+      "discriminator": [
+        239,
+        97,
+        154,
+        215,
+        172,
+        137,
+        119,
+        38
+      ],
+      "accounts": [
+        {
+          "name": "user_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "user_profile"
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "close_account",
+      "docs": [
+        "Close user profile and trade log, reclaim rent."
+      ],
+      "discriminator": [
+        125,
+        255,
+        149,
+        14,
+        110,
+        34,
+        72,
+        24
+      ],
+      "accounts": [
+        {
+          "name": "user_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "trade_log",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  97,
+                  100,
+                  101,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "user_profile",
+            "trade_log"
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize_user",
+      "docs": [
+        "Create a new user profile PDA. Called once per wallet on first connect."
+      ],
+      "discriminator": [
+        111,
+        17,
+        185,
+        250,
+        60,
+        122,
+        38,
+        254
+      ],
+      "accounts": [
+        {
+          "name": "user_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "trade_log",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  97,
+                  100,
+                  101,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "record_badge",
+      "docs": [
+        "Record a badge as earned (bitmap — up to 32 badges)."
+      ],
+      "discriminator": [
+        98,
+        169,
+        238,
+        108,
+        227,
+        194,
+        235,
+        46
+      ],
+      "accounts": [
+        {
+          "name": "user_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "user_profile"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "badge_index",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "record_module",
+      "docs": [
+        "Record module completion (bitmap — up to 8 modules)."
+      ],
+      "discriminator": [
+        134,
+        69,
+        8,
+        131,
+        165,
+        223,
+        63,
+        39
+      ],
+      "accounts": [
+        {
+          "name": "user_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "user_profile"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "module_index",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "record_trade",
+      "docs": [
+        "Record a trade's aggregate data (volume + fees). Individual trades stay off-chain."
+      ],
+      "discriminator": [
+        83,
+        201,
+        2,
+        171,
+        223,
+        122,
+        186,
+        127
+      ],
+      "accounts": [
+        {
+          "name": "trade_log",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  97,
+                  100,
+                  101,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "trade_log"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "volume_usd",
+          "type": "u64"
+        },
+        {
+          "name": "fee_amount",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "TradeLog",
+      "discriminator": [
+        32,
+        113,
+        191,
+        71,
+        0,
+        74,
+        68,
+        182
+      ]
+    },
+    {
+      "name": "UserProfile",
+      "discriminator": [
+        32,
+        37,
+        119,
+        205,
+        179,
+        180,
+        13,
+        194
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidBadgeIndex",
+      "msg": "Badge index must be 0-31"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidModuleIndex",
+      "msg": "Module index must be 0-7"
+    }
+  ],
+  "types": [
+    {
+      "name": "TradeLog",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "trade_count",
+            "type": "u32"
+          },
+          {
+            "name": "total_volume_usd",
+            "type": "u64"
+          },
+          {
+            "name": "total_fees",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserProfile",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "xp",
+            "type": "u64"
+          },
+          {
+            "name": "limer_points",
+            "type": "u64"
+          },
+          {
+            "name": "current_streak",
+            "type": "u32"
+          },
+          {
+            "name": "longest_streak",
+            "type": "u32"
+          },
+          {
+            "name": "last_login",
+            "type": "i64"
+          },
+          {
+            "name": "badges_earned",
+            "type": "u32"
+          },
+          {
+            "name": "modules_completed",
+            "type": "u8"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}

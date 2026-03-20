@@ -1,0 +1,7 @@
+name = "ttse-proxy"
+main = "ttse-proxy.js"
+compatibility_date = "2024-01-01"
+
+# Optional: restrict allowed origins in production
+# [vars]
+# ALLOWED_ORIGIN = "https://caribcryptomap.pages.dev"
