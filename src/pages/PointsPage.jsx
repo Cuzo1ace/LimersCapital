@@ -14,9 +14,20 @@ export default function PointsPage() {
   const userRank = leaderboard.find(u => u.isUser)?.rank || '—';
   const projectedAirdrop = (limerPoints / (SIMULATED_TOTAL_LP + limerPoints)) * AIRDROP_POOL;
 
-  function copyCode() {
+  const refLink = `https://limerscapital.com/ref/${referralCode || '...'}`;
+
+  function copyLink() {
     const code = referralCode || generateReferralCode();
-    navigator.clipboard.writeText(code).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+    const link = `https://limerscapital.com/ref/${code}`;
+    navigator.clipboard.writeText(link).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  }
+
+  function shareOnX() {
+    const code = referralCode || generateReferralCode();
+    const text = encodeURIComponent(
+      `Join me on Limer's Capital — the Caribbean crypto + investment platform on Solana 🌴🍋\nEarn LP points → $LIMER airdrop. Use my link:\nhttps://limerscapital.com/ref/${code}\n#Solana #Caribbean #DeFi`
+    );
+    window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'noopener');
   }
 
   return (
@@ -64,14 +75,21 @@ export default function PointsPage() {
           <div className="font-sans font-bold text-[.92rem] text-txt mb-1">Refer Friends — Earn 200 LP Each</div>
           <div className="text-[.75rem] text-txt-2">Share your referral code. When someone connects their wallet, you both earn 200 LP.</div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="bg-black/30 border border-border rounded-lg px-4 py-2 font-mono text-[.82rem] text-sea">
-            {referralCode || '...'}
+        <div className="flex flex-col gap-2 min-w-[240px]">
+          <div className="bg-black/30 border border-border rounded-lg px-3 py-2 font-mono text-[.72rem] text-sea truncate">
+            {refLink}
           </div>
-          <button onClick={copyCode}
-            className="px-4 py-2 rounded-lg text-[.75rem] font-mono cursor-pointer border border-sea/30 bg-sea/8 text-sea transition-all hover:bg-sea/15">
-            {copied ? '✓ Copied' : 'Copy'}
-          </button>
+          <div className="flex gap-2">
+            <button onClick={copyLink}
+              className="flex-1 px-3 py-2 rounded-lg text-[.73rem] font-mono cursor-pointer border border-sea/30 bg-sea/8 text-sea transition-all hover:bg-sea/15">
+              {copied ? '✓ Copied!' : '⎘ Copy Link'}
+            </button>
+            <button onClick={shareOnX}
+              className="flex-1 px-3 py-2 rounded-lg text-[.73rem] font-mono font-bold cursor-pointer border-none transition-all hover:opacity-90"
+              style={{ background: '#00C8B4', color: '#0A1628' }}>
+              𝕏 Share
+            </button>
+          </div>
         </div>
       </div>
 

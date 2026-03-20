@@ -60,6 +60,20 @@ function StreakCheck() {
   return null;
 }
 
+function ReferralHandler() {
+  const applyReferral = useStore(s => s.applyReferral);
+  const setActiveTab  = useStore(s => s.setActiveTab);
+  useEffect(() => {
+    const match = window.location.pathname.match(/^\/ref\/([A-Za-z0-9_-]+)/);
+    if (!match) return;
+    const code = match[1].toUpperCase();
+    applyReferral(code);
+    setActiveTab('market');
+    window.history.replaceState({}, '', '/');
+  }, []);
+  return null;
+}
+
 function ThemeSync() {
   const theme = useStore(s => s.theme);
   const prev = useRef(theme);
@@ -75,6 +89,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <StreakCheck />
+      <ReferralHandler />
       <ThemeSync />
       <LimerBridge />
       <PriceAlertChecker />
