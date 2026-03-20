@@ -74,32 +74,30 @@ export default function TradePage() {
   });
   const heliusLogos = heliusLogosQ.data || {}; // { mint: logoUrl }
 
-  // Real candle data from DexScreener — fetched per selected Solana token, cached 5min
-  const CANDLE_PERIODS = ['1M', '3M', '6M', '1Y', '5Y'];
-  const candleQueries = CANDLE_PERIODS.map(p =>
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useQuery({
-      queryKey: ['candles', selectedId, p],
-      queryFn: () => fetchCandleData(selectedId, p),
-      staleTime: 5 * 60 * 1000,
-      enabled: !!selectedId && market === 'solana',
-      retry: 0,
-    })
-  );
-  const realCandles = useMemo(() => {
-    const map = {};
-    CANDLE_PERIODS.forEach((p, i) => {
-      if (candleQueries[i].data?.length) map[p] = candleQueries[i].data;
-    });
-    return Object.keys(map).length ? map : null;
-  }, [candleQueries.map(q => q.data).join(',')]);
-
   const [market, setMarket] = useState('solana'); // 'solana' | 'ttse'
   const [side, setSide] = useState('buy');
   const [selectedId, setSelectedId] = useState('');
   const [qty, setQty] = useState('');
   const [message, setMessage] = useState(null);
   const [assetFilter, setAssetFilter] = useState('all'); // 'all' | 'watchlist'
+
+  // Real candle data from DexScreener — all 5 periods fetched together when a token is selected
+  const candleQ = useQuery({
+    queryKey: ['candles', selectedId],
+    queryFn: async () => {
+      const periods = ['1M', '3M', '6M', '1Y', '5Y'];
+      const results = await Promise.allSettled(periods.map(p => fetchCandleData(selectedId, p)));
+      const map = {};
+      periods.forEach((p, i) => {
+        if (results[i].status === 'fulfilled' && results[i].value?.length) map[p] = results[i].value;
+      });
+      return Object.keys(map).length ? map : null;
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: !!selectedId && market === 'solana',
+    retry: 0,
+  });
+  const realCandles = candleQ.data || null;
 
   const isTTSE = market === 'ttse';
   const currency = isTTSE ? 'TTD' : 'USD';
