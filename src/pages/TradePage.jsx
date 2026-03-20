@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchSolanaMarketData } from '../api/prices';
+import { fetchTradePrices } from '../api/prices';
 import { TTSE_FALLBACK } from '../api/ttse';
 import { fetchTTSEData } from '../api/ttse';
 import StockChart from '../components/StockChart';
@@ -30,7 +30,12 @@ const WAM_LINK = 'https://wam.money/';
 
 export default function TradePage() {
   const { balanceUSD, balanceTTD, holdings, trades, executeTrade, walletConnected } = useStore();
-  const marketQ = useQuery({ queryKey: ['sol-market'], queryFn: fetchSolanaMarketData, staleTime: 30000 });
+  const marketQ = useQuery({
+    queryKey: ['trade-prices'],
+    queryFn: fetchTradePrices,
+    staleTime: 10000,
+    refetchInterval: 12000,
+  });
   const ttseQ = useQuery({ queryKey: ['ttse-data'], queryFn: fetchTTSEData, staleTime: 120000 });
 
   const [market, setMarket] = useState('solana'); // 'solana' | 'ttse'
@@ -63,9 +68,9 @@ export default function TradePage() {
   }, [isTTSE, solTokens, ttseStocks]);
 
   const selected = assets.find(a => a.id === selectedId);
-  const price = selected?.price || 0;
-  const total = (parseFloat(qty) || 0) * price;
-  const fee = total * 0.003;
+  const price = selected?.price ?? null;
+  const total = price != null ? (parseFloat(qty) || 0) * price : null;
+  const fee   = total != null ? total * 0.003 : null;
   const orderBook = useMemo(() => generateOrderBook(price), [price]);
 
   // Filter holdings by current market

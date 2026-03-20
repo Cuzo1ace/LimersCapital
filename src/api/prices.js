@@ -1,8 +1,28 @@
 // CoinGecko free API — no key needed
 const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
 
-// Jupiter Price API v2 — no key needed
+// Jupiter Price API v2 — no key needed (last-resort fallback)
 const JUPITER_BASE = 'https://api.jup.ag/price/v2';
+
+// Pyth Hermes — oracle-grade prices, free, no key, CORS-enabled
+const HERMES_BASE = 'https://hermes.pyth.network/v2/updates/price/latest';
+
+// DexScreener — all Solana tokens by mint, price + 24h change + volume
+const DEXSCREENER_BASE = 'https://api.dexscreener.com/tokens/v1/solana';
+
+// Pyth Hermes feed IDs (verified live 2026-03-20)
+// zBTC tracks BTC oracle; WETH tracks ETH oracle; GOLD tracks XAU/spot gold
+const PYTH_FEEDS = {
+  SOL:  '0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d',
+  zBTC: '0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43',
+  WETH: '0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace',
+  GOLD: '0x765d2ba906dbc32ca17cc11f5310a89e9ee1f6420508c63861f2f8ba4ee34bb2',
+};
+
+// Reverse map: Pyth feed ID (no 0x) → token symbol
+const PYTH_ID_TO_SYMBOL = Object.fromEntries(
+  Object.entries(PYTH_FEEDS).map(([sym, id]) => [id.replace('0x', ''), sym])
+);
 
 // Solana token mint addresses — core + new CAs
 export const SOL_TOKENS = {
@@ -24,23 +44,29 @@ export const SOL_TOKENS = {
   NVDAX:  'Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh',
 };
 
+// 7 tokens not on CoinGecko — use DexScreener / Pyth for prices
+const JUPITER_ONLY_MINTS = [
+  SOL_TOKENS.GOLD, SOL_TOKENS.zBTC, SOL_TOKENS.WETH,
+  SOL_TOKENS.BILL, SOL_TOKENS.PERP, SOL_TOKENS.PREN, SOL_TOKENS.NVDAX,
+];
+
 // Token metadata for the order book / market page
 export const TOKEN_INFO = {
-  SOL:    { name: 'Solana',                   cat: 'L1',    col: '#9945FF' },
+  SOL:    { name: 'Solana',                   cat: 'L1',     col: '#9945FF' },
   USDC:   { name: 'USD Coin',                 cat: 'Stable', col: '#2D9B56' },
-  ONDO:   { name: 'Ondo Finance',             cat: 'RWA',   col: '#FFCA3A' },
-  JUP:    { name: 'Jupiter',                  cat: 'DeFi',  col: '#00C8B4' },
-  RAY:    { name: 'Raydium',                  cat: 'DeFi',  col: '#FF5C4D' },
-  BONK:   { name: 'Bonk',                     cat: 'Meme',  col: '#FFCA3A' },
-  RENDER: { name: 'Render',                   cat: 'Infra', col: '#FF5C4D' },
-  HNT:    { name: 'Helium',                   cat: 'Infra', col: '#00C8B4' },
-  GOLD:   { name: 'Gold (Tokenized)',          cat: 'RWA',   col: '#FFD700' },
-  zBTC:   { name: 'Zeus Bitcoin',              cat: 'RWA',   col: '#F7931A' },
-  WETH:   { name: 'Ether (Portal)',            cat: 'L1',    col: '#627EEA' },
-  BILL:   { name: 'T-Bill Token',              cat: 'RWA',   col: '#00C8B4' },
-  PERP:   { name: 'Perp Protocol',             cat: 'DeFi',  col: '#C87EFF' },
-  PREN:   { name: 'Pren Finance',              cat: 'DeFi',  col: '#38BDF8' },
-  NVDAX:  { name: 'NVIDIA xStock',             cat: 'Stock', col: '#76B900' },
+  ONDO:   { name: 'Ondo Finance',             cat: 'RWA',    col: '#FFCA3A' },
+  JUP:    { name: 'Jupiter',                  cat: 'DeFi',   col: '#00C8B4' },
+  RAY:    { name: 'Raydium',                  cat: 'DeFi',   col: '#FF5C4D' },
+  BONK:   { name: 'Bonk',                     cat: 'Meme',   col: '#FFCA3A' },
+  RENDER: { name: 'Render',                   cat: 'Infra',  col: '#FF5C4D' },
+  HNT:    { name: 'Helium',                   cat: 'Infra',  col: '#00C8B4' },
+  GOLD:   { name: 'Gold (Tokenized)',          cat: 'RWA',    col: '#FFD700' },
+  zBTC:   { name: 'Zeus Bitcoin',              cat: 'RWA',    col: '#F7931A' },
+  WETH:   { name: 'Ether (Portal)',            cat: 'L1',     col: '#627EEA' },
+  BILL:   { name: 'T-Bill Token',              cat: 'RWA',    col: '#00C8B4' },
+  PERP:   { name: 'Perp Protocol',             cat: 'DeFi',   col: '#C87EFF' },
+  PREN:   { name: 'Pren Finance',              cat: 'DeFi',   col: '#38BDF8' },
+  NVDAX:  { name: 'NVIDIA xStock',             cat: 'Stock',  col: '#76B900' },
 };
 
 // Reverse lookup: mint address → symbol
@@ -62,6 +88,63 @@ export function getTokenInfoForMint(mint) {
   return { symbol, ...TOKEN_INFO[symbol] };
 }
 
+// ─── Layer 1: Pyth Hermes ────────────────────────────────────────────────────
+// Oracle-grade prices for SOL, zBTC (BTC), WETH (ETH), GOLD (XAU)
+// Returns { SOL: { price, confidence }, zBTC: {...}, ... }
+export async function fetchPythPrices() {
+  const params = Object.values(PYTH_FEEDS).map(id => `ids[]=${id}`).join('&');
+  const res = await fetch(`${HERMES_BASE}?${params}`);
+  if (!res.ok) throw new Error(`Pyth Hermes error: ${res.status}`);
+  const json = await res.json();
+
+  const result = {};
+  for (const feed of json.parsed || []) {
+    const symbol = PYTH_ID_TO_SYMBOL[feed.id];
+    if (!symbol) continue;
+    // price.price is a string; multiply by 10^expo (expo is negative)
+    const price = parseInt(feed.price.price) * Math.pow(10, feed.price.expo);
+    const confidence = parseInt(feed.price.conf) * Math.pow(10, feed.price.expo);
+    if (isFinite(price) && price > 0) {
+      result[symbol] = { price, confidence };
+    }
+  }
+  return result;
+}
+
+// ─── Layer 2: DexScreener ────────────────────────────────────────────────────
+// Any Solana token by mint address → price + 24h change + volume
+// Returns { SOL: { price, change24h, volume24h }, GOLD: {...}, ... }
+export async function fetchDexScreenerPrices(mints) {
+  const res = await fetch(`${DEXSCREENER_BASE}/${mints.join(',')}`);
+  if (!res.ok) throw new Error(`DexScreener error: ${res.status}`);
+  const pairs = await res.json(); // array of DEX pair objects
+
+  // Per mint, pick the pair with highest 24h volume (most liquid / reliable price)
+  const best = {};
+  for (const pair of pairs) {
+    const mint = pair.baseToken?.address;
+    if (!mint) continue;
+    const vol = pair.volume?.h24 ?? 0;
+    if (!best[mint] || vol > (best[mint].volume?.h24 ?? 0)) best[mint] = pair;
+  }
+
+  // Translate mint → symbol and extract fields
+  const result = {};
+  for (const [symbol, mint] of Object.entries(SOL_TOKENS)) {
+    const pair = best[mint];
+    if (!pair) continue;
+    const price = parseFloat(pair.priceUsd);
+    if (!isFinite(price) || price <= 0) continue;
+    result[symbol] = {
+      price,
+      change24h: pair.priceChange?.h24 ?? null,
+      volume24h: pair.volume?.h24 ?? null,
+    };
+  }
+  return result;
+}
+
+// ─── Layer 3: Jupiter v2 (fallback only) ─────────────────────────────────────
 export async function fetchJupiterPrices() {
   const ids = Object.values(SOL_TOKENS).join(',');
   const res = await fetch(`${JUPITER_BASE}?ids=${ids}`);
@@ -72,17 +155,78 @@ export async function fetchJupiterPrices() {
   for (const [symbol, mint] of Object.entries(SOL_TOKENS)) {
     const data = json.data?.[mint];
     if (data) {
-      prices[symbol] = {
-        price: parseFloat(data.price),
-        mint,
-      };
+      prices[symbol] = { price: parseFloat(data.price), mint };
     }
   }
   return prices;
 }
 
+// ─── TradePage: fast-polling price function ───────────────────────────────────
+// Pyth Hermes → DexScreener → Jupiter v2 fallback
+// Refreshed every 12s in TradePage (independent of MarketPage's 60s sol-market query)
+export async function fetchTradePrices() {
+  // Layer 1: Pyth — oracle prices for SOL, zBTC, WETH, GOLD
+  let pythPrices = {};
+  try {
+    pythPrices = await fetchPythPrices();
+  } catch (e) {
+    console.warn('Pyth Hermes failed:', e.message);
+  }
+
+  // Layer 2: DexScreener — all 15 tokens (price + 24h change + volume)
+  let dexPrices = {};
+  try {
+    dexPrices = await fetchDexScreenerPrices(Object.values(SOL_TOKENS));
+  } catch (e) {
+    console.warn('DexScreener failed:', e.message);
+  }
+
+  // Layer 3: Jupiter v2 — fallback for any symbol still missing
+  const missingSymbols = Object.keys(TOKEN_INFO)
+    .filter(sym => !pythPrices[sym] && !dexPrices[sym]);
+  let jupPrices = {};
+  if (missingSymbols.length > 0) {
+    try {
+      const mints = missingSymbols.map(s => SOL_TOKENS[s]).filter(Boolean).join(',');
+      const res = await fetch(`${JUPITER_BASE}?ids=${mints}`);
+      if (res.ok) {
+        const json = await res.json();
+        for (const sym of missingSymbols) {
+          const mint = SOL_TOKENS[sym];
+          const data = json.data?.[mint];
+          if (data?.price) jupPrices[sym] = { price: parseFloat(data.price) };
+        }
+      }
+    } catch (e) {
+      console.warn('Jupiter fallback failed:', e.message);
+    }
+  }
+
+  // Merge: Pyth wins for oracle assets, DexScreener for the rest
+  return Object.entries(TOKEN_INFO).map(([symbol, info]) => {
+    const pyth = pythPrices[symbol];
+    const dex  = dexPrices[symbol];
+    const jup  = jupPrices[symbol];
+    const price = pyth?.price ?? dex?.price ?? jup?.price ?? null;
+    return {
+      id: symbol.toLowerCase(),
+      symbol: symbol.toLowerCase(),
+      name: info.name,
+      image: null,
+      current_price: price,
+      price_change_percentage_24h: dex?.change24h ?? null,
+      total_volume: dex?.volume24h ?? null,
+      market_cap: null,
+      _pythConfidence: pyth?.confidence ?? null,
+      _cat: info.cat,
+      _col: info.col,
+    };
+  });
+}
+
+// ─── MarketPage: CoinGecko + DexScreener ─────────────────────────────────────
 export async function fetchSolanaMarketData() {
-  // CoinGecko IDs for the tokens we can look up there
+  // CoinGecko IDs for the 8 tokens it covers (with market cap + 24h change)
   const ids = 'solana,usd-coin,ondo-finance,jupiter-exchange-solana,raydium,bonk,render-token,helium';
   const res = await fetch(
     `${COINGECKO_BASE}/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&sparkline=false&price_change_percentage=24h`
@@ -90,43 +234,40 @@ export async function fetchSolanaMarketData() {
   if (!res.ok) throw new Error(`CoinGecko API error: ${res.status}`);
   const cgData = await res.json();
 
-  // Also fetch Jupiter prices for ALL tokens (including new CAs not on CoinGecko)
+  // DexScreener for the 7 Jupiter-only tokens (primary); Jupiter v2 as fallback
+  let dexPrices = {};
   let jupPrices = {};
   try {
-    jupPrices = await fetchJupiterPrices();
+    dexPrices = await fetchDexScreenerPrices(JUPITER_ONLY_MINTS);
   } catch (e) {
-    console.warn('Jupiter price fetch failed:', e.message);
+    console.warn('DexScreener failed, falling back to Jupiter:', e.message);
+    try { jupPrices = await fetchJupiterPrices(); } catch {}
   }
 
-  // Merge: CoinGecko data first, then fill in Jupiter-only tokens
+  // Start with CoinGecko data
   const result = [...cgData];
 
-  // Add tokens that are on Jupiter but not CoinGecko
+  // Add Jupiter-only tokens from DexScreener / Jupiter
   const cgSymbols = new Set(cgData.map(t => (t.symbol || '').toUpperCase()));
-
-  // These tokens are always shown in the order book even if Jupiter has no live price
-  const PRIORITY_TOKENS = new Set(['GOLD', 'ZBTC']);
-
   for (const [symbol, info] of Object.entries(TOKEN_INFO)) {
     if (cgSymbols.has(symbol.toUpperCase())) continue;
+    const dex = dexPrices[symbol];
     const jup = jupPrices[symbol];
-    const hasPriority = PRIORITY_TOKENS.has(symbol.toUpperCase());
-    // Include if Jupiter returned a price, OR if this is a priority token
-    if ((jup && jup.price) || hasPriority) {
-      result.push({
-        id: symbol.toLowerCase(),
-        symbol: symbol.toLowerCase(),
-        name: info.name,
-        image: null,
-        current_price: jup?.price || null,
-        price_change_percentage_24h: null, // Jupiter v2 doesn't provide this
-        market_cap: null,
-        total_volume: null,
-        _source: 'jupiter',
-        _cat: info.cat,
-        _col: info.col,
-      });
-    }
+    const price = dex?.price ?? jup?.price ?? null;
+    if (!price) continue; // skip if no data from any source
+    result.push({
+      id: symbol.toLowerCase(),
+      symbol: symbol.toLowerCase(),
+      name: info.name,
+      image: null,
+      current_price: price,
+      price_change_percentage_24h: dex?.change24h ?? null,
+      market_cap: null,
+      total_volume: dex?.volume24h ?? null,
+      _source: dex ? 'dexscreener' : 'jupiter',
+      _cat: info.cat,
+      _col: info.col,
+    });
   }
 
   return result;
@@ -142,7 +283,7 @@ export async function fetchSolPrice() {
   };
 }
 
-// DeFiLlama — TVL for Solana RWA protocols (no key needed)
+// DeFiLlama — TVL for Solana chain
 export async function fetchSolanaTVL() {
   const res = await fetch('https://api.llama.fi/v2/chains');
   if (!res.ok) throw new Error(`DeFiLlama error: ${res.status}`);
