@@ -260,13 +260,13 @@ export default function PortfolioPage() {
               const cur = t?.current_price || h.avgPrice;
               const pnl = ((cur - h.avgPrice) / h.avgPrice * 100);
               return (
-                <div key={`sol:${h.symbol}`} className="flex items-center gap-4 rounded-xl px-4 py-2.5 border border-border text-[.76rem]"
+                <div key={`sol:${h.symbol}`} className="flex items-center gap-2 md:gap-4 rounded-xl px-2.5 md:px-4 py-2.5 border border-border text-[.76rem]"
                   style={{ background: 'var(--color-card)' }}>
-                  <span className="font-sans font-bold w-16">{h.symbol}</span>
-                  <span className="text-txt-2">{h.qty.toFixed(4)}</span>
-                  <span className="text-txt-2">{fmtUSD(h.avgPrice)}</span>
-                  <span className="text-txt">{fmtUSD(h.qty * cur)}</span>
-                  <span className={`ml-auto ${pnl >= 0 ? 'text-up' : 'text-down'}`}>{pnl >= 0 ? '+' : ''}{pnl.toFixed(2)}%</span>
+                  <span className="font-sans font-bold w-14">{h.symbol}</span>
+                  <span className="text-txt-2 tabular-nums">{h.qty.toFixed(4)}</span>
+                  <span className="hidden md:block text-txt-2">{fmtUSD(h.avgPrice)}</span>
+                  <span className="text-txt tabular-nums">{fmtUSD(h.qty * cur)}</span>
+                  <span className={`ml-auto tabular-nums ${pnl >= 0 ? 'text-up' : 'text-down'}`}>{pnl >= 0 ? '+' : ''}{pnl.toFixed(2)}%</span>
                 </div>
               );
             })}
@@ -284,13 +284,13 @@ export default function PortfolioPage() {
               const cur = s?.close || h.avgPrice;
               const pnl = ((cur - h.avgPrice) / h.avgPrice * 100);
               return (
-                <div key={`ttse:${h.symbol}`} className="flex items-center gap-4 rounded-xl px-4 py-2.5 border border-[rgba(200,16,46,.15)] text-[.76rem]"
+                <div key={`ttse:${h.symbol}`} className="flex items-center gap-2 md:gap-4 rounded-xl px-2.5 md:px-4 py-2.5 border border-[rgba(200,16,46,.15)] text-[.76rem]"
                   style={{ background: 'var(--color-card)' }}>
-                  <span className="font-sans font-bold w-16">{h.symbol}</span>
-                  <span className="text-txt-2">{h.qty.toFixed(0)} shares</span>
-                  <span className="text-txt-2">{fmtTTD(h.avgPrice)}</span>
-                  <span className="text-txt">{fmtTTD(h.qty * cur)}</span>
-                  <span className={`ml-auto ${pnl >= 0 ? 'text-up' : 'text-down'}`}>{pnl >= 0 ? '+' : ''}{pnl.toFixed(2)}%</span>
+                  <span className="font-sans font-bold w-14">{h.symbol}</span>
+                  <span className="text-txt-2 tabular-nums">{h.qty.toFixed(0)} <span className="hidden md:inline">shares</span></span>
+                  <span className="hidden md:block text-txt-2">{fmtTTD(h.avgPrice)}</span>
+                  <span className="text-txt tabular-nums">{fmtTTD(h.qty * cur)}</span>
+                  <span className={`ml-auto tabular-nums ${pnl >= 0 ? 'text-up' : 'text-down'}`}>{pnl >= 0 ? '+' : ''}{pnl.toFixed(2)}%</span>
                 </div>
               );
             })}

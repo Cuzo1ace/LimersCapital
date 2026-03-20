@@ -109,11 +109,18 @@ export default function TTSEPage() {
         </span>
       </div>
 
-      {/* Table header */}
-      <div className="grid gap-3.5 items-center px-4 py-1 text-[.68rem] text-muted uppercase tracking-widest"
-        style={{ gridTemplateColumns: '44px 2fr 1fr 1fr .9fr 1fr 1.1fr 100px' }}>
-        <span /><span>Company</span><span>Open (TTD)</span><span>Close (TTD)</span>
-        <span>Change</span><span>Volume</span><span>Sector</span><span />
+      {/* Table header — 4 cols mobile / 8 cols desktop */}
+      <div className="grid gap-2 md:gap-3.5 items-center px-4 py-1 text-[.68rem] text-muted uppercase tracking-widest
+        [grid-template-columns:44px_2fr_1fr_90px]
+        md:[grid-template-columns:44px_2fr_1fr_1fr_.9fr_1fr_1.1fr_100px]">
+        <span />
+        <span>Company</span>
+        <span className="hidden md:block">Open (TTD)</span>
+        <span>Close (TTD)</span>
+        <span className="hidden md:block">Change</span>
+        <span className="hidden md:block">Volume</span>
+        <span className="hidden md:block">Sector</span>
+        <span />
       </div>
 
       {/* Loading / Error / Data */}
@@ -132,32 +139,40 @@ export default function TTSEPage() {
           const sec = SECTOR_META[s.sector] || SECTOR_META.congl;
           return (
             <div key={s.sym}
-              className="grid gap-3.5 items-center rounded-xl px-4 py-3 border border-[rgba(200,16,46,.15)] cursor-pointer transition-all hover:border-[rgba(200,16,46,.4)] hover:translate-x-[3px]"
-              style={{ gridTemplateColumns: '44px 2fr 1fr 1fr .9fr 1fr 1.1fr 100px', background: 'var(--color-card)' }}
+              className="grid gap-2 md:gap-3.5 items-center rounded-xl px-3 md:px-4 py-3 border border-[rgba(200,16,46,.15)] cursor-pointer transition-all hover:border-[rgba(200,16,46,.4)] hover:translate-x-[3px]
+                [grid-template-columns:44px_2fr_1fr_90px]
+                md:[grid-template-columns:44px_2fr_1fr_1fr_.9fr_1fr_1.1fr_100px]"
+              style={{ background: 'var(--color-card)' }}
               onClick={() => openTrade(s.sym)}>
               <div className="w-9 h-9 rounded-full flex items-center justify-content-center text-[.68rem] font-extrabold"
                 style={{ background: 'rgba(200,16,46,.15)', color: '#FF4D6D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {s.sym.slice(0, 4)}
               </div>
-              <div>
+              <div className="min-w-0">
                 <div className="font-sans font-bold text-[.88rem]">{s.sym}</div>
-                <div className="text-[.68rem] text-muted truncate max-w-[200px]">{s.name}</div>
+                <div className="text-[.68rem] text-muted truncate">{s.name}</div>
+                {/* Change shown inline on mobile (hidden col) */}
+                <div className="md:hidden mt-0.5">
+                  <span className={`text-[.7rem] px-1.5 py-0.5 rounded-md inline-block ${cls}`}>
+                    {isUp ? '+' : ''}{s.chg.toFixed(2)} ({isUp ? '+' : ''}{chgPct}%)
+                  </span>
+                </div>
               </div>
-              <div className="font-sans font-bold text-[.84rem]">{fmtTTD(s.open)}</div>
+              <div className="hidden md:block font-sans font-bold text-[.84rem]">{fmtTTD(s.open)}</div>
               <div className="font-sans font-bold text-[.84rem]">{fmtTTD(s.close)}</div>
-              <div>
+              <div className="hidden md:block">
                 <span className={`text-[.78rem] px-2 py-0.5 rounded-md inline-block ${cls}`}>
                   {isUp ? '+' : ''}{s.chg.toFixed(2)}
                 </span>
                 <div className="text-[.65rem] text-muted mt-0.5">{isUp ? '+' : ''}{chgPct}%</div>
               </div>
-              <div className="text-[.8rem] text-txt-2">{s.vol > 0 ? s.vol.toLocaleString() : '—'}</div>
-              <span className={`text-[.65rem] px-2 py-0.5 rounded-full border text-center whitespace-nowrap ${sec.cls}`}>
+              <div className="hidden md:block text-[.8rem] text-txt-2">{s.vol > 0 ? s.vol.toLocaleString() : '—'}</div>
+              <span className={`hidden md:inline-block text-[.65rem] px-2 py-0.5 rounded-full border text-center whitespace-nowrap ${sec.cls}`}>
                 {sec.icon} {sec.label}
               </span>
-              <button className="bg-[rgba(200,16,46,.1)] border border-[rgba(200,16,46,.22)] text-[#FF4D6D] rounded-lg px-3 py-1.5 text-[.7rem] font-mono cursor-pointer transition-all hover:bg-[#C8102E] hover:text-white"
+              <button className="bg-[rgba(200,16,46,.1)] border border-[rgba(200,16,46,.22)] text-[#FF4D6D] rounded-lg px-2 md:px-3 py-1.5 text-[.7rem] font-mono cursor-pointer transition-all hover:bg-[#C8102E] hover:text-white whitespace-nowrap"
                 onClick={e => { e.stopPropagation(); openTrade(s.sym); }}>
-                Trade TTD
+                Trade
               </button>
             </div>
           );

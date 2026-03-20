@@ -96,7 +96,7 @@ export default function MarketPage() {
               defillama.com/chain/solana ↗
             </a>
           </div>
-          <div className="relative w-full" style={{ height: '500px' }}>
+          <div className="relative w-full h-[280px] md:h-[500px]">
             <iframe
               src="https://defillama.com/chain/solana"
               loading="lazy"
@@ -122,7 +122,7 @@ export default function MarketPage() {
               defillama.com/rwa/chain/solana ↗
             </a>
           </div>
-          <div className="relative w-full" style={{ height: '500px' }}>
+          <div className="relative w-full h-[280px] md:h-[500px]">
             <iframe
               src="https://defillama.com/rwa/chain/solana"
               loading="lazy"
@@ -148,16 +148,17 @@ export default function MarketPage() {
         }
       />
 
-      {/* Header row */}
-      <div className="grid gap-3.5 items-center px-4 py-1 text-[.68rem] text-muted uppercase tracking-widest"
-        style={{ gridTemplateColumns: '44px 2fr 1.1fr .9fr 1fr 1fr 1.1fr' }}>
+      {/* Header row — 4 cols mobile / 7 cols desktop */}
+      <div className="grid gap-2 md:gap-3.5 items-center px-4 py-1 text-[.68rem] text-muted uppercase tracking-widest
+        [grid-template-columns:44px_2fr_1.1fr_.9fr]
+        md:[grid-template-columns:44px_2fr_1.1fr_.9fr_1fr_1fr_1.1fr]">
         <span />
         <span>Token</span>
         <span>Price</span>
         <span>24h</span>
-        <span>Market Cap</span>
-        <span>Volume</span>
-        <span>Category</span>
+        <span className="hidden md:block">Market Cap</span>
+        <span className="hidden md:block">Volume</span>
+        <span className="hidden md:block">Category</span>
       </div>
 
       <div className="flex flex-col gap-0.5">
@@ -179,23 +180,29 @@ export default function MarketPage() {
           return (
             <div
               key={token.id}
-              className="grid gap-3.5 items-center rounded-xl px-4 py-3 border border-border cursor-pointer transition-all hover:border-sea/35 hover:translate-x-[3px]"
-              style={{ gridTemplateColumns: '44px 2fr 1.1fr .9fr 1fr 1fr 1.1fr', background: 'var(--color-card)' }}
+              className="grid gap-2 md:gap-3.5 items-center rounded-xl px-3 md:px-4 py-3 border border-border cursor-pointer transition-all hover:border-sea/35 hover:translate-x-[3px]
+                [grid-template-columns:44px_2fr_1.1fr_.9fr]
+                md:[grid-template-columns:44px_2fr_1.1fr_.9fr_1fr_1fr_1.1fr]"
+              style={{ background: 'var(--color-card)' }}
             >
               {token.image
                 ? <img src={token.image} alt={meta.sym} className="w-9 h-9 rounded-full" />
                 : <div className="w-9 h-9 rounded-full flex items-center justify-center text-[.65rem] font-extrabold"
                     style={{ background: col + '22', color: col }}>{meta.sym.slice(0, 3)}</div>
               }
-              <div>
+              <div className="min-w-0">
                 <div className="font-sans font-bold text-[.88rem]">{meta.sym}</div>
-                <div className="text-[.68rem] text-muted truncate max-w-[200px]">{token.name}</div>
+                <div className="text-[.68rem] text-muted truncate">{token.name}</div>
+                {/* Category shown inline on mobile */}
+                <span className={`md:hidden text-[.6rem] px-1.5 py-0.5 rounded-full border whitespace-nowrap ${catCls}`}>
+                  {meta.cat}
+                </span>
               </div>
               <div className="font-sans font-bold text-[.88rem]">{fmt(token.current_price, token.current_price < 0.01 ? 6 : 2)}</div>
               <ChgPill value={token.price_change_percentage_24h} />
-              <div className="text-[.8rem] text-txt-2">{token.market_cap ? fmt(token.market_cap) : '—'}</div>
-              <div className="text-[.8rem] text-txt-2">{token.total_volume ? fmt(token.total_volume) : '—'}</div>
-              <span className={`text-[.65rem] px-2 py-0.5 rounded-full border text-center whitespace-nowrap ${catCls}`}>
+              <div className="hidden md:block text-[.8rem] text-txt-2">{token.market_cap ? fmt(token.market_cap) : '—'}</div>
+              <div className="hidden md:block text-[.8rem] text-txt-2">{token.total_volume ? fmt(token.total_volume) : '—'}</div>
+              <span className={`hidden md:inline-block text-[.65rem] px-2 py-0.5 rounded-full border text-center whitespace-nowrap ${catCls}`}>
                 {meta.cat}
               </span>
             </div>

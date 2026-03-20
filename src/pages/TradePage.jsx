@@ -88,7 +88,7 @@ export default function TradePage() {
     <div>
       {/* Wallet Connection Banner */}
       {!walletConnected && (
-        <div className="rounded-2xl border border-sea/30 p-5 mb-6 flex items-center gap-5"
+        <div className="rounded-2xl border border-sea/30 p-4 md:p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-5"
           style={{ background: 'linear-gradient(135deg, rgba(0,200,180,.06), rgba(252,92,62,.04))' }}>
           <div className="text-3xl">🔗</div>
           <div className="flex-1">
@@ -97,9 +97,9 @@ export default function TradePage() {
               Connect Solflare to access your Solana wallet, or top up your TTD account with Wam. Paper trading is available without a wallet.
             </div>
           </div>
-          <div className="flex gap-2 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0 w-full sm:w-auto">
             <a href={WAM_LINK} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1.5 bg-[rgba(255,215,0,.08)] border border-[rgba(255,215,0,.28)]
+              className="flex items-center justify-center gap-1.5 bg-[rgba(255,215,0,.08)] border border-[rgba(255,215,0,.28)]
                 rounded-lg px-4 py-2.5 text-[.75rem] font-sans font-bold text-[#FFD700] no-underline
                 transition-all hover:bg-[rgba(255,215,0,.14)]">
               <span className="w-4 h-4 rounded bg-[#FFD700] flex items-center justify-center text-[.5rem] font-black text-night">W</span>
@@ -109,7 +109,7 @@ export default function TradePage() {
               // Scroll to header wallet button — wallet connection now handled via wallet-standard in Header
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-              className="flex items-center gap-2 bg-[linear-gradient(135deg,#FC5C3E,#FF8C42)] border-none
+              className="flex items-center justify-center gap-2 bg-[linear-gradient(135deg,#FC5C3E,#FF8C42)] border-none
                 text-white px-4 py-2.5 rounded-lg text-[.75rem] font-sans font-extrabold cursor-pointer
                 transition-all hover:-translate-y-0.5"
               style={{ boxShadow: '0 0 20px rgba(252,92,62,.3)' }}>
@@ -168,7 +168,7 @@ export default function TradePage() {
             </div>
 
             {/* Asset list as clickable rows */}
-            <div className="max-h-[280px] overflow-y-auto mb-4 border border-border rounded-xl">
+            <div className="max-h-[200px] md:max-h-[280px] overflow-y-auto mb-4 border border-border rounded-xl">
               <div className="grid items-center gap-2 px-3 py-1.5 text-[.62rem] text-muted uppercase tracking-widest border-b border-border sticky top-0 z-10"
                 style={{ gridTemplateColumns: isTTSE ? '1.5fr 1fr .8fr .8fr' : '28px 1.5fr 1fr .8fr', background: 'var(--color-night-2)' }}>
                 {!isTTSE && <span />}
@@ -268,9 +268,11 @@ export default function TradePage() {
             </div>
           ) : (
             <div className="flex flex-col gap-0.5">
-              <div className="grid items-center gap-3 px-4 py-1 text-[.62rem] text-muted uppercase tracking-widest"
-                style={{ gridTemplateColumns: '1.5fr 1fr 1fr 1fr 90px' }}>
-                <span>Asset</span><span>Qty</span><span>Avg Price</span><span>P&L</span><span />
+              <div className="grid items-center gap-2 md:gap-3 px-3 md:px-4 py-1 text-[.62rem] text-muted uppercase tracking-widest
+                [grid-template-columns:1.5fr_1fr_80px]
+                md:[grid-template-columns:1.5fr_1fr_1fr_1fr_90px]">
+                <span>Asset</span><span>Qty</span>
+                <span className="hidden md:block">Avg Price</span><span className="hidden md:block">P&L</span><span />
               </div>
               {marketHoldings.map(h => {
                 const a = assets.find(a => a.symbol === h.symbol);
@@ -279,12 +281,20 @@ export default function TradePage() {
                 const pnl = ((curPrice - h.avgPrice) / h.avgPrice * 100);
                 return (
                   <div key={`${h.market}:${h.symbol}`}
-                    className="grid items-center gap-3 rounded-xl px-4 py-3 border border-border"
-                    style={{ gridTemplateColumns: '1.5fr 1fr 1fr 1fr 90px', background: 'var(--color-card)' }}>
-                    <span className="font-sans font-bold text-[.84rem]">{h.symbol}</span>
-                    <span className="text-[.78rem] text-txt-2">{h.qty < 1 ? h.qty.toFixed(6) : h.qty.toFixed(2)}</span>
-                    <span className="text-[.78rem] text-txt-2">{fmtPrice(h.avgPrice)}</span>
+                    className="grid items-center gap-2 md:gap-3 rounded-xl px-3 md:px-4 py-3 border border-border
+                      [grid-template-columns:1.5fr_1fr_80px]
+                      md:[grid-template-columns:1.5fr_1fr_1fr_1fr_90px]"
+                    style={{ background: 'var(--color-card)' }}>
                     <div>
+                      <div className="font-sans font-bold text-[.84rem]">{h.symbol}</div>
+                      {/* Show P&L inline on mobile */}
+                      <div className={`md:hidden text-[.62rem] ${pnl >= 0 ? 'text-up' : 'text-down'}`}>
+                        {pnl >= 0 ? '+' : ''}{pnl.toFixed(2)}%
+                      </div>
+                    </div>
+                    <span className="text-[.78rem] text-txt-2">{h.qty < 1 ? h.qty.toFixed(6) : h.qty.toFixed(2)}</span>
+                    <span className="hidden md:block text-[.78rem] text-txt-2">{fmtPrice(h.avgPrice)}</span>
+                    <div className="hidden md:block">
                       <div className="text-[.78rem] text-txt">{fmtPrice(val)}</div>
                       <div className={`text-[.65rem] ${pnl >= 0 ? 'text-up' : 'text-down'}`}>
                         {pnl >= 0 ? '+' : ''}{pnl.toFixed(2)}%

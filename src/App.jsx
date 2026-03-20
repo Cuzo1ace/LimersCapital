@@ -63,7 +63,7 @@ export default function App() {
       <StreakCheck />
       <LimerBridge />
       <Header />
-      <main className="relative z-[1] p-7 max-w-[1440px] mx-auto">
+      <main className="relative z-[1] px-3 py-4 md:p-7 max-w-[1440px] mx-auto">
         <ErrorBoundary>
           <TabContent />
         </ErrorBoundary>
