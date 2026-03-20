@@ -1,0 +1,13 @@
+# Exclude Anchor/Rust build artifacts (1.1 GB — not needed for web deploy)
+anchor/target/
+anchor/**/*-keypair.json
+*.so
+
+# Exclude dev tools
+node_modules/
+.claude/
+.agents/
+
+# Exclude local env
+.env.local
+.env.*.local
