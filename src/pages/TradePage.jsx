@@ -21,6 +21,7 @@ import { TTSE_FALLBACK } from '../api/ttse';
 import { fetchTTSEData } from '../api/ttse';
 import StockChart from '../components/StockChart';
 import FeatureLock from '../components/gamification/FeatureLock';
+import PriceAlerts from '../components/PriceAlerts';
 import useStore from '../store/useStore';
 
 const fmtUSD = n => {
@@ -394,6 +395,13 @@ export default function TradePage() {
                 isTTSE={isTTSE}
                 realCandles={isTTSE ? null : realCandles}
               />
+            </div>
+          )}
+
+          {/* Price Alerts */}
+          {!isTTSE && (
+            <div className="mb-5">
+              <PriceAlerts />
             </div>
           )}
 

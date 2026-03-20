@@ -322,6 +322,24 @@ const useStore = create(
           : [...s.watchlist, symbol],
       })),
 
+      // ── Price Alerts ───────────────────────────────────────
+      priceAlerts: [],
+      addPriceAlert: (symbol, condition, targetPrice) => {
+        const alert = {
+          id: Date.now().toString(36),
+          symbol: symbol.toUpperCase(),
+          condition, // 'above' | 'below'
+          targetPrice: Number(targetPrice),
+          triggered: false,
+          createdAt: new Date().toISOString(),
+        };
+        set(s => ({ priceAlerts: [...s.priceAlerts, alert] }));
+      },
+      removePriceAlert: (id) => set(s => ({ priceAlerts: s.priceAlerts.filter(a => a.id !== id) })),
+      markAlertTriggered: (id) => set(s => ({
+        priceAlerts: s.priceAlerts.map(a => a.id === id ? { ...a, triggered: true } : a),
+      })),
+
       // ── Listing Applications ───────────────────────────────
       listingApplications: [],
 
@@ -351,6 +369,7 @@ const useStore = create(
         simulatedRevenue: state.simulatedRevenue,
         listingApplications: state.listingApplications,
         watchlist: state.watchlist,
+        priceAlerts: state.priceAlerts,
       }),
     }
   )

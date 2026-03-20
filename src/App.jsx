@@ -18,6 +18,7 @@ import CommunityPage from './pages/CommunityPage';
 import ListingPage from './pages/ListingPage';
 import useStore from './store/useStore';
 import LimerBridge from './components/solana/LimerBridge';
+import PriceAlertChecker from './components/PriceAlertChecker';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -63,6 +64,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <StreakCheck />
       <LimerBridge />
+      <PriceAlertChecker />
       <Header />
       <PriceTicker />
       <main className="relative z-[1] px-3 py-4 md:p-7 max-w-[1440px] mx-auto">

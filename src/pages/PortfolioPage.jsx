@@ -16,6 +16,29 @@ import { useLimerActions } from '../solana/bridge';
 const fmtUSD = n => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtTTD = n => n == null ? '—' : 'TT$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+function exportCSV(trades) {
+  const headers = ['Date', 'Side', 'Market', 'Symbol', 'Quantity', 'Price', 'Total', 'Currency', 'Fee'];
+  const rows = trades.map(t => [
+    new Date(t.timestamp).toISOString(),
+    t.side.toUpperCase(),
+    t.market.toUpperCase(),
+    t.symbol,
+    t.qty,
+    t.price,
+    t.total,
+    t.currency,
+    +(t.total * 0.003).toFixed(6),
+  ]);
+  const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `limerscapital-trades-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function PortfolioPage() {
   const [chartAsset, setChartAsset] = useState(null);
   const { balanceUSD, balanceTTD, holdings, trades, resetPortfolio } = useStore();
@@ -302,10 +325,18 @@ export default function PortfolioPage() {
       {/* Recent Activity */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-sans text-[.92rem] font-bold uppercase tracking-widest text-txt">All Activity</h2>
-        <button onClick={resetPortfolio}
-          className="bg-transparent border border-down/25 text-down cursor-pointer rounded-lg px-3 py-1 text-[.7rem] font-mono transition-all hover:bg-down/10">
-          Reset Portfolio
-        </button>
+        <div className="flex gap-2">
+          {trades.length > 0 && (
+            <button onClick={() => exportCSV(trades)}
+              className="bg-transparent border border-sea/30 text-sea cursor-pointer rounded-lg px-3 py-1 text-[.7rem] font-mono transition-all hover:bg-sea/10">
+              ↓ Export CSV
+            </button>
+          )}
+          <button onClick={resetPortfolio}
+            className="bg-transparent border border-down/25 text-down cursor-pointer rounded-lg px-3 py-1 text-[.7rem] font-mono transition-all hover:bg-down/10">
+            Reset Portfolio
+          </button>
+        </div>
       </div>
 
       {trades.length === 0 ? (
@@ -314,7 +345,7 @@ export default function PortfolioPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-1">
-          {trades.slice(0, 20).map(t => (
+          {trades.map(t => (
             <div key={t.id} className="flex items-center gap-3 rounded-xl px-4 py-2 border border-border text-[.74rem]"
               style={{ background: 'var(--color-card)' }}>
               <span className={`px-1.5 py-0.5 rounded text-[.62rem] font-semibold uppercase
