@@ -10,6 +10,13 @@ const HERMES_BASE = 'https://hermes.pyth.network/v2/updates/price/latest';
 // DexScreener — all Solana tokens by mint, price + 24h change + volume
 const DEXSCREENER_BASE = 'https://api.dexscreener.com/tokens/v1/solana';
 
+// Helius — dedicated RPC + DAS API for on-chain token metadata / logos
+// API key stored in VITE_HELIUS_API_KEY (.env.local, never committed)
+const HELIUS_API_KEY = import.meta.env.VITE_HELIUS_API_KEY || '';
+export const HELIUS_RPC_URL = HELIUS_API_KEY
+  ? `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`
+  : 'https://api.mainnet-beta.solana.com'; // public fallback
+
 // Pyth Hermes feed IDs (verified live 2026-03-20)
 // zBTC tracks BTC oracle; WETH tracks ETH oracle; GOLD tracks XAU/spot gold
 const PYTH_FEEDS = {
@@ -66,14 +73,14 @@ export const TOKEN_INFO = {
   BONK:   { name: 'Bonk',             cat: 'Meme',   col: '#FFCA3A', img: CG('28600', 'bonk.jpg') },
   RENDER: { name: 'Render',           cat: 'Infra',  col: '#FF5C4D', img: CG('11636', 'rndr.png') },
   HNT:    { name: 'Helium',           cat: 'Infra',  col: '#00C8B4', img: CG('4284',  'Helium_HNT.png') },
-  // Representative logos for custom Solana tokens not in CoinGecko or Solana token list
-  GOLD:   { name: 'Gold (Tokenized)', cat: 'RWA',    col: '#FFD700', img: CG('9519',  'paxgold.png') },         // PAX Gold icon
-  zBTC:   { name: 'Zeus Bitcoin',     cat: 'RWA',    col: '#F7931A', img: CG('1',     'bitcoin.png') },         // BTC icon
-  WETH:   { name: 'Ether (Portal)',   cat: 'L1',     col: '#627EEA', img: SL('7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs') }, // Solana TL has it
-  BILL:   { name: 'T-Bill Token',     cat: 'RWA',    col: '#00C8B4', img: null },
-  PERP:   { name: 'Perp Protocol',    cat: 'DeFi',   col: '#C87EFF', img: null },
-  PREN:   { name: 'Pren Finance',     cat: 'DeFi',   col: '#38BDF8', img: null },
-  NVDAX:  { name: 'NVIDIA xStock',    cat: 'Stock',  col: '#76B900', img: null },
+  // Representative logos for custom Solana tokens — verified via Helius DAS getAssetBatch
+  GOLD:   { name: 'Gold (Tokenized)',     cat: 'RWA',    col: '#FFD700', img: CG('9519',  'paxgold.png') },       // PAX Gold icon
+  zBTC:   { name: 'Zeus Bitcoin',         cat: 'RWA',    col: '#F7931A', img: CG('1',     'bitcoin.png') },       // BTC icon
+  WETH:   { name: 'Ether (Portal)',       cat: 'L1',     col: '#627EEA', img: SL('7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs') },
+  BILL:   { name: 'HYPE',                cat: 'DeFi',   col: '#00C8B4', img: 'https://arweave.net/QBRdRop8wI4PpScSRTKyibv-fQuYBua-WOvC7tuJyJo' },
+  PERP:   { name: 'Silver rStock',        cat: 'RWA',    col: '#C0C0C0', img: null },                             // S3 SVG has CORS — colored circle fallback
+  PREN:   { name: 'Anthropic PreStocks', cat: 'Stock',  col: '#D97706', img: 'https://prestocks.com/logos/anthropic.png' },
+  NVDAX:  { name: 'NVIDIA xStock',       cat: 'Stock',  col: '#76B900', img: 'https://xstocks-metadata.backed.fi/logos/tokens/NVDAx.png' },
 };
 
 // Reverse lookup: mint address → symbol
@@ -94,6 +101,43 @@ export function getTokenInfoForMint(mint) {
   if (!symbol) return null;
   return { symbol, ...TOKEN_INFO[symbol] };
 }
+
+// ─── Helius DAS API — on-chain token metadata / logos ────────────────────────
+// Uses getAssetBatch to fetch token metadata for multiple mints in one request.
+// Returns { mint: logoUrl } for tokens with an image in their on-chain metadata.
+// staleTime should be long (24h) — token logos essentially never change.
+export async function fetchHeliusTokenLogos(mints) {
+  if (!HELIUS_API_KEY || !mints.length) return {};
+  const res = await fetch(HELIUS_RPC_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0', id: 'logo-batch',
+      method: 'getAssetBatch',
+      params: { ids: mints },
+    }),
+  });
+  if (!res.ok) throw new Error(`Helius DAS error: ${res.status}`);
+  const json = await res.json();
+
+  const result = {};
+  for (const asset of json.result || []) {
+    const mint = asset.id;
+    // Prefer content.links.image, fall back to first file URI
+    const image =
+      asset.content?.links?.image ||
+      asset.content?.files?.find(f => f.mime?.startsWith('image/'))?.uri ||
+      null;
+    if (mint && image) result[mint] = image;
+  }
+  return result; // { '98sMh...': 'https://...logo.png', ... }
+}
+
+// Mints that don't have a hardcoded CDN logo — fetched via Helius DAS on load
+export const HELIUS_LOGO_MINTS = Object.entries(TOKEN_INFO)
+  .filter(([, info]) => !info.img)
+  .map(([sym]) => SOL_TOKENS[sym])
+  .filter(Boolean);
 
 // ─── Layer 1: Pyth Hermes ────────────────────────────────────────────────────
 // Oracle-grade prices for SOL, zBTC (BTC), WETH (ETH), GOLD (XAU)

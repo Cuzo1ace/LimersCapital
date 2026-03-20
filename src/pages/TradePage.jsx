@@ -16,7 +16,7 @@ function TokenLogo({ src, symbol, col }) {
   );
 }
 import { useQuery } from '@tanstack/react-query';
-import { fetchTradePrices } from '../api/prices';
+import { fetchTradePrices, fetchHeliusTokenLogos, HELIUS_LOGO_MINTS, SOL_TOKENS } from '../api/prices';
 import { TTSE_FALLBACK } from '../api/ttse';
 import { fetchTTSEData } from '../api/ttse';
 import StockChart from '../components/StockChart';
@@ -64,6 +64,16 @@ export default function TradePage() {
   });
   const ttseQ = useQuery({ queryKey: ['ttse-data'], queryFn: fetchTTSEData, staleTime: 120000 });
 
+  // Helius DAS: fetch on-chain logos for tokens without a hardcoded CDN image.
+  // 24h staleTime — token logos never change, so one fetch per session is enough.
+  const heliusLogosQ = useQuery({
+    queryKey: ['helius-logos'],
+    queryFn: () => fetchHeliusTokenLogos(HELIUS_LOGO_MINTS),
+    staleTime: 24 * 60 * 60 * 1000,
+    retry: 1,
+  });
+  const heliusLogos = heliusLogosQ.data || {}; // { mint: logoUrl }
+
   const [market, setMarket] = useState('solana'); // 'solana' | 'ttse'
   const [side, setSide] = useState('buy');
   const [selectedId, setSelectedId] = useState('');
@@ -87,12 +97,18 @@ export default function TradePage() {
         volume: s.vol, image: null, sector: s.sector,
       }));
     }
-    return solTokens.map(t => ({
-      id: t.id, symbol: t.symbol.toUpperCase(), name: t.name, price: t.current_price,
-      change: t.price_change_percentage_24h, volume: t.total_volume, image: t.image,
-      col: t._col,
-    }));
-  }, [isTTSE, solTokens, ttseStocks]);
+    return solTokens.map(t => {
+      const sym = t.symbol.toUpperCase();
+      const mint = SOL_TOKENS[sym];
+      // Use CDN image if available, otherwise try Helius DAS on-chain logo
+      const image = t.image || (mint ? heliusLogos[mint] : null) || null;
+      return {
+        id: t.id, symbol: sym, name: t.name, price: t.current_price,
+        change: t.price_change_percentage_24h, volume: t.total_volume,
+        image, col: t._col,
+      };
+    });
+  }, [isTTSE, solTokens, ttseStocks, heliusLogos]);
 
   const selected = assets.find(a => a.id === selectedId);
   const price = selected?.price ?? null;
