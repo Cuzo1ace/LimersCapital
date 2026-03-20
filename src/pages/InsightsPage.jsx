@@ -4,7 +4,7 @@ import { fetchSolanaTVL } from '../api/prices';
 import {
   fetchSolanaProtocols, fetchCryptoMarket, fetchRWATokens, fetchL1Tokens,
   fetchDeFiMarket, fetchTrending, fetchGlobalMarket,
-  fetchJupiterQuote, fetchCaribFXRates, fetchCaribbeanGDP,
+  fetchJupiterQuote, fetchCaribFXRates, fetchCaribbeanGDP, fetchCryptoNews,
 } from '../api/insights';
 
 function fmt(n, dec = 2) {
@@ -62,6 +62,7 @@ export default function InsightsPage() {
   const tvlQ      = useQuery({ queryKey: ['sol-tvl'],     queryFn: fetchSolanaTVL,       staleTime: 300000 });
   const fxQ       = useQuery({ queryKey: ['fx-rates'],    queryFn: fetchCaribFXRates,    staleTime: 300000 });
   const gdpQ      = useQuery({ queryKey: ['carib-gdp'],   queryFn: fetchCaribbeanGDP,    staleTime: 600000 });
+  const newsQ     = useQuery({ queryKey: ['crypto-news'], queryFn: fetchCryptoNews,      staleTime: 300000 });
 
   const [jupIn, setJupIn] = useState('So11111111111111111111111111111111111111112');
   const [jupOut, setJupOut] = useState('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
@@ -77,7 +78,7 @@ export default function InsightsPage() {
   }
 
   function refetchAll() {
-    [globalQ, rwaQ, l1Q, defiQ, trendingQ, protocolsQ, tvlQ, fxQ, gdpQ].forEach(q => q.refetch());
+    [globalQ, rwaQ, l1Q, defiQ, trendingQ, protocolsQ, tvlQ, fxQ, gdpQ, newsQ].forEach(q => q.refetch());
   }
 
   const g = globalQ.data;
@@ -243,6 +244,21 @@ export default function InsightsPage() {
         </Card>
       </div>
 
+      {/* ── Row 5: Crypto News Feed ────────────────────────────── */}
+      <div className="mb-4">
+        <Card title="📰 Crypto News" color="var(--color-sea)" source="CoinGecko · latest">
+          {newsQ.isLoading && <Loader />}
+          {newsQ.isError && <Err msg={newsQ.error.message} retry={newsQ.refetch} />}
+          {newsQ.data && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {newsQ.data.map(n => (
+                <NewsItem key={n.id} item={n} />
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+
       {/* API Attribution */}
       <div className="rounded-xl p-4 border border-white/6 flex flex-wrap gap-3 items-center" style={{ background: 'rgba(0,0,0,.2)' }}>
         <span className="text-[.65rem] text-muted">Powered by:</span>
@@ -285,4 +301,28 @@ function Err({ msg, retry }) {
   return <div className="text-coral text-[.76rem] py-2">
     {msg}. <button onClick={retry} className="text-sea underline cursor-pointer bg-transparent border-none font-mono">Retry</button>
   </div>;
+}
+
+function NewsItem({ item }) {
+  const ago = (() => {
+    const s = Math.floor(Date.now() / 1000) - item.publishedOn;
+    if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+    if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+    return `${Math.floor(s / 86400)}d ago`;
+  })();
+
+  return (
+    <a href={item.url} target="_blank" rel="noopener noreferrer"
+      className="flex flex-col gap-2 p-3 rounded-xl border border-white/6 hover:border-sea/30 hover:bg-sea/5 transition-all no-underline group"
+      style={{ background: 'rgba(0,0,0,.15)' }}>
+      {item.imageUrl && (
+        <img src={item.imageUrl} alt="" className="w-full h-[90px] object-cover rounded-lg opacity-80 group-hover:opacity-100 transition-opacity" />
+      )}
+      <div className="flex items-center gap-1.5">
+        <span className="text-[.6rem] text-sea bg-sea/10 rounded px-1.5 py-0.5 font-mono font-bold truncate max-w-[80px]">{item.source}</span>
+        <span className="text-[.6rem] text-muted ml-auto flex-shrink-0">{ago}</span>
+      </div>
+      <p className="text-[.74rem] text-txt-2 leading-snug line-clamp-3 m-0 group-hover:text-txt transition-colors">{item.title}</p>
+    </a>
+  );
 }

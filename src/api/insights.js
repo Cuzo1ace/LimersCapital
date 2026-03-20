@@ -139,6 +139,21 @@ export async function fetchCaribFXRates() {
     .map(code => ({ code, rate: json.rates[code], name: names[code] || code }));
 }
 
+// ─── CoinGecko: Crypto news feed (free, no key) ──────────────────────────────
+export async function fetchCryptoNews() {
+  const res = await fetch(`${CG}/news?page=1`);
+  if (!res.ok) throw new Error(`News error: ${res.status}`);
+  const data = await res.json();
+  return (data.data || []).slice(0, 9).map(n => ({
+    id: n.id,
+    title: n.title,
+    url: n.url,
+    source: n.news_site,
+    publishedOn: typeof n.created_at === 'number' ? n.created_at : Math.floor(new Date(n.created_at).getTime() / 1000),
+    imageUrl: n.thumb_2x,
+  }));
+}
+
 // ─── World Bank: Caribbean GDP growth ────────────────────────────────────────
 export async function fetchCaribbeanGDP() {
   const countries = 'TTO;JAM;BRB;GUY;BHS;BLZ';
