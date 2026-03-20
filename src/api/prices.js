@@ -50,23 +50,30 @@ const JUPITER_ONLY_MINTS = [
   SOL_TOKENS.BILL, SOL_TOKENS.PERP, SOL_TOKENS.PREN, SOL_TOKENS.NVDAX,
 ];
 
+// Token logo CDNs (verified CORS-safe):
+// - CoinGecko CDN: used for the 8 major tokens it lists
+// - Solana token list (raw GitHub): used for everything else by mint
+const CG = (id, file) => `https://assets.coingecko.com/coins/images/${id}/small/${file}`;
+const SL = (mint)    => `https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/${mint}/logo.png`;
+
 // Token metadata for the order book / market page
 export const TOKEN_INFO = {
-  SOL:    { name: 'Solana',                   cat: 'L1',     col: '#9945FF' },
-  USDC:   { name: 'USD Coin',                 cat: 'Stable', col: '#2D9B56' },
-  ONDO:   { name: 'Ondo Finance',             cat: 'RWA',    col: '#FFCA3A' },
-  JUP:    { name: 'Jupiter',                  cat: 'DeFi',   col: '#00C8B4' },
-  RAY:    { name: 'Raydium',                  cat: 'DeFi',   col: '#FF5C4D' },
-  BONK:   { name: 'Bonk',                     cat: 'Meme',   col: '#FFCA3A' },
-  RENDER: { name: 'Render',                   cat: 'Infra',  col: '#FF5C4D' },
-  HNT:    { name: 'Helium',                   cat: 'Infra',  col: '#00C8B4' },
-  GOLD:   { name: 'Gold (Tokenized)',          cat: 'RWA',    col: '#FFD700' },
-  zBTC:   { name: 'Zeus Bitcoin',              cat: 'RWA',    col: '#F7931A' },
-  WETH:   { name: 'Ether (Portal)',            cat: 'L1',     col: '#627EEA' },
-  BILL:   { name: 'T-Bill Token',              cat: 'RWA',    col: '#00C8B4' },
-  PERP:   { name: 'Perp Protocol',             cat: 'DeFi',   col: '#C87EFF' },
-  PREN:   { name: 'Pren Finance',              cat: 'DeFi',   col: '#38BDF8' },
-  NVDAX:  { name: 'NVIDIA xStock',             cat: 'Stock',  col: '#76B900' },
+  SOL:    { name: 'Solana',            cat: 'L1',     col: '#9945FF', img: CG('4128',  'solana.png') },
+  USDC:   { name: 'USD Coin',          cat: 'Stable', col: '#2D9B56', img: CG('6319',  'usdc.png') },
+  ONDO:   { name: 'Ondo Finance',      cat: 'RWA',    col: '#FFCA3A', img: CG('26580', 'ONDO.png') },
+  JUP:    { name: 'Jupiter',           cat: 'DeFi',   col: '#00C8B4', img: CG('34188', 'jup.png') },
+  RAY:    { name: 'Raydium',           cat: 'DeFi',   col: '#FF5C4D', img: CG('13928', 'PSigc4ie_400x400.jpg') },
+  BONK:   { name: 'Bonk',             cat: 'Meme',   col: '#FFCA3A', img: CG('28600', 'bonk.jpg') },
+  RENDER: { name: 'Render',           cat: 'Infra',  col: '#FF5C4D', img: CG('11636', 'rndr.png') },
+  HNT:    { name: 'Helium',           cat: 'Infra',  col: '#00C8B4', img: CG('4284',  'Helium_HNT.png') },
+  // Representative logos for custom Solana tokens not in CoinGecko or Solana token list
+  GOLD:   { name: 'Gold (Tokenized)', cat: 'RWA',    col: '#FFD700', img: CG('9519',  'paxgold.png') },         // PAX Gold icon
+  zBTC:   { name: 'Zeus Bitcoin',     cat: 'RWA',    col: '#F7931A', img: CG('1',     'bitcoin.png') },         // BTC icon
+  WETH:   { name: 'Ether (Portal)',   cat: 'L1',     col: '#627EEA', img: SL('7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs') }, // Solana TL has it
+  BILL:   { name: 'T-Bill Token',     cat: 'RWA',    col: '#00C8B4', img: null },
+  PERP:   { name: 'Perp Protocol',    cat: 'DeFi',   col: '#C87EFF', img: null },
+  PREN:   { name: 'Pren Finance',     cat: 'DeFi',   col: '#38BDF8', img: null },
+  NVDAX:  { name: 'NVIDIA xStock',    cat: 'Stock',  col: '#76B900', img: null },
 };
 
 // Reverse lookup: mint address → symbol
@@ -181,7 +188,7 @@ export async function fetchTradePrices() {
     console.warn('DexScreener failed:', e.message);
   }
 
-  // Layer 3: Jupiter v2 — fallback for any symbol still missing
+  // Layer 3: Jupiter v2 — last resort for any symbol still missing
   const missingSymbols = Object.keys(TOKEN_INFO)
     .filter(sym => !pythPrices[sym] && !dexPrices[sym]);
   let jupPrices = {};
@@ -202,7 +209,7 @@ export async function fetchTradePrices() {
     }
   }
 
-  // Merge: Pyth wins for oracle assets, DexScreener for the rest
+  // Merge: Pyth wins for oracle assets, DexScreener for the rest, Jupiter last resort
   return Object.entries(TOKEN_INFO).map(([symbol, info]) => {
     const pyth = pythPrices[symbol];
     const dex  = dexPrices[symbol];
@@ -212,7 +219,7 @@ export async function fetchTradePrices() {
       id: symbol.toLowerCase(),
       symbol: symbol.toLowerCase(),
       name: info.name,
-      image: null,
+      image: info.img || null,
       current_price: price,
       price_change_percentage_24h: dex?.change24h ?? null,
       total_volume: dex?.volume24h ?? null,

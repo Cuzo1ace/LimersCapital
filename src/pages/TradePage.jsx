@@ -1,4 +1,20 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+
+// Token logo with colored-initial fallback
+function TokenLogo({ src, symbol, col }) {
+  const [err, setErr] = useState(false);
+  const onErr = useCallback(() => setErr(true), []);
+  if (src && !err) {
+    return <img src={src} alt={symbol} onError={onErr}
+      className="w-6 h-6 rounded-full object-cover flex-shrink-0 bg-white/5" />;
+  }
+  return (
+    <div className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-[.6rem] font-bold text-white"
+      style={{ background: col || '#555' }}>
+      {symbol?.[0]}
+    </div>
+  );
+}
 import { useQuery } from '@tanstack/react-query';
 import { fetchTradePrices } from '../api/prices';
 import { TTSE_FALLBACK } from '../api/ttse';
@@ -7,7 +23,17 @@ import StockChart from '../components/StockChart';
 import FeatureLock from '../components/gamification/FeatureLock';
 import useStore from '../store/useStore';
 
-const fmtUSD = n => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtUSD = n => {
+  if (n == null) return '—';
+  const v = Number(n);
+  if (v === 0) return '$0.00';
+  if (v >= 1000) return '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (v >= 1)    return '$' + v.toFixed(2);
+  if (v >= 0.01) return '$' + v.toFixed(4);
+  if (v >= 0.0001) return '$' + v.toFixed(6);
+  // micro-price: show 4 sig figs in scientific notation
+  return '$' + v.toPrecision(4);
+};
 const fmtTTD = n => n == null ? '—' : 'TT$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 // Generate simulated order book from a base price
@@ -64,6 +90,7 @@ export default function TradePage() {
     return solTokens.map(t => ({
       id: t.id, symbol: t.symbol.toUpperCase(), name: t.name, price: t.current_price,
       change: t.price_change_percentage_24h, volume: t.total_volume, image: t.image,
+      col: t._col,
     }));
   }, [isTTSE, solTokens, ttseStocks]);
 
@@ -202,7 +229,7 @@ export default function TradePage() {
             {/* Asset list as clickable rows */}
             <div className="max-h-[200px] md:max-h-[280px] overflow-y-auto mb-4 border border-border rounded-xl">
               <div className="grid items-center gap-2 px-3 py-1.5 text-[.62rem] text-muted uppercase tracking-widest border-b border-border sticky top-0 z-10"
-                style={{ gridTemplateColumns: isTTSE ? '1.5fr 1fr .8fr .8fr' : '28px 1.5fr 1fr .8fr', background: 'var(--color-night-2)' }}>
+                style={{ gridTemplateColumns: isTTSE ? '1.5fr 1fr .8fr .8fr' : '24px 1.5fr 1fr .8fr', background: 'var(--color-night-2)' }}>
                 {!isTTSE && <span />}
                 <span>Asset</span>
                 <span>Price</span>
@@ -214,15 +241,15 @@ export default function TradePage() {
                   onClick={() => setSelectedId(a.id)}
                   className={`grid items-center gap-2 px-3 py-2 cursor-pointer text-[.76rem] border-b border-white/3 transition-all hover:bg-sea/5
                     ${selectedId === a.id ? (isTTSE ? 'bg-[rgba(200,16,46,.08)]' : 'bg-sea/8') : ''}`}
-                  style={{ gridTemplateColumns: isTTSE ? '1.5fr 1fr .8fr .8fr' : '28px 1.5fr 1fr .8fr' }}>
-                  {!isTTSE && a.image && <img src={a.image} alt="" className="w-5 h-5 rounded-full" />}
-                  <div>
-                    <span className="font-sans font-bold">{a.symbol}</span>
-                    <span className="text-muted text-[.62rem] ml-1">{a.name.length > 18 ? a.name.slice(0, 18) + '…' : a.name}</span>
+                  style={{ gridTemplateColumns: isTTSE ? '1.5fr 1fr .8fr .8fr' : '24px 1.5fr 1fr .8fr' }}>
+                  {!isTTSE && <TokenLogo src={a.image} symbol={a.symbol} col={a.col} />}
+                  <div className="min-w-0">
+                    <span className="font-sans font-bold text-[.78rem]">{a.symbol}</span>
+                    <span className="text-muted text-[.6rem] ml-1 truncate">{a.name.length > 16 ? a.name.slice(0, 16) + '…' : a.name}</span>
                   </div>
-                  <span className="font-sans font-bold">{fmtPrice(a.price)}</span>
+                  <span className="font-sans font-bold text-[.78rem]">{fmtPrice(a.price)}</span>
                   <span className={`text-[.7rem] ${(a.change || 0) >= 0 ? 'text-up' : 'text-down'}`}>
-                    {(a.change || 0) >= 0 ? '+' : ''}{(a.change || 0).toFixed(2)}%
+                    {a.change != null ? ((a.change >= 0 ? '+' : '') + a.change.toFixed(2) + '%') : '—'}
                   </span>
                   {isTTSE && <span className="text-muted text-[.68rem]">{(a.volume || 0).toLocaleString()}</span>}
                 </div>
