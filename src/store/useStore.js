@@ -314,6 +314,14 @@ const useStore = create(
         feeRevenue: 0,
       },
 
+      // ── Watchlist ──────────────────────────────────────────
+      watchlist: [],
+      toggleWatchlist: (symbol) => set(s => ({
+        watchlist: s.watchlist.includes(symbol)
+          ? s.watchlist.filter(x => x !== symbol)
+          : [...s.watchlist, symbol],
+      })),
+
       // ── Listing Applications ───────────────────────────────
       listingApplications: [],
 
@@ -342,6 +350,7 @@ const useStore = create(
         lpReferrals: state.lpReferrals, _lpMigrated: state._lpMigrated,
         simulatedRevenue: state.simulatedRevenue,
         listingApplications: state.listingApplications,
+        watchlist: state.watchlist,
       }),
     }
   )

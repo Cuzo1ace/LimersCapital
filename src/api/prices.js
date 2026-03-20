@@ -139,6 +139,58 @@ export const HELIUS_LOGO_MINTS = Object.entries(TOKEN_INFO)
   .map(([sym]) => SOL_TOKENS[sym])
   .filter(Boolean);
 
+// ─── DexScreener OHLCV ───────────────────────────────────────────────────────
+// Two-step: get best pair address for a mint, then fetch candle data.
+// Returns ApexCharts candlestick format: [{ x: timestamp_ms, y: [o,h,l,c] }]
+// Falls back to null on failure — StockChart generates seeded data as fallback.
+
+const PERIOD_CONFIG = {
+  '1M': { res: 'D',  days: 30 },
+  '3M': { res: 'D',  days: 90 },
+  '6M': { res: 'W',  days: 180 },
+  '1Y': { res: 'W',  days: 365 },
+  '5Y': { res: 'W',  days: 1825 },
+};
+
+async function fetchDexScreenerPairAddress(mint) {
+  const res = await fetch(`${DEXSCREENER_BASE}/${mint}`);
+  if (!res.ok) return null;
+  const pairs = await res.json();
+  if (!Array.isArray(pairs) || !pairs.length) return null;
+  // Pick highest volume pair
+  return pairs.reduce((best, p) =>
+    (p.volume?.h24 || 0) > (best?.volume?.h24 || 0) ? p : best, null
+  )?.pairAddress || null;
+}
+
+export async function fetchCandleData(symbol, period = '3M') {
+  const mint = SOL_TOKENS[symbol?.toUpperCase()];
+  if (!mint) return null;
+  const cfg = PERIOD_CONFIG[period] || PERIOD_CONFIG['3M'];
+  const to = Math.floor(Date.now() / 1000);
+  const from = to - cfg.days * 86400;
+
+  try {
+    const pairAddress = await fetchDexScreenerPairAddress(mint);
+    if (!pairAddress) return null;
+
+    const url = `https://api.dexscreener.com/latest/dex/candles/solana/${pairAddress}?res=${cfg.res}&from=${from}&to=${to}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const json = await res.json();
+    const ohlcv = json?.data?.ohlcv;
+    if (!Array.isArray(ohlcv) || !ohlcv.length) return null;
+
+    // DexScreener format: [timestamp_ms, open, high, low, close, volume]
+    return ohlcv.map(([t, o, h, l, c]) => ({
+      x: t,
+      y: [+o.toFixed(6), +h.toFixed(6), +l.toFixed(6), +c.toFixed(6)],
+    }));
+  } catch {
+    return null;
+  }
+}
+
 // ─── Layer 1: Pyth Hermes ────────────────────────────────────────────────────
 // Oracle-grade prices for SOL, zBTC (BTC), WETH (ETH), GOLD (XAU)
 // Returns { SOL: { price, confidence }, zBTC: {...}, ... }

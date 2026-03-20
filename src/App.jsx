@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Header from './components/layout/Header';
+import PriceTicker from './components/PriceTicker';
 import ErrorBoundary from './components/ErrorBoundary';
 import RewardToast from './components/gamification/RewardToast';
 import MarketPage from './pages/MarketPage';
@@ -63,6 +64,7 @@ export default function App() {
       <StreakCheck />
       <LimerBridge />
       <Header />
+      <PriceTicker />
       <main className="relative z-[1] px-3 py-4 md:p-7 max-w-[1440px] mx-auto">
         <ErrorBoundary>
           <TabContent />

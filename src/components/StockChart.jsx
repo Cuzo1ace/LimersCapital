@@ -88,7 +88,7 @@ const PERIODS = [
   { key: '5Y', label: '5Y', days: 1825 },
 ];
 
-export default function StockChart({ symbol, name, price, currency = 'USD', isTTSE = false }) {
+export default function StockChart({ symbol, name, price, currency = 'USD', isTTSE = false, realCandles = null }) {
   const [period, setPeriod] = useState('1Y');
 
   const periodDays = PERIODS.find(p => p.key === period)?.days || 365;
@@ -96,10 +96,12 @@ export default function StockChart({ symbol, name, price, currency = 'USD', isTT
 
   const chartData = useMemo(() => {
     if (!price || !symbol) return [];
+    // Use real candles if available for this period, else fall back to seeded generation
+    if (realCandles?.[period]?.length) return realCandles[period];
     let data = generateOHLCV(symbol, price, periodDays, vol);
     if (period === '5Y') data = aggregateWeekly(data);
     return data;
-  }, [symbol, price, periodDays, vol, period]);
+  }, [symbol, price, periodDays, vol, period, realCandles]);
 
   const currLabel = currency === 'TTD' ? 'TT$' : '$';
   const accentColor = isTTSE ? '#FF4D6D' : '#00C8B4';
@@ -176,7 +178,9 @@ export default function StockChart({ symbol, name, price, currency = 'USD', isTT
             </button>
           ))}
         </div>
-        <span className="text-[.62rem] text-muted">Simulated · Educational</span>
+        <span className="text-[.62rem] text-muted">
+          {realCandles?.[period]?.length ? '📡 Live · DexScreener' : 'Simulated · Educational'}
+        </span>
       </div>
 
       {/* Chart */}

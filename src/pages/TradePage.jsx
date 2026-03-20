@@ -16,7 +16,7 @@ function TokenLogo({ src, symbol, col }) {
   );
 }
 import { useQuery } from '@tanstack/react-query';
-import { fetchTradePrices, fetchHeliusTokenLogos, HELIUS_LOGO_MINTS, SOL_TOKENS } from '../api/prices';
+import { fetchTradePrices, fetchHeliusTokenLogos, HELIUS_LOGO_MINTS, SOL_TOKENS, fetchCandleData } from '../api/prices';
 import { TTSE_FALLBACK } from '../api/ttse';
 import { fetchTTSEData } from '../api/ttse';
 import StockChart from '../components/StockChart';
@@ -55,7 +55,7 @@ const SOLFLARE_ORANGE = '#FC5602';
 const WAM_LINK = 'https://wam.money/';
 
 export default function TradePage() {
-  const { balanceUSD, balanceTTD, holdings, trades, executeTrade, walletConnected } = useStore();
+  const { balanceUSD, balanceTTD, holdings, trades, executeTrade, walletConnected, watchlist, toggleWatchlist } = useStore();
   const marketQ = useQuery({
     queryKey: ['trade-prices'],
     queryFn: fetchTradePrices,
@@ -74,11 +74,32 @@ export default function TradePage() {
   });
   const heliusLogos = heliusLogosQ.data || {}; // { mint: logoUrl }
 
+  // Real candle data from DexScreener — fetched per selected Solana token, cached 5min
+  const CANDLE_PERIODS = ['1M', '3M', '6M', '1Y', '5Y'];
+  const candleQueries = CANDLE_PERIODS.map(p =>
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useQuery({
+      queryKey: ['candles', selectedId, p],
+      queryFn: () => fetchCandleData(selectedId, p),
+      staleTime: 5 * 60 * 1000,
+      enabled: !!selectedId && market === 'solana',
+      retry: 0,
+    })
+  );
+  const realCandles = useMemo(() => {
+    const map = {};
+    CANDLE_PERIODS.forEach((p, i) => {
+      if (candleQueries[i].data?.length) map[p] = candleQueries[i].data;
+    });
+    return Object.keys(map).length ? map : null;
+  }, [candleQueries.map(q => q.data).join(',')]);
+
   const [market, setMarket] = useState('solana'); // 'solana' | 'ttse'
   const [side, setSide] = useState('buy');
   const [selectedId, setSelectedId] = useState('');
   const [qty, setQty] = useState('');
   const [message, setMessage] = useState(null);
+  const [assetFilter, setAssetFilter] = useState('all'); // 'all' | 'watchlist'
 
   const isTTSE = market === 'ttse';
   const currency = isTTSE ? 'TTD' : 'USD';
@@ -109,6 +130,17 @@ export default function TradePage() {
       };
     });
   }, [isTTSE, solTokens, ttseStocks, heliusLogos]);
+
+  const visibleAssets = useMemo(() => {
+    const list = assetFilter === 'watchlist'
+      ? assets.filter(a => watchlist.includes(a.symbol))
+      : [...assets].sort((a, b) => {
+          const aw = watchlist.includes(a.symbol) ? 0 : 1;
+          const bw = watchlist.includes(b.symbol) ? 0 : 1;
+          return aw - bw;
+        });
+    return list;
+  }, [assets, watchlist, assetFilter]);
 
   const selected = assets.find(a => a.id === selectedId);
   const price = selected?.price ?? null;
@@ -242,34 +274,67 @@ export default function TradePage() {
               </span>
             </div>
 
+            {/* Watchlist filter tabs */}
+            <div className="flex gap-1.5 mb-3">
+              <button onClick={() => setAssetFilter('all')}
+                className={`px-3 py-1 rounded-md text-[.65rem] font-mono cursor-pointer border transition-all
+                  ${assetFilter === 'all' ? 'bg-sea/12 border-sea/35 text-sea' : 'border-border text-muted hover:text-txt'}`}>
+                All
+              </button>
+              {watchlist.length > 0 && (
+                <button onClick={() => setAssetFilter('watchlist')}
+                  className={`px-3 py-1 rounded-md text-[.65rem] font-mono cursor-pointer border transition-all flex items-center gap-1
+                    ${assetFilter === 'watchlist' ? 'bg-[rgba(255,202,58,.1)] border-sun/35 text-sun' : 'border-border text-muted hover:text-txt'}`}>
+                  ★ Watchlist ({watchlist.length})
+                </button>
+              )}
+            </div>
+
             {/* Asset list as clickable rows */}
             <div className="max-h-[200px] md:max-h-[280px] overflow-y-auto mb-4 border border-border rounded-xl">
               <div className="grid items-center gap-2 px-3 py-1.5 text-[.62rem] text-muted uppercase tracking-widest border-b border-border sticky top-0 z-10"
-                style={{ gridTemplateColumns: isTTSE ? '1.5fr 1fr .8fr .8fr' : '24px 1.5fr 1fr .8fr', background: 'var(--color-night-2)' }}>
+                style={{ gridTemplateColumns: isTTSE ? '1.5fr 1fr .8fr .8fr' : '16px 24px 1.5fr 1fr .8fr', background: 'var(--color-night-2)' }}>
+                {!isTTSE && <span />}
                 {!isTTSE && <span />}
                 <span>Asset</span>
                 <span>Price</span>
                 <span>24h</span>
                 {isTTSE && <span>Vol</span>}
               </div>
-              {assets.map(a => (
-                <div key={a.id}
-                  onClick={() => setSelectedId(a.id)}
-                  className={`grid items-center gap-2 px-3 py-2 cursor-pointer text-[.76rem] border-b border-white/3 transition-all hover:bg-sea/5
-                    ${selectedId === a.id ? (isTTSE ? 'bg-[rgba(200,16,46,.08)]' : 'bg-sea/8') : ''}`}
-                  style={{ gridTemplateColumns: isTTSE ? '1.5fr 1fr .8fr .8fr' : '24px 1.5fr 1fr .8fr' }}>
-                  {!isTTSE && <TokenLogo src={a.image} symbol={a.symbol} col={a.col} />}
-                  <div className="min-w-0">
-                    <span className="font-sans font-bold text-[.78rem]">{a.symbol}</span>
-                    <span className="text-muted text-[.6rem] ml-1 truncate">{a.name.length > 16 ? a.name.slice(0, 16) + '…' : a.name}</span>
+              {visibleAssets.map(a => {
+                const starred = watchlist.includes(a.symbol);
+                return (
+                  <div key={a.id}
+                    onClick={() => setSelectedId(a.id)}
+                    className={`grid items-center gap-2 px-3 py-2 cursor-pointer text-[.76rem] border-b border-white/3 transition-all hover:bg-sea/5
+                      ${selectedId === a.id ? (isTTSE ? 'bg-[rgba(200,16,46,.08)]' : 'bg-sea/8') : ''}`}
+                    style={{ gridTemplateColumns: isTTSE ? '1.5fr 1fr .8fr .8fr' : '16px 24px 1.5fr 1fr .8fr' }}>
+                    {!isTTSE && (
+                      <button
+                        onClick={e => { e.stopPropagation(); toggleWatchlist(a.symbol); }}
+                        className="text-[.75rem] leading-none cursor-pointer bg-transparent border-none p-0 transition-all hover:scale-125"
+                        style={{ color: starred ? '#FFCA3A' : 'rgba(90,120,160,0.5)' }}>
+                        {starred ? '★' : '☆'}
+                      </button>
+                    )}
+                    {!isTTSE && <TokenLogo src={a.image} symbol={a.symbol} col={a.col} />}
+                    <div className="min-w-0">
+                      <span className="font-sans font-bold text-[.78rem]">{a.symbol}</span>
+                      <span className="text-muted text-[.6rem] ml-1 truncate">{a.name.length > 16 ? a.name.slice(0, 16) + '…' : a.name}</span>
+                    </div>
+                    <span className="font-sans font-bold text-[.78rem]">{fmtPrice(a.price)}</span>
+                    <span className={`text-[.7rem] ${(a.change || 0) >= 0 ? 'text-up' : 'text-down'}`}>
+                      {a.change != null ? ((a.change >= 0 ? '+' : '') + a.change.toFixed(2) + '%') : '—'}
+                    </span>
+                    {isTTSE && <span className="text-muted text-[.68rem]">{(a.volume || 0).toLocaleString()}</span>}
                   </div>
-                  <span className="font-sans font-bold text-[.78rem]">{fmtPrice(a.price)}</span>
-                  <span className={`text-[.7rem] ${(a.change || 0) >= 0 ? 'text-up' : 'text-down'}`}>
-                    {a.change != null ? ((a.change >= 0 ? '+' : '') + a.change.toFixed(2) + '%') : '—'}
-                  </span>
-                  {isTTSE && <span className="text-muted text-[.68rem]">{(a.volume || 0).toLocaleString()}</span>}
+                );
+              })}
+              {assetFilter === 'watchlist' && visibleAssets.length === 0 && (
+                <div className="px-4 py-6 text-center text-muted text-[.72rem]">
+                  No tokens starred yet — click ☆ to add to watchlist
                 </div>
-              ))}
+              )}
             </div>
 
             {/* Bid/Ask Order Book */}
@@ -329,6 +394,7 @@ export default function TradePage() {
                 price={selected.price}
                 currency={currency}
                 isTTSE={isTTSE}
+                realCandles={isTTSE ? null : realCandles}
               />
             </div>
           )}

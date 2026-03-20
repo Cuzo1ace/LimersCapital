@@ -4,7 +4,7 @@ import { fetchSolanaMarketData, fetchSolPrice } from '../api/prices';
 import { fetchTTSEData, TTSE_FALLBACK, TTD_RATE } from '../api/ttse';
 import useStore from '../store/useStore';
 import StockChart from '../components/StockChart';
-import PortfolioIndexChart from '../components/PortfolioIndexChart';
+import PortfolioValueChart from '../components/PortfolioValueChart';
 import WalletBalances from '../components/wallet/WalletBalances';
 import TransactionHistory from '../components/wallet/TransactionHistory';
 import { useWalletAddress, useWalletConnected, useUserProfile, useTradeLog } from '../solana/hooks';
@@ -199,9 +199,10 @@ export default function PortfolioPage() {
         />
       </div>
 
-      {/* Portfolio Index vs USD */}
+      {/* Portfolio Value Chart */}
       <div className="mb-6">
-        <PortfolioIndexChart
+        <PortfolioValueChart
+          trades={trades}
           holdings={holdings}
           solTokens={tokens}
           ttseStocks={stocks}

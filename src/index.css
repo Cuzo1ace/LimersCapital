@@ -61,6 +61,17 @@ body::after {
   to { transform: translateY(0); opacity: 1; }
 }
 
+/* Price ticker scroll */
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.ticker-scroll {
+  animation: ticker 45s linear infinite;
+  width: max-content;
+}
+.ticker-scroll:hover { animation-play-state: paused; }
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 5px; background: var(--color-night-2); }
 ::-webkit-scrollbar-thumb { background: var(--color-night-3); border-radius: 99px; }
