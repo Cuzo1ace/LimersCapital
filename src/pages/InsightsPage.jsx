@@ -6,6 +6,7 @@ import {
   fetchDeFiMarket, fetchTrending, fetchGlobalMarket,
   fetchJupiterQuote, fetchCaribFXRates, fetchCaribbeanGDP, fetchCryptoNews,
 } from '../api/insights';
+import { SkeletonRows, SkeletonCard } from '../components/ui/Skeleton';
 
 function fmt(n, dec = 2) {
   if (n == null) return '—';
@@ -123,13 +124,13 @@ export default function InsightsPage() {
       {/* ── Row 1: RWA Tokens + L1 Chains ────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <Card title="🏦 RWA Tokens" color="var(--color-sun)" source="CoinGecko · real-world-assets">
-          {rwaQ.isLoading && <Loader />}
+          {rwaQ.isLoading && <SkeletonRows count={6} cols={4} />}
           {rwaQ.data?.map(c => <TokenRow key={c.id} c={c} showVol />)}
           {rwaQ.isError && <Err msg={rwaQ.error.message} retry={rwaQ.refetch} />}
         </Card>
 
         <Card title="⛓️ Layer 1 Chains" color="var(--color-coral)" source="CoinGecko · layer-1">
-          {l1Q.isLoading && <Loader />}
+          {l1Q.isLoading && <SkeletonRows count={6} cols={4} />}
           {l1Q.data?.map(c => <TokenRow key={c.id} c={c} showVol />)}
           {l1Q.isError && <Err msg={l1Q.error.message} retry={l1Q.refetch} />}
         </Card>
@@ -138,13 +139,13 @@ export default function InsightsPage() {
       {/* ── Row 2: DeFi + Solana Protocols ────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <Card title="💎 DeFi Tokens" color="var(--color-sea)" source="CoinGecko · defi">
-          {defiQ.isLoading && <Loader />}
+          {defiQ.isLoading && <SkeletonRows count={6} cols={4} />}
           {defiQ.data?.map(c => <TokenRow key={c.id} c={c} showVol />)}
           {defiQ.isError && <Err msg={defiQ.error.message} retry={defiQ.refetch} />}
         </Card>
 
         <Card title="🔒 Solana DeFi TVL" color="var(--color-up)" source="DeFiLlama">
-          {protocolsQ.isLoading && <Loader />}
+          {protocolsQ.isLoading && <SkeletonRows count={6} cols={3} />}
           {protocolsQ.data?.map(p => (
             <div key={p.name} className="flex justify-between items-center py-[5px] border-b border-white/5 last:border-b-0 text-[.76rem]">
               <span className="text-txt-2">{p.name} <span className="text-muted text-[.6rem]">{p.category}</span></span>
@@ -161,7 +162,7 @@ export default function InsightsPage() {
       {/* ── Row 3: Trending + Jupiter Quote ───────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <Card title="🔥 Trending" color="var(--color-coral)" source="CoinGecko">
-          {trendingQ.isLoading && <Loader />}
+          {trendingQ.isLoading && <SkeletonRows count={8} cols={3} />}
           {trendingQ.data?.coins?.map(c => (
             <div key={c.id} className="flex items-center gap-2.5 py-[5px] border-b border-white/5 last:border-b-0">
               <img src={c.thumb} alt={c.symbol} className="w-5 h-5 rounded-full" />
@@ -207,7 +208,7 @@ export default function InsightsPage() {
               Quote
             </button>
           </div>
-          {jupLoading && <Loader />}
+          {jupLoading && <SkeletonRows count={4} cols={2} />}
           {jupResult && !jupResult.error && (
             <div className="bg-sea/5 border border-border rounded-xl p-3.5">
               <Row label="You send" value={jupResult.inAmount?.toFixed(4)} cls="text-txt" />
@@ -223,7 +224,7 @@ export default function InsightsPage() {
       {/* ── Row 4: Caribbean FX + GDP ─────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <Card title="💱 Caribbean FX Rates" color="var(--color-sun)" source="ExchangeRate-API">
-          {fxQ.isLoading && <Loader />}
+          {fxQ.isLoading && <SkeletonRows count={6} cols={2} />}
           {fxQ.data?.map(fx => (
             <div key={fx.code} className="flex justify-between items-center py-[5px] border-b border-white/5 last:border-b-0 text-[.76rem]">
               <span className="text-txt-2">USD → {fx.code} <span className="text-muted text-[.6rem]">{fx.name}</span></span>
@@ -234,7 +235,7 @@ export default function InsightsPage() {
         </Card>
 
         <Card title="🌍 Caribbean GDP Growth" color="var(--color-palm)" source="World Bank">
-          {gdpQ.isLoading && <Loader />}
+          {gdpQ.isLoading && <SkeletonRows count={5} cols={2} />}
           {gdpQ.data?.map(g => (
             <Row key={g.country} label={`${g.country} (${g.year})`}
               value={`${g.growth >= 0 ? '+' : ''}${g.growth.toFixed(1)}%`}
@@ -247,7 +248,11 @@ export default function InsightsPage() {
       {/* ── Row 5: Crypto News Feed ────────────────────────────── */}
       <div className="mb-4">
         <Card title="📰 Crypto News" color="var(--color-sea)" source="CoinGecko · latest">
-          {newsQ.isLoading && <Loader />}
+          {newsQ.isLoading && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+            </div>
+          )}
           {newsQ.isError && <Err msg={newsQ.error.message} retry={newsQ.refetch} />}
           {newsQ.data && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -316,7 +321,13 @@ function NewsItem({ item }) {
       className="flex flex-col gap-2 p-3 rounded-xl border border-white/6 hover:border-sea/30 hover:bg-sea/5 transition-all no-underline group"
       style={{ background: 'rgba(0,0,0,.15)' }}>
       {item.imageUrl && (
-        <img src={item.imageUrl} alt="" className="w-full h-[90px] object-cover rounded-lg opacity-80 group-hover:opacity-100 transition-opacity" />
+        <img
+          src={item.imageUrl}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="w-full h-[90px] object-cover rounded-lg opacity-80 group-hover:opacity-100 transition-opacity"
+        />
       )}
       <div className="flex items-center gap-1.5">
         <span className="text-[.6rem] text-sea bg-sea/10 rounded px-1.5 py-0.5 font-mono font-bold truncate max-w-[80px]">{item.source}</span>

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchSolanaMarketData, fetchSolPrice, fetchSolanaTVL } from '../api/prices';
+import { SkeletonRows } from '../components/ui/Skeleton';
 
 function fmt(n, decimals = 2) {
   if (n == null) return '—';
@@ -163,9 +164,8 @@ export default function MarketPage() {
 
       <div className="flex flex-col gap-0.5">
         {marketQ.isLoading && (
-          <div className="flex flex-col items-center gap-3.5 py-12 text-muted text-sm">
-            <div className="w-7 h-7 border-[3px] border-border border-t-sea rounded-full animate-spin" />
-            Loading market data...
+          <div className="flex flex-col gap-0.5 px-1">
+            <SkeletonRows count={12} cols={4} />
           </div>
         )}
         {marketQ.isError && (

@@ -98,6 +98,14 @@ const useStore = create(
           get().awardXP(25, 'Wallet connected!');
         }
         get().awardLP(50, 'Wallet connected', 'wallet');
+
+        // Apply any stashed referral code (Sybil guard: wallet is now verified)
+        const pending = get().pendingReferralCode;
+        if (pending && !get().lpReferrals.some(r => r.code === pending)) {
+          set({ lpReferrals: [...get().lpReferrals, { code: pending, timestamp: new Date().toISOString() }], pendingReferralCode: null });
+          get().awardLP(200, 'Referral bonus', 'referral');
+        }
+
         const s = get();
         identify(address, { tier: getTier(s.xp).name, xp: s.xp, limerPoints: s.limerPoints });
         track('wallet_connected', { address: address.slice(0, 8) + '…' });
@@ -298,6 +306,7 @@ const useStore = create(
       referralCode: null,
       lpReferrals: [],
       _lpMigrated: false,
+      pendingReferralCode: null, // Sybil guard: hold code until wallet connects
 
       awardLP: (baseAmount, reason, action) => {
         const state = get();
@@ -325,7 +334,22 @@ const useStore = create(
 
       applyReferral: (code) => {
         const state = get();
+        // Deduplicate — same code cannot be applied twice
         if (state.lpReferrals.some(r => r.code === code)) return;
+
+        // Sybil guard: wallet must be connected to earn referral LP.
+        // If not connected yet, stash the code and award when wallet connects.
+        if (!state.walletConnected) {
+          set({ pendingReferralCode: code });
+          set({ pendingToasts: [...get().pendingToasts, {
+            id: 'ref:pending:' + Date.now().toString(36),
+            type: 'xp',
+            title: '🔗 Connect Wallet to Claim',
+            message: 'Connect your Solana wallet to redeem your referral bonus',
+          }]});
+          return;
+        }
+
         set({ lpReferrals: [...state.lpReferrals, { code, timestamp: new Date().toISOString() }] });
         get().awardLP(200, 'Referral bonus', 'referral');
       },
@@ -431,6 +455,7 @@ const useStore = create(
         limerPoints: state.limerPoints, lpHistory: state.lpHistory,
         lpMultiplier: state.lpMultiplier, referralCode: state.referralCode,
         lpReferrals: state.lpReferrals, _lpMigrated: state._lpMigrated,
+        pendingReferralCode: state.pendingReferralCode,
         simulatedRevenue: state.simulatedRevenue,
         listingApplications: state.listingApplications,
         watchlist: state.watchlist,
