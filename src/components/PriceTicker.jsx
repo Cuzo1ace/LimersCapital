@@ -15,8 +15,9 @@ function fmtTTD(n) {
   return 'TT$' + Number(n).toFixed(2);
 }
 
-const FADE = 'linear-gradient(to right, rgba(10,22,40,0.95), transparent)';
-const FADE_R = 'linear-gradient(to left, rgba(10,22,40,0.95), transparent)';
+// Use CSS variable so fade works in both dark + light mode
+const FADE   = 'linear-gradient(to right, var(--color-night) 0%, transparent 100%)';
+const FADE_R = 'linear-gradient(to left,  var(--color-night) 0%, transparent 100%)';
 
 export default function PriceTicker() {
   const { data: tokens } = useQuery({

@@ -20,6 +20,7 @@ import useStore from './store/useStore';
 import LimerBridge from './components/solana/LimerBridge';
 import PriceAlertChecker from './components/PriceAlertChecker';
 import OnboardingTour from './components/OnboardingTour';
+import NetworkStatus from './components/NetworkStatus';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,10 +53,12 @@ function TabContent() {
 
 function StreakCheck() {
   const checkDailyStreak = useStore(s => s.checkDailyStreak);
-  const migrateToLP = useStore(s => s._migrateToLP);
+  const migrateToLP      = useStore(s => s._migrateToLP);
+  const incrementSession = useStore(s => s.incrementSession);
   useEffect(() => {
     try { checkDailyStreak(); } catch {}
     try { migrateToLP(); } catch {}
+    try { incrementSession(); } catch {}
   }, []);
   return null;
 }
@@ -88,6 +91,7 @@ function ThemeSync() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <NetworkStatus />
       <StreakCheck />
       <ReferralHandler />
       <ThemeSync />

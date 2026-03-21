@@ -60,7 +60,7 @@ function jupiterUrl(side, tokenMint) {
   if (!tokenMint) return 'https://jup.ag';
   const input  = side === 'buy'  ? USDC_MINT   : tokenMint;
   const output = side === 'buy'  ? tokenMint   : USDC_MINT;
-  return `https://jup.ag/swap/${input}-${output}`;
+  return `https://jup.ag/swap/${input}-${output}?slippage=0.5`;
 }
 
 export default function TradePage() {
@@ -89,6 +89,7 @@ export default function TradePage() {
   const [qty, setQty] = useState('');
   const [message, setMessage] = useState(null);
   const [assetFilter, setAssetFilter] = useState('all'); // 'all' | 'watchlist'
+  const [confirmPending, setConfirmPending] = useState(null); // { side, symbol, qty, price, total, fee, currency }
 
   // Real candle data from DexScreener — all 5 periods fetched together when a token is selected
   const candleQ = useQuery({
@@ -160,11 +161,23 @@ export default function TradePage() {
 
   const handleExecute = () => {
     const q = parseFloat(qty);
-    if (!q || q <= 0) { flash('error', 'Enter a valid quantity'); return; }
+    if (!q || q <= 0 || !isFinite(q)) { flash('error', 'Enter a valid quantity'); return; }
+    if (q > 1e9) { flash('error', 'Quantity too large'); return; }
     if (!selected) { flash('error', 'Select an asset first'); return; }
-    const result = executeTrade(side, selected.symbol, q, price, currency, market);
+    // Show confirmation modal instead of executing immediately
+    setConfirmPending({
+      side, symbol: selected.symbol, qty: q,
+      price, total: q * price, fee: q * price * 0.003, currency,
+    });
+  };
+
+  const handleConfirm = () => {
+    if (!confirmPending) return;
+    const { side: s, symbol, qty: q, price: p, currency: c } = confirmPending;
+    const result = executeTrade(s, symbol, q, p, c, market);
+    setConfirmPending(null);
     if (result.error) { flash('error', result.error); }
-    else { flash('success', `${side === 'buy' ? 'Bought' : 'Sold'} ${q} ${selected.symbol} @ ${fmtPrice(price)}`); setQty(''); }
+    else { flash('success', `${s === 'buy' ? 'Bought' : 'Sold'} ${q} ${symbol} @ ${fmtPrice(p)}`); setQty(''); }
   };
 
   function flash(type, text) {
@@ -172,8 +185,52 @@ export default function TradePage() {
     setTimeout(() => setMessage(null), 3500);
   }
 
+  const isFallback = ttseQ.data && ttseQ.data.live === false;
+
   return (
     <div>
+      {/* ── Trade Confirmation Modal ─────────────────────────── */}
+      {confirmPending && (
+        <div
+          role="dialog" aria-modal="true" aria-label="Confirm trade"
+          className="fixed inset-0 z-[500] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(4px)' }}
+          onClick={e => { if (e.target === e.currentTarget) setConfirmPending(null); }}
+        >
+          <div className="rounded-2xl border border-border max-w-sm w-full p-6 flex flex-col gap-4"
+            style={{ background: 'var(--color-night-2)' }}>
+            <div className="font-sans font-black text-[1rem] text-txt text-center">
+              {confirmPending.side === 'buy' ? '🟢 Confirm Buy' : '🔴 Confirm Sell'}
+            </div>
+            <div className="rounded-xl border border-border p-4 text-[.78rem] flex flex-col gap-2"
+              style={{ background: 'var(--color-card)' }}>
+              <div className="flex justify-between"><span className="text-muted">Asset</span><span className="text-txt font-bold">{confirmPending.symbol}</span></div>
+              <div className="flex justify-between"><span className="text-muted">Quantity</span><span className="text-txt font-bold">{confirmPending.qty}</span></div>
+              <div className="flex justify-between"><span className="text-muted">Price</span><span className="text-txt">{fmtPrice(confirmPending.price)}</span></div>
+              <div className="flex justify-between"><span className="text-muted">Fee (0.3%)</span><span className="text-muted">{fmtPrice(confirmPending.fee)}</span></div>
+              <div className="flex justify-between border-t border-border pt-2 mt-1">
+                <span className="text-txt font-bold">Total</span>
+                <span className={`font-black text-[.92rem] ${confirmPending.side === 'buy' ? 'text-up' : 'text-down'}`}>
+                  {fmtPrice(confirmPending.total)} {confirmPending.currency}
+                </span>
+              </div>
+            </div>
+            <div className="text-[.65rem] text-muted text-center">⚠️ Paper trading only — no real funds involved</div>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmPending(null)}
+                className="flex-1 py-2.5 rounded-xl border border-border bg-transparent text-muted text-[.78rem] font-mono cursor-pointer hover:text-txt transition-all">
+                Cancel
+              </button>
+              <button onClick={handleConfirm}
+                className={`flex-1 py-2.5 rounded-xl border-none text-[.82rem] font-sans font-bold cursor-pointer transition-all hover:brightness-90
+                  ${confirmPending.side === 'buy' ? 'bg-up text-night' : 'bg-down text-white'}`}>
+                {confirmPending.side === 'buy' ? 'Confirm Buy' : 'Confirm Sell'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Solflare Affiliate Banner */}
       <a href={SOLFLARE_LINK} target="_blank" rel="noopener noreferrer"
         className="no-underline block mb-4">
@@ -250,6 +307,14 @@ export default function TradePage() {
           <div className="text-[.72rem] text-muted mt-1">{ttseStocks.length} stocks tokenized</div>
         </div>
       </div>
+
+      {/* TTSE Stale Data Warning */}
+      {isFallback && market === 'ttse' && (
+        <div role="alert" className="rounded-xl border border-[#92400E]/40 bg-[#92400E]/10 text-[#FCD34D] text-[.74rem] font-mono px-4 py-2.5 mb-4 flex items-center gap-2">
+          <span aria-hidden="true">⚠️</span>
+          <span>Showing cached TTSE data (last updated 17 Mar 2026) — live feed unavailable</span>
+        </div>
+      )}
 
       {/* Market Toggle */}
       <div className="flex gap-2 mb-5">
@@ -510,10 +575,11 @@ export default function TradePage() {
 
           {/* Asset select */}
           <div className="flex flex-col gap-1">
-            <label className="text-[.65rem] text-muted uppercase tracking-wider">
+            <label htmlFor="trade-asset-select" className="text-[.65rem] text-muted uppercase tracking-wider">
               {isTTSE ? 'Stock' : 'Token'}
             </label>
-            <select value={selectedId} onChange={e => setSelectedId(e.target.value)}
+            <select id="trade-asset-select" value={selectedId} onChange={e => setSelectedId(e.target.value)}
+              aria-label={`Select ${isTTSE ? 'stock' : 'token'} to ${side}`}
               className="bg-black/30 border border-border text-txt rounded-lg px-3 py-2 font-mono text-[.78rem] outline-none">
               <option value="">— Select —</option>
               {assets.map(a => (
@@ -524,9 +590,10 @@ export default function TradePage() {
 
           {/* Quantity */}
           <div className="flex flex-col gap-1">
-            <label className="text-[.65rem] text-muted uppercase tracking-wider">Quantity</label>
-            <input type="number" value={qty} onChange={e => setQty(e.target.value)}
-              placeholder={isTTSE ? 'Shares' : '0.00'} min="0" step="any"
+            <label htmlFor="trade-qty-input" className="text-[.65rem] text-muted uppercase tracking-wider">Quantity</label>
+            <input id="trade-qty-input" type="number" value={qty} onChange={e => setQty(e.target.value)}
+              placeholder={isTTSE ? 'Shares' : '0.00'} min="0" max="1000000000" step="any"
+              aria-label={`Quantity to ${side}`}
               className="bg-black/30 border border-border text-txt rounded-lg px-3 py-2 font-mono text-[.78rem] outline-none focus:border-sea" />
           </div>
 

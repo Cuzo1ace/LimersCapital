@@ -148,6 +148,8 @@ export default function Header() {
             {/* Network toggle */}
             <button
               onClick={() => setCluster(cluster === 'devnet' ? 'mainnet-beta' : 'devnet')}
+              aria-label={`Switch to ${cluster === 'devnet' ? 'mainnet' : 'devnet'} — currently on ${clusterLabel}`}
+              title={`Switch to ${cluster === 'devnet' ? 'mainnet' : 'devnet'}`}
               className={`px-2.5 py-1 rounded-md text-[.65rem] uppercase tracking-widest font-mono cursor-pointer border transition-all
                 ${cluster === 'devnet'
                   ? 'text-[#FFB347] bg-[rgba(255,179,71,.08)] border-[rgba(255,179,71,.25)] hover:bg-[rgba(255,179,71,.15)]'
@@ -244,10 +246,11 @@ export default function Header() {
             {/* Theme toggle */}
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
               title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
               className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-muted hover:text-txt hover:border-white/20 transition-all cursor-pointer bg-transparent text-[.88rem]"
             >
-              {theme === 'dark' ? '☀️' : '🌙'}
+              <span aria-hidden="true">{theme === 'dark' ? '☀️' : '🌙'}</span>
             </button>
 
             {/* Live indicator */}

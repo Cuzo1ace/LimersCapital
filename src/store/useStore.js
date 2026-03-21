@@ -209,16 +209,49 @@ const useStore = create(
         });
       },
 
+      // ── Streak Shields ─────────────────────────────────────
+      streakShields: 1,
+      lastShieldRefill: null,
+
+      useStreakShield: () => {
+        const state = get();
+        if (state.streakShields <= 0) return false;
+        set({ streakShields: state.streakShields - 1 });
+        return true;
+      },
+
       checkDailyStreak: () => {
         const today = new Date().toISOString().split('T')[0];
         const state = get();
         if (state.lastLoginDate === today) return;
 
+        // Weekly shield refill (every 7 days)
+        const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+        if (!state.lastShieldRefill || state.lastShieldRefill <= weekAgo) {
+          set({ streakShields: Math.min(state.streakShields + 1, 2), lastShieldRefill: today });
+        }
+
         const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
         const isConsecutive = state.lastLoginDate === yesterday;
-        const newStreak = isConsecutive ? state.currentStreak + 1 : 1;
-        const newLongest = Math.max(newStreak, state.longestStreak);
 
+        let newStreak;
+        if (isConsecutive) {
+          newStreak = state.currentStreak + 1;
+        } else if (!isConsecutive && state.streakShields > 0 && state.currentStreak > 0) {
+          // Auto-apply shield silently to protect streak
+          newStreak = state.currentStreak;
+          set({ streakShields: get().streakShields - 1 });
+          set({ pendingToasts: [...get().pendingToasts, {
+            id: 'shield:' + Date.now().toString(36),
+            type: 'xp',
+            title: '🛡️ Streak Shield Used!',
+            message: `Your ${state.currentStreak}-day streak is protected`,
+          }]});
+        } else {
+          newStreak = 1;
+        }
+
+        const newLongest = Math.max(newStreak, state.longestStreak);
         set({ currentStreak: newStreak, lastLoginDate: today, longestStreak: newLongest });
         get().awardXP(XP_VALUES.dailyStreak, `Day ${newStreak} streak!`);
         get().awardLP(3 * newStreak, `Day ${newStreak} streak!`, 'streak');
@@ -340,6 +373,18 @@ const useStore = create(
         priceAlerts: s.priceAlerts.map(a => a.id === id ? { ...a, triggered: true } : a),
       })),
 
+      // ── Session Tracking ───────────────────────────────────
+      firstSessionDate: null,
+      sessionCount: 0,
+      incrementSession: () => {
+        const state = get();
+        const today = new Date().toISOString().split('T')[0];
+        set({
+          sessionCount: state.sessionCount + 1,
+          firstSessionDate: state.firstSessionDate || today,
+        });
+      },
+
       // ── Onboarding ─────────────────────────────────────────
       hasSeenOnboarding: false,
       setHasSeenOnboarding: (v) => set({ hasSeenOnboarding: v }),
@@ -380,6 +425,10 @@ const useStore = create(
         priceAlerts: state.priceAlerts,
         hasSeenOnboarding: state.hasSeenOnboarding,
         theme: state.theme,
+        streakShields: state.streakShields,
+        lastShieldRefill: state.lastShieldRefill,
+        firstSessionDate: state.firstSessionDate,
+        sessionCount: state.sessionCount,
       }),
     }
   )

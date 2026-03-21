@@ -6,7 +6,8 @@ import { LP_ACTIONS, generateLeaderboard, AIRDROP_POOL, SIMULATED_TOTAL_LP } fro
 const fmtNum = n => n.toLocaleString('en-US');
 
 export default function PointsPage() {
-  const { limerPoints, lpHistory, lpMultiplier, xp, referralCode, generateReferralCode, setActiveTab } = useStore();
+  const { limerPoints, lpHistory, lpMultiplier, xp, referralCode, generateReferralCode, setActiveTab,
+    currentStreak, streakShields, firstSessionDate, sessionCount } = useStore();
   const [copied, setCopied] = useState(false);
   useEffect(() => { if (!referralCode) generateReferralCode(); }, []);
   const tier = getTier(xp);
@@ -33,11 +34,37 @@ export default function PointsPage() {
   return (
     <div>
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-7">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-5">
         <StatCard icon="🍋" label="Limer Points" value={fmtNum(limerPoints)} color="#2D9B56" />
         <StatCard icon="🏆" label="Your Rank" value={`#${userRank}`} sub={`of ${leaderboard.length}`} color="#FFCA3A" />
         <StatCard icon={tier.icon} label="LP Multiplier" value={`${lpMultiplier}x`} sub={tier.name} color={tier.color} />
         <StatCard icon="🪂" label="Projected Airdrop" value={`${fmtNum(Math.floor(projectedAirdrop))} $LIMER`} sub="Based on current LP" color="#00C8B4" />
+      </div>
+
+      {/* Streak Shields */}
+      <div className="rounded-2xl border border-border p-5 mb-7 flex items-center gap-5 flex-wrap"
+        style={{ background: 'var(--color-card)' }}>
+        <div className="flex gap-1.5">
+          {[0,1].map(i => (
+            <span key={i} className={`text-2xl transition-all ${i < streakShields ? 'opacity-100' : 'opacity-20'}`}
+              title={i < streakShields ? 'Shield available' : 'Shield used'}>
+              🛡️
+            </span>
+          ))}
+        </div>
+        <div className="flex-1 min-w-[180px]">
+          <div className="font-sans font-bold text-[.88rem] text-txt mb-0.5">
+            Streak Shields — {streakShields}/2 available
+          </div>
+          <div className="text-[.73rem] text-txt-2 leading-relaxed">
+            Shields automatically protect your streak if you miss a day. You get 1 new shield each week.
+            {currentStreak > 0 && <span className="text-sea ml-1">Current streak: 🔥 {currentStreak} days</span>}
+          </div>
+        </div>
+        <div className="flex flex-col gap-1 text-[.65rem] text-muted text-right">
+          <span>Member since {firstSessionDate || '—'}</span>
+          <span>{sessionCount} sessions</span>
+        </div>
       </div>
 
       {/* LP vs XP */}
