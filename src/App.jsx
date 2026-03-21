@@ -4,6 +4,7 @@ import Header from './components/layout/Header';
 import PriceTicker from './components/PriceTicker';
 import ErrorBoundary from './components/ErrorBoundary';
 import RewardToast from './components/gamification/RewardToast';
+import DashboardPage from './pages/DashboardPage';
 import MarketPage from './pages/MarketPage';
 import TTSEPage from './pages/TTSEPage';
 import RegulationPage from './pages/RegulationPage';
@@ -21,6 +22,7 @@ import LimerBridge from './components/solana/LimerBridge';
 import PriceAlertChecker from './components/PriceAlertChecker';
 import OnboardingTour from './components/OnboardingTour';
 import NetworkStatus from './components/NetworkStatus';
+import { initAnalytics, track } from './analytics/track';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,7 +36,13 @@ const queryClient = new QueryClient({
 function TabContent() {
   const activeTab = useStore(s => s.activeTab);
 
+  // Fire page_viewed analytics on every tab change
+  useEffect(() => {
+    track('page_viewed', { tab: activeTab });
+  }, [activeTab]);
+
   switch (activeTab) {
+    case 'dashboard': return <DashboardPage />;
     case 'market': return <MarketPage />;
     case 'ttse': return <TTSEPage />;
     case 'regulation': return <RegulationPage />;
@@ -47,7 +55,7 @@ function TabContent() {
     case 'revenue': return <RevenuePage />;
     case 'community': return <CommunityPage />;
     case 'listing': return <ListingPage />;
-    default: return <MarketPage />;
+    default: return <DashboardPage />;
   }
 }
 
@@ -56,6 +64,7 @@ function StreakCheck() {
   const migrateToLP      = useStore(s => s._migrateToLP);
   const incrementSession = useStore(s => s.incrementSession);
   useEffect(() => {
+    initAnalytics();                         // PostHog CDN load if VITE_POSTHOG_KEY set
     try { checkDailyStreak(); } catch {}
     try { migrateToLP(); } catch {}
     try { incrementSession(); } catch {}

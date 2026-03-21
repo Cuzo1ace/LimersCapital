@@ -13,13 +13,14 @@ const SOLFLARE_LINK = 'https://www.solflare.com/?af_qr=true&shortlink=carribean&
 const WAM_LINK = 'https://wam.money/';
 
 const TABS = [
-  { id: 'regulation', label: 'Regulation', icon: '\u{1F5FA}\uFE0F' },
-  { id: 'learn', label: 'Learn', icon: '\u{1F4DA}' },
-  { id: 'ttse', label: 'TTSE', icon: '\u{1F1F9}\u{1F1F9}', ttse: true },
-  { id: 'trade', label: 'Paper Trade', icon: '\u{1F4B9}' },
-  { id: 'portfolio', label: 'Portfolio', icon: '\u{1F392}' },
-  { id: 'market', label: 'Solana', icon: '\u{1F4CA}' },
-  { id: 'insights', label: 'Insights', icon: '\u{1F310}' },
+  { id: 'dashboard',  label: 'Home',        icon: '🏠' },
+  { id: 'market',     label: 'Solana',      icon: '\u{1F4CA}' },
+  { id: 'ttse',       label: 'TTSE',        icon: '\u{1F1F9}\u{1F1F9}', ttse: true },
+  { id: 'trade',      label: 'Paper Trade', icon: '\u{1F4B9}' },
+  { id: 'portfolio',  label: 'Portfolio',   icon: '\u{1F392}' },
+  { id: 'learn',      label: 'Learn',       icon: '\u{1F4DA}' },
+  { id: 'regulation', label: 'Regulation',  icon: '\u{1F5FA}\uFE0F' },
+  { id: 'insights',   label: 'Insights',    icon: '\u{1F310}' },
 ];
 
 function shortenAddress(addr) {

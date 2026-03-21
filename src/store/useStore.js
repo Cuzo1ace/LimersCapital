@@ -4,6 +4,7 @@ import { getTier, XP_VALUES } from '../data/gamification';
 import { BADGES } from '../data/badges';
 import { MODULES } from '../data/modules';
 import { getLPMultiplier } from '../data/lp';
+import { track, identify, analyticsReset } from '../analytics/track';
 
 const INITIAL_USD = 100000;
 const INITIAL_TTD = 679000;
@@ -80,6 +81,7 @@ const useStore = create(
         if (volumeLP > 0) get().awardLP(volumeLP, `$${total.toFixed(0)} volume`, 'volume');
 
         get()._checkBadges();
+        track('trade_executed', { side, symbol, market, total: Math.round(total) });
         return { success: true };
       },
 
@@ -96,16 +98,23 @@ const useStore = create(
           get().awardXP(25, 'Wallet connected!');
         }
         get().awardLP(50, 'Wallet connected', 'wallet');
+        const s = get();
+        identify(address, { tier: getTier(s.xp).name, xp: s.xp, limerPoints: s.limerPoints });
+        track('wallet_connected', { address: address.slice(0, 8) + '…' });
       },
 
-      disconnectWallet: () => set({ walletAddress: null, walletConnected: false }),
+      disconnectWallet: () => {
+        track('wallet_disconnected');
+        analyticsReset();
+        set({ walletAddress: null, walletConnected: false });
+      },
 
       // ── Network ─────────────────────────────────────────────
       cluster: 'devnet',
       setCluster: (cluster) => set({ cluster }),
 
       // ── Navigation ──────────────────────────────────────────
-      activeTab: 'regulation',
+      activeTab: 'dashboard',
       setActiveTab: (tab) => set({ activeTab: tab }),
 
       // ── Gamification ────────────────────────────────────────
@@ -150,6 +159,7 @@ const useStore = create(
         get().awardLP(5, 'Lesson completed', 'lesson');
         get()._checkModuleComplete();
         get()._checkBadges();
+        track('lesson_completed', { lessonId, totalLessons: Object.keys(newRead).length });
       },
 
       submitQuizResult: (quizId, score, total) => {
@@ -175,6 +185,7 @@ const useStore = create(
 
         get()._checkModuleComplete();
         get()._checkBadges();
+        track('quiz_submitted', { quizId, score, total, passed, perfect });
       },
 
       _checkModuleComplete: () => {
@@ -205,6 +216,7 @@ const useStore = create(
               earnedBadges: [...get().earnedBadges, badge.id],
               pendingToasts: [...get().pendingToasts, { id: 'b:' + badge.id, type: 'badge', title: `${badge.icon} ${badge.title}`, message: badge.desc }],
             });
+            track('badge_earned', { badgeId: badge.id, badgeTitle: badge.title, category: badge.cat });
           }
         });
       },
