@@ -16,11 +16,17 @@ const HERMES_BASE = 'https://hermes.pyth.network/v2/updates/price/latest';
 const DEXSCREENER_BASE = 'https://api.dexscreener.com/tokens/v1/solana';
 
 // Helius — dedicated RPC + DAS API for on-chain token metadata / logos
-// API key stored in VITE_HELIUS_API_KEY (.env.local, never committed)
-const HELIUS_API_KEY = import.meta.env.VITE_HELIUS_API_KEY || '';
-export const HELIUS_RPC_URL = HELIUS_API_KEY
-  ? `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`
-  : 'https://api.mainnet-beta.solana.com'; // public fallback
+// API key is stored server-side in the Cloudflare Worker (limer-api-proxy).
+// The frontend NEVER sees the Helius key — all requests route through the proxy.
+const API_PROXY_URL = import.meta.env.VITE_API_PROXY_URL || '';
+const HELIUS_RPC_URL_DIRECT = import.meta.env.VITE_SOLANA_RPC_URL || '';
+export const HELIUS_RPC_URL = API_PROXY_URL
+  ? `${API_PROXY_URL}/rpc`           // Proxied — key stays server-side
+  : HELIUS_RPC_URL_DIRECT             // Fallback for local dev only
+  || 'https://api.mainnet-beta.solana.com';  // Public RPC last resort
+const HELIUS_DAS_URL = API_PROXY_URL
+  ? `${API_PROXY_URL}/das`
+  : HELIUS_RPC_URL;
 
 // Pyth Hermes feed IDs (verified live 2026-03-20)
 // zBTC tracks BTC oracle; WETH tracks ETH oracle; GOLD tracks XAU/spot gold
@@ -112,8 +118,10 @@ export function getTokenInfoForMint(mint) {
 // Returns { mint: logoUrl } for tokens with an image in their on-chain metadata.
 // staleTime should be long (24h) — token logos essentially never change.
 export async function fetchHeliusTokenLogos(mints) {
-  if (!HELIUS_API_KEY || !mints.length) return {};
-  const res = await fetch(HELIUS_RPC_URL, {
+  if (!mints.length) return {};
+  const dasUrl = HELIUS_DAS_URL || HELIUS_RPC_URL;
+  if (!dasUrl || dasUrl === 'https://api.mainnet-beta.solana.com') return {}; // public RPC has no DAS
+  const res = await fetch(dasUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

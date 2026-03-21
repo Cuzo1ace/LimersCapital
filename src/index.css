@@ -1,22 +1,28 @@
 @import "tailwindcss";
 
-/* ── Base theme ── */
+/* ── Veridian Night Theme ── */
 @theme {
-  --color-night: #0A1628;
-  --color-night-2: #111E38;
-  --color-night-3: #1A2D4F;
-  --color-sea: #00C8B4;
-  --color-sea-dk: #009E8E;
-  --color-coral: #FF5C4D;
+  --color-night: #0d0e10;
+  --color-night-2: #121316;
+  --color-night-3: #1e2022;
+  --color-sea: #00ffa3;
+  --color-sea-dk: #00ef99;
+  --color-coral: #bf81ff;
   --color-sun: #FFCA3A;
   --color-palm: #2D9B56;
-  --color-up: #1DCC8A;
-  --color-down: #FF4A6B;
-  --color-muted: #5B7A9A;
-  --color-txt: #E6F0FF;
-  --color-txt-2: #A0BAD8;
-  --color-card: rgba(17, 30, 56, 0.85);
-  --color-border: rgba(0, 200, 180, 0.18);
+  --color-up: #00ffa3;
+  --color-down: #ff716c;
+  --color-muted: #ababad;
+  --color-txt: #fdfbfe;
+  --color-txt-2: #ababad;
+  --color-card: rgba(18, 19, 22, 0.85);
+  --color-border: rgba(71, 72, 74, 0.4);
+  --color-surface-3: #181a1c;
+  --color-surface-4: #242629;
+  --color-purple: #bf81ff;
+  --font-headline: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'DM Mono', 'Courier New', monospace;
 }
 
 html, body, #root {
@@ -29,17 +35,16 @@ html, body, #root {
 body {
   background: var(--color-night);
   color: var(--color-txt);
-  font-family: 'DM Mono', 'Courier New', monospace;
+  font-family: var(--font-body);
 }
 
-/* Grid background effect */
+/* Caribbean circuit dot-grid background */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background:
-    repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(0,200,180,.04) 40px),
-    repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(0,200,180,.04) 40px);
+  background-image: radial-gradient(circle at 2px 2px, rgba(0,255,163,0.03) 1px, transparent 0);
+  background-size: 24px 24px;
   pointer-events: none;
   z-index: 0;
 }
@@ -49,35 +54,40 @@ body::after {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 120% 60% at 80% -10%, rgba(0,200,180,.12) 0%, transparent 60%),
-    radial-gradient(ellipse 80% 50% at -10% 80%, rgba(45,155,86,.09) 0%, transparent 60%);
+    radial-gradient(ellipse 120% 60% at 80% -10%, rgba(0,255,163,.08) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 50% at -10% 80%, rgba(191,129,255,.06) 0%, transparent 60%);
   pointer-events: none;
   z-index: 0;
 }
 
+/* Selection */
+::selection {
+  background: #00ffa3;
+  color: #0d0e10;
+}
+
 /* ── Light theme overrides ── */
 html.light body {
-  background: #EFF4FB;
+  background: #f5f5f5;
 }
 html.light body::before {
-  background:
-    repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(0,150,135,.05) 40px),
-    repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(0,150,135,.05) 40px);
+  background-image: radial-gradient(circle at 2px 2px, rgba(0,0,0,0.04) 1px, transparent 0);
+  background-size: 24px 24px;
 }
 html.light body::after {
   background:
-    radial-gradient(ellipse 120% 60% at 80% -10%, rgba(0,200,180,.08) 0%, transparent 60%),
-    radial-gradient(ellipse 80% 50% at -10% 80%, rgba(45,155,86,.06) 0%, transparent 60%);
+    radial-gradient(ellipse 120% 60% at 80% -10%, rgba(0,255,163,.05) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 50% at -10% 80%, rgba(191,129,255,.04) 0%, transparent 60%);
 }
 html.light {
-  --color-night: #EFF4FB;
-  --color-night-2: #E2EAF6;
-  --color-night-3: #CDD9EE;
-  --color-txt: #0E1E3A;
-  --color-txt-2: #2E4A78;
-  --color-muted: #6080A8;
-  --color-card: rgba(225, 236, 252, 0.9);
-  --color-border: rgba(0, 160, 145, 0.22);
+  --color-night: #f5f5f5;
+  --color-night-2: #ebebeb;
+  --color-night-3: #d4d4d4;
+  --color-txt: #1a1a1a;
+  --color-txt-2: #555555;
+  --color-muted: #888888;
+  --color-card: rgba(235, 235, 235, 0.9);
+  --color-border: rgba(71, 72, 74, 0.2);
 }
 
 /* Toast animation */
@@ -108,5 +118,53 @@ html.light {
 .ticker-scroll-rev:hover { animation-play-state: paused; }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 5px; background: var(--color-night-2); }
+::-webkit-scrollbar { width: 4px; background: var(--color-night-2); }
 ::-webkit-scrollbar-thumb { background: var(--color-night-3); border-radius: 99px; }
+
+/* ── Veridian glow utilities ── */
+.neon-glow-primary {
+  box-shadow: 0 0 15px rgba(0,255,163,0.2);
+}
+.neon-glow-secondary {
+  box-shadow: 0 0 15px rgba(191,129,255,0.2);
+}
+.neon-glow-primary-strong {
+  box-shadow: 0 0 20px rgba(0,255,163,0.35), 0 0 40px rgba(0,255,163,0.1);
+}
+
+/* ── GlowingEffect border component ── */
+.glow {
+  position: absolute;
+  inset: calc(-1 * var(--glowingeffect-border-width, 1px));
+  width: calc(100% + 2 * var(--glowingeffect-border-width, 1px));
+  height: calc(100% + 2 * var(--glowingeffect-border-width, 1px));
+}
+.glow::after {
+  position: absolute;
+  content: "";
+  inset: calc(-1 * var(--glowingeffect-border-width, 1px));
+  border: var(--glowingeffect-border-width, 1px) solid transparent;
+  border-radius: inherit;
+  background: var(--gradient);
+  background-attachment: fixed;
+  opacity: var(--active, 0);
+  transition: opacity 0.3s;
+  mask-clip: padding-box, border-box;
+  -webkit-mask-clip: padding-box, border-box;
+  mask-composite: intersect;
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(#0000, #0000),
+    conic-gradient(
+      from calc((var(--start, 0) - var(--spread, 20)) * 1deg),
+      #00000000 0deg,
+      #fff,
+      #00000000 calc(var(--spread, 20) * 2deg)
+    );
+  -webkit-mask-image: linear-gradient(#0000, #0000),
+    conic-gradient(
+      from calc((var(--start, 0) - var(--spread, 20)) * 1deg),
+      #00000000 0deg,
+      #fff,
+      #00000000 calc(var(--spread, 20) * 2deg)
+    );
+}

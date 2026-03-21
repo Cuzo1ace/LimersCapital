@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchSolanaMarketData, fetchSolPrice, fetchSolanaTVL } from '../api/prices';
 import { SkeletonRows } from '../components/ui/Skeleton';
+import GlowCard from '../components/ui/GlowCard';
+import GradientDots from '../components/ui/GradientDots';
+import FinancialTable, { PerfPill, Sparkline, fmtCurrency } from '../components/ui/FinancialTable';
 
 function fmt(n, decimals = 2) {
   if (n == null) return '—';
@@ -57,16 +60,24 @@ export default function MarketPage() {
   return (
     <div>
       {/* Hero */}
-      <div className="rounded-2xl p-9 mb-7 grid grid-cols-1 md:grid-cols-2 gap-9 items-center overflow-hidden relative border border-border"
-        style={{ background: 'linear-gradient(135deg, var(--color-night-2) 0%, rgba(0,200,180,.05) 100%)' }}>
+      <div className="rounded-xl p-9 mb-7 grid grid-cols-1 md:grid-cols-2 gap-9 items-center overflow-hidden relative border border-border"
+        style={{ background: 'linear-gradient(135deg, var(--color-night-2) 0%, rgba(0,255,163,.05) 100%)' }}>
+        <GradientDots
+          dotSize={6}
+          spacing={14}
+          duration={35}
+          colorCycleDuration={8}
+          backgroundColor="transparent"
+          className="opacity-12 pointer-events-none rounded-xl"
+        />
         <div>
           <div className="inline-block bg-sea/12 border border-sea/30 rounded-full text-[.68rem] text-sea px-3 py-0.5 tracking-widest uppercase mb-3.5">
             Limer's Capital — Solana × RWA Markets
           </div>
-          <h1 className="font-serif text-[2.6rem] font-black leading-[1.05] text-txt mb-3.5">
+          <h1 className="font-headline text-[2.6rem] font-black leading-[1.05] text-txt mb-3.5">
             The Future is<br /><em className="italic text-sea">On-Chain</em>
           </h1>
-          <p className="font-mono text-txt-2 text-[.82rem] leading-relaxed">
+          <p className="font-body text-txt-2 text-[.82rem] leading-relaxed">
             Trade tokenized real-world assets — bonds, funds, stablecoins — 24/7 on Solana.
             No broker, no minimum. Start paper trading today.
           </p>
@@ -86,10 +97,10 @@ export default function MarketPage() {
       {/* DeFiLlama Solana Dashboard */}
       <div className="mb-7">
         <SectionHead title="Solana DeFi Dashboard" label="DeFiLlama · Live" />
-        <div className="rounded-2xl border border-border overflow-hidden" style={{ background: 'var(--color-card)' }}>
+        <div className="rounded-xl border border-border overflow-hidden" style={{ background: 'var(--color-card)' }}>
           <div className="flex items-center justify-between px-5 py-3 border-b border-border">
             <div>
-              <div className="font-sans font-bold text-[.88rem] text-txt">Solana Chain Overview</div>
+              <div className="font-body font-bold text-[.88rem] text-txt">Solana Chain Overview</div>
               <div className="text-[.65rem] text-muted">TVL, protocols, and chain metrics</div>
             </div>
             <a href="https://defillama.com/chain/solana" target="_blank" rel="noopener"
@@ -112,10 +123,10 @@ export default function MarketPage() {
       {/* DeFiLlama Solana RWA Dashboard */}
       <div className="mb-7">
         <SectionHead title="Solana RWA Dashboard" label="DeFiLlama · Real-World Assets" />
-        <div className="rounded-2xl border border-sea/20 overflow-hidden" style={{ background: 'var(--color-card)' }}>
+        <div className="rounded-xl border border-sea/20 overflow-hidden" style={{ background: 'var(--color-card)' }}>
           <div className="flex items-center justify-between px-5 py-3 border-b border-sea/15">
             <div>
-              <div className="font-sans font-bold text-[.88rem] text-sun">Real-World Assets on Solana</div>
+              <div className="font-body font-bold text-[.88rem] text-sun">Real-World Assets on Solana</div>
               <div className="text-[.65rem] text-muted">Tokenized treasuries, bonds, and RWA protocols</div>
             </div>
             <a href="https://defillama.com/rwa/chain/solana" target="_blank" rel="noopener"
@@ -149,85 +160,133 @@ export default function MarketPage() {
         }
       />
 
-      {/* Header row — 4 cols mobile / 7 cols desktop */}
-      <div className="grid gap-2 md:gap-3.5 items-center px-4 py-1 text-[.68rem] text-muted uppercase tracking-widest
-        [grid-template-columns:44px_2fr_1.1fr_.9fr]
-        md:[grid-template-columns:44px_2fr_1.1fr_.9fr_1fr_1fr_1.1fr]">
-        <span />
-        <span>Token</span>
-        <span>Price</span>
-        <span>24h</span>
-        <span className="hidden md:block">Market Cap</span>
-        <span className="hidden md:block">Volume</span>
-        <span className="hidden md:block">Category</span>
-      </div>
-
-      <div className="flex flex-col gap-0.5">
-        {marketQ.isLoading && (
-          <div className="flex flex-col gap-0.5 px-1">
-            <SkeletonRows count={12} cols={4} />
-          </div>
-        )}
-        {marketQ.isError && (
-          <div className="text-coral text-sm text-center py-9">
-            Failed to load: {marketQ.error.message}. <button onClick={() => marketQ.refetch()} className="text-sea underline cursor-pointer bg-transparent border-none font-mono">Retry</button>
-          </div>
-        )}
-        {marketQ.data?.map(token => {
-          const meta = TOKEN_META[token.id] || { sym: token.symbol.toUpperCase(), cat: token._cat || '—' };
-          const catCls = CAT_CLS[meta.cat] || 'text-muted border-muted/20 bg-muted/7';
-          const col = token._col || '#5B7A9A';
-          return (
-            <div
-              key={token.id}
-              className="grid gap-2 md:gap-3.5 items-center rounded-xl px-3 md:px-4 py-3 border border-border cursor-pointer transition-all hover:border-sea/35 hover:translate-x-[3px]
-                [grid-template-columns:44px_2fr_1.1fr_.9fr]
-                md:[grid-template-columns:44px_2fr_1.1fr_.9fr_1fr_1fr_1.1fr]"
-              style={{ background: 'var(--color-card)' }}
-            >
-              {token.image
-                ? <img src={token.image} alt={meta.sym} className="w-9 h-9 rounded-full" />
-                : <div className="w-9 h-9 rounded-full flex items-center justify-center text-[.65rem] font-extrabold"
-                    style={{ background: col + '22', color: col }}>{meta.sym.slice(0, 3)}</div>
-              }
-              <div className="min-w-0">
-                <div className="font-sans font-bold text-[.88rem]">{meta.sym}</div>
-                <div className="text-[.68rem] text-muted truncate">{token.name}</div>
-                {/* Category shown inline on mobile */}
-                <span className={`md:hidden text-[.6rem] px-1.5 py-0.5 rounded-full border whitespace-nowrap ${catCls}`}>
-                  {meta.cat}
+      {marketQ.isLoading && (
+        <div className="flex flex-col gap-0.5 px-1">
+          <SkeletonRows count={12} cols={4} />
+        </div>
+      )}
+      {marketQ.isError && (
+        <div className="text-coral text-sm text-center py-9">
+          Failed to load: {marketQ.error.message}. <button onClick={() => marketQ.refetch()} className="text-sea underline cursor-pointer bg-transparent border-none font-mono">Retry</button>
+        </div>
+      )}
+      {marketQ.data && (
+        <FinancialTable
+          title="Token"
+          getRowId={(r) => r.id}
+          rows={marketQ.data}
+          columns={[
+            {
+              key: 'token',
+              label: 'Token',
+              width: '2.2fr',
+              render: (token) => {
+                const meta = TOKEN_META[token.id] || { sym: token.symbol.toUpperCase(), cat: token._cat || '—' };
+                const col = token._col || '#5B7A9A';
+                return (
+                  <div className="flex items-center gap-3 min-w-0">
+                    {token.image
+                      ? <img src={token.image} alt={meta.sym} className="w-8 h-8 rounded-full flex-shrink-0" />
+                      : <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-[.6rem] font-extrabold"
+                          style={{ background: col + '22', color: col }}>{meta.sym.slice(0, 3)}</div>
+                    }
+                    <div className="min-w-0">
+                      <div className="font-body font-bold text-[.85rem] text-txt">{meta.sym}</div>
+                      <div className="text-[.65rem] text-muted truncate">{token.name}</div>
+                    </div>
+                  </div>
+                );
+              },
+            },
+            {
+              key: 'price',
+              label: 'Price',
+              width: '1fr',
+              render: (token) => (
+                <span className="font-mono font-bold text-[.82rem] text-txt">
+                  {fmt(token.current_price, token.current_price < 0.01 ? 6 : 2)}
                 </span>
-              </div>
-              <div className="font-sans font-bold text-[.88rem]">{fmt(token.current_price, token.current_price < 0.01 ? 6 : 2)}</div>
-              <ChgPill value={token.price_change_percentage_24h} />
-              <div className="hidden md:block text-[.8rem] text-txt-2">{token.market_cap ? fmt(token.market_cap) : '—'}</div>
-              <div className="hidden md:block text-[.8rem] text-txt-2">{token.total_volume ? fmt(token.total_volume) : '—'}</div>
-              <span className={`hidden md:inline-block text-[.65rem] px-2 py-0.5 rounded-full border text-center whitespace-nowrap ${catCls}`}>
-                {meta.cat}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+              ),
+            },
+            {
+              key: 'change24h',
+              label: '24h',
+              width: '.9fr',
+              render: (token) => <PerfPill value={token.price_change_percentage_24h} />,
+            },
+            {
+              key: 'sparkline',
+              label: '7d',
+              width: '80px',
+              hideOnMobile: true,
+              render: (token) => {
+                const data = token.sparkline_in_7d?.price;
+                if (data && data.length > 10) {
+                  const sampled = data.filter((_, i) => i % Math.ceil(data.length / 20) === 0);
+                  return <Sparkline data={sampled} width={64} height={22} />;
+                }
+                return <Sparkline data={null} width={64} height={22} />;
+              },
+            },
+            {
+              key: 'market_cap',
+              label: 'Market Cap',
+              width: '1fr',
+              hideOnMobile: true,
+              render: (token) => (
+                <span className="text-[.78rem] text-txt-2 font-mono">
+                  {token.market_cap ? fmtCurrency(token.market_cap) : '—'}
+                </span>
+              ),
+            },
+            {
+              key: 'volume',
+              label: 'Volume',
+              width: '1fr',
+              hideOnMobile: true,
+              render: (token) => (
+                <span className="text-[.78rem] text-txt-2 font-mono">
+                  {token.total_volume ? fmtCurrency(token.total_volume) : '—'}
+                </span>
+              ),
+            },
+            {
+              key: 'category',
+              label: 'Category',
+              width: '.8fr',
+              hideOnMobile: true,
+              render: (token) => {
+                const meta = TOKEN_META[token.id] || { sym: token.symbol.toUpperCase(), cat: token._cat || '—' };
+                const catCls = CAT_CLS[meta.cat] || 'text-muted border-muted/20 bg-muted/7';
+                return (
+                  <span className={`text-[.62rem] px-2 py-0.5 rounded-full border whitespace-nowrap ${catCls}`}>
+                    {meta.cat}
+                  </span>
+                );
+              },
+            },
+          ]}
+        />
+      )}
     </div>
   );
 }
 
 function StatCard({ label, value, change, sub, up }) {
   return (
-    <div className="bg-sea/6 border border-border rounded-xl p-4">
+    <GlowCard className="bg-sea/6 border border-border rounded-xl p-4" proximity={80} spread={40}>
       <div className="text-[.68rem] text-muted uppercase tracking-widest mb-1.5">{label}</div>
-      <div className="font-sans text-[1.45rem] font-extrabold text-txt">{value}</div>
+      <div className="font-body text-[1.45rem] font-extrabold text-txt">{value}</div>
       {change != null && <ChgPill value={change} />}
       {sub && <div className={`text-[.72rem] mt-1 ${up ? 'text-up' : 'text-muted'}`}>{up ? '▲ ' : ''}{sub}</div>}
-    </div>
+    </GlowCard>
   );
 }
 
 function SectionHead({ title, label, action }) {
   return (
     <div className="flex items-center justify-between mb-4">
-      <h2 className="font-sans text-[.92rem] font-bold uppercase tracking-widest text-txt">{title}</h2>
+      <h2 className="font-headline text-[.92rem] font-bold uppercase tracking-widest text-txt">{title}</h2>
       <div className="flex gap-2 items-center">
         {label && <span className="text-[.68rem] text-muted px-2.5 py-0.5 border border-white/8 rounded-full">{label}</span>}
         {action}

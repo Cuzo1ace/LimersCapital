@@ -25,14 +25,14 @@ export default function PriceAlerts() {
   }
 
   return (
-    <div className="rounded-2xl border border-border overflow-hidden" style={{ background: 'var(--color-card)' }}>
+    <div className="rounded-xl border border-border overflow-hidden" style={{ background: 'var(--color-card)' }}>
       {/* Header */}
       <button
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between px-5 py-3 border-b border-border hover:bg-white/2 transition-colors cursor-pointer"
       >
         <div className="flex items-center gap-2">
-          <span className="text-[.82rem] font-sans font-bold uppercase tracking-widest text-txt">🔔 Price Alerts</span>
+          <span className="text-[.82rem] font-body font-bold uppercase tracking-widest text-txt">🔔 Price Alerts</span>
           {active.length > 0 && (
             <span className="px-1.5 py-0.5 rounded-full text-[.6rem] font-mono bg-sea/15 text-sea border border-sea/25">
               {active.length} active

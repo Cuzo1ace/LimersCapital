@@ -1,10 +1,10 @@
 export const TIERS = [
   { level: 1, xp: 0,    name: 'Sand Walker',       color: '#C2A878', icon: '👣' },
-  { level: 2, xp: 200,  name: 'Reef Spotter',      color: '#00C8B4', icon: '🪸' },
+  { level: 2, xp: 200,  name: 'Reef Spotter',      color: '#00ffa3', icon: '🪸' },
   { level: 3, xp: 500,  name: 'Trade Wind',        color: '#2D9B56', icon: '🌴' },
   { level: 4, xp: 1000, name: 'Island Navigator',  color: '#FFCA3A', icon: '🧭' },
-  { level: 5, xp: 2000, name: 'Caribbean Captain',color: '#FF5C4D', icon: '⚓' },
-  { level: 6, xp: 3500, name: 'Limer Legend',      color: '#00C8B4', icon: '👑' },
+  { level: 5, xp: 2000, name: 'Caribbean Captain',color: '#bf81ff', icon: '⚓' },
+  { level: 6, xp: 3500, name: 'Limer Legend',      color: '#00ffa3', icon: '👑' },
 ];
 
 export function getTier(xp) {

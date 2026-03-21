@@ -27,6 +27,8 @@ const TRUSTED_RPC_DOMAINS = [
   'genesysgo.net',
   'ankr.com',
   'alchemy.com',
+  'workers.dev',       // Cloudflare Workers (our API proxy)
+  'limerscapital.com', // Our own domain
   'localhost',
   '127.0.0.1',
 ];

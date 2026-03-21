@@ -12,13 +12,13 @@ const SOLFLARE_LINK = 'https://www.solflare.com/?af_qr=true&shortlink=carribean&
 
 const MAIN_TABS = [
   { id: 'dashboard',  label: 'Home',       icon: '🏠' },
-  { id: 'market',     label: 'Solana',     icon: '📊' },
+  { id: 'regulation', label: 'Regulation', icon: '🗺️' },
+  { id: 'learn',      label: 'Learn',      icon: '📚' },
   { id: 'ttse',       label: 'TTSE',       icon: '🇹🇹', ttse: true },
+  { id: 'insights',   label: 'Insights',   icon: '🌐' },
+  { id: 'market',     label: 'Solana',     icon: '📊' },
   { id: 'trade',      label: 'Trade',      icon: '💹' },
   { id: 'portfolio',  label: 'Portfolio',  icon: '🎒' },
-  { id: 'learn',      label: 'Learn',      icon: '📚' },
-  { id: 'regulation', label: 'Regulation', icon: '🗺️' },
-  { id: 'insights',   label: 'Insights',   icon: '🌐' },
 ];
 
 const LIMER_TABS = [
@@ -58,9 +58,9 @@ export default function MobileNav({ open, onClose, isConnected, displayAddress, 
 
       {/* Drawer — slides up from bottom */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-[70] rounded-t-3xl border-t border-border overflow-hidden"
+        className="fixed bottom-0 left-0 right-0 z-[70] rounded-t-2xl border-t border-border overflow-hidden"
         style={{
-          background: 'rgba(10,22,40,.98)',
+          background: 'rgba(13,14,16,.98)',
           maxHeight: '88vh',
           boxShadow: '0 -8px 40px rgba(0,0,0,.6)',
         }}
@@ -106,7 +106,7 @@ export default function MobileNav({ open, onClose, isConnected, displayAddress, 
                 <button
                   key={tab.id}
                   onClick={() => navigate(tab.id)}
-                  className={`flex items-center gap-2.5 rounded-xl px-4 py-3.5 text-[.8rem] font-mono uppercase tracking-wide border-none cursor-pointer transition-all text-left
+                  className={`flex items-center gap-2.5 rounded-xl px-4 py-3.5 text-[.8rem] font-headline uppercase tracking-wide border-none cursor-pointer transition-all text-left
                     ${activeTab === tab.id
                       ? tab.ttse
                         ? 'text-[#FF4D6D] bg-[rgba(200,16,46,.12)]'
@@ -127,7 +127,7 @@ export default function MobileNav({ open, onClose, isConnected, displayAddress, 
                 <button
                   key={tab.id}
                   onClick={() => navigate(tab.id)}
-                  className={`flex items-center gap-2.5 rounded-xl px-4 py-3 text-[.78rem] font-mono uppercase tracking-wide border-none cursor-pointer transition-all text-left
+                  className={`flex items-center gap-2.5 rounded-xl px-4 py-3 text-[.78rem] font-headline uppercase tracking-wide border-none cursor-pointer transition-all text-left
                     ${activeTab === tab.id
                       ? 'text-[#2D9B56] bg-[rgba(45,155,86,.12)]'
                       : 'text-txt-2 bg-white/4 hover:bg-white/8'
@@ -145,7 +145,7 @@ export default function MobileNav({ open, onClose, isConnected, displayAddress, 
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setCluster(cluster === 'devnet' ? 'mainnet-beta' : 'devnet')}
-                  className={`flex-1 py-2.5 rounded-xl text-[.72rem] uppercase tracking-widest font-mono cursor-pointer border transition-all
+                  className={`flex-1 py-2.5 rounded-xl text-[.72rem] uppercase tracking-widest font-headline cursor-pointer border transition-all
                     ${cluster === 'devnet'
                       ? 'text-[#FFB347] bg-[rgba(255,179,71,.08)] border-[rgba(255,179,71,.25)]'
                       : 'text-up bg-up/8 border-up/25'
@@ -155,7 +155,7 @@ export default function MobileNav({ open, onClose, isConnected, displayAddress, 
                 </button>
                 <a href={WAM_LINK} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1.5 bg-[rgba(255,215,0,.08)] border border-[rgba(255,215,0,.28)]
-                    rounded-xl px-4 py-2.5 text-[.72rem] font-sans font-bold text-[#FFD700]
+                    rounded-xl px-4 py-2.5 text-[.72rem] font-body font-bold text-[#FFD700]
                     transition-all hover:bg-[rgba(255,215,0,.14)] no-underline cursor-pointer">
                   <span className="w-4 h-4 rounded bg-[#FFD700] flex items-center justify-center text-[.5rem] font-black text-night flex-shrink-0">W</span>
                   Wam
@@ -165,13 +165,13 @@ export default function MobileNav({ open, onClose, isConnected, displayAddress, 
               {/* Wallet button */}
               <button
                 onClick={() => { onWalletClick(); onClose(); }}
-                className={`w-full py-3 rounded-xl text-[.82rem] font-sans font-bold transition-all border-none cursor-pointer
+                className={`w-full py-3 rounded-xl text-[.82rem] font-body font-bold transition-all border-none cursor-pointer
                   ${isConnected
-                    ? 'bg-[linear-gradient(135deg,rgba(29,204,138,.18),rgba(29,204,138,.09))] border border-up/40 text-up'
+                    ? 'bg-[linear-gradient(135deg,rgba(0,255,163,.18),rgba(0,255,163,.09))] border border-up/40 text-up neon-glow-primary'
                     : 'bg-[linear-gradient(135deg,#FC5C3E,#FF8C42)] text-white'
                   }`}
                 style={isConnected
-                  ? { boxShadow: '0 0 12px rgba(29,204,138,.2)' }
+                  ? { boxShadow: '0 0 12px rgba(0,255,163,.2)' }
                   : { boxShadow: '0 0 20px rgba(252,92,62,.3)' }
                 }
               >

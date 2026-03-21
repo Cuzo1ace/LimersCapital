@@ -88,7 +88,7 @@ export default function PortfolioPage() {
       {walletConnected && walletAddress && (
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <h2 className="font-sans text-[.92rem] font-bold uppercase tracking-widest text-txt">
+            <h2 className="font-headline text-[.92rem] font-bold uppercase tracking-widest text-txt">
               On-Chain Wallet
             </h2>
             <span className={`px-2 py-0.5 rounded text-[.6rem] font-mono uppercase tracking-wider
@@ -108,21 +108,21 @@ export default function PortfolioPage() {
             </a>
           </div>
 
-          <div className="rounded-2xl border border-sea/20 p-5 mb-4" style={{ background: 'linear-gradient(135deg, rgba(0,200,180,.04), rgba(45,155,86,.02))' }}>
+          <div className="rounded-xl border border-sea/20 p-5 mb-4" style={{ background: 'linear-gradient(135deg, rgba(0,255,163,.04), rgba(45,155,86,.02))' }}>
             <WalletBalances walletAddress={walletAddress} solPrice={solPrice} />
           </div>
 
           <div className="mb-4">
-            <h3 className="font-sans text-[.78rem] font-bold uppercase tracking-widest mb-3 text-txt-2">Recent On-Chain Transactions</h3>
+            <h3 className="font-headline text-[.78rem] font-bold uppercase tracking-widest mb-3 text-txt-2">Recent On-Chain Transactions</h3>
             <TransactionHistory walletAddress={walletAddress} />
           </div>
 
           {/* Limer On-Chain Profile */}
           {profile?.initialized && (
-            <div className="rounded-2xl border border-[rgba(45,155,86,.2)] p-5 mb-4"
-              style={{ background: 'linear-gradient(135deg, rgba(45,155,86,.04), rgba(0,200,180,.02))' }}>
+            <div className="rounded-xl border border-[rgba(45,155,86,.2)] p-5 mb-4"
+              style={{ background: 'linear-gradient(135deg, rgba(45,155,86,.04), rgba(0,255,163,.02))' }}>
               <div className="flex items-center gap-2 mb-3">
-                <h3 className="font-sans text-[.78rem] font-bold uppercase tracking-widest text-[#2D9B56]">
+                <h3 className="font-headline text-[.78rem] font-bold uppercase tracking-widest text-[#2D9B56]">
                   Limer Profile (On-Chain)
                 </h3>
                 <a href={getAccountExplorerUrl(profile.address, cluster)}
@@ -134,28 +134,28 @@ export default function PortfolioPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="rounded-xl p-3 border border-border" style={{ background: 'var(--color-card)' }}>
                   <div className="text-[.6rem] text-muted uppercase tracking-widest mb-1">XP</div>
-                  <div className="font-serif text-[1.2rem] font-black text-txt">
+                  <div className="font-headline text-[1.2rem] font-black text-txt">
                     {profile.xp.toLocaleString()}
                   </div>
                   <div className="text-[.6rem] text-txt-2">{getTier(profile.xp).name} {getTier(profile.xp).icon}</div>
                 </div>
                 <div className="rounded-xl p-3 border border-border" style={{ background: 'var(--color-card)' }}>
                   <div className="text-[.6rem] text-muted uppercase tracking-widest mb-1">Limer Points</div>
-                  <div className="font-serif text-[1.2rem] font-black text-[#2D9B56]">
+                  <div className="font-headline text-[1.2rem] font-black text-[#2D9B56]">
                     {profile.limerPoints.toLocaleString()}
                   </div>
                   <div className="text-[.6rem] text-txt-2">LP</div>
                 </div>
                 <div className="rounded-xl p-3 border border-border" style={{ background: 'var(--color-card)' }}>
                   <div className="text-[.6rem] text-muted uppercase tracking-widest mb-1">Streak</div>
-                  <div className="font-serif text-[1.2rem] font-black text-txt">
+                  <div className="font-headline text-[1.2rem] font-black text-txt">
                     {profile.currentStreak}
                   </div>
                   <div className="text-[.6rem] text-txt-2">longest: {profile.longestStreak}</div>
                 </div>
                 <div className="rounded-xl p-3 border border-border" style={{ background: 'var(--color-card)' }}>
                   <div className="text-[.6rem] text-muted uppercase tracking-widest mb-1">Badges</div>
-                  <div className="font-serif text-[1.2rem] font-black text-txt">
+                  <div className="font-headline text-[1.2rem] font-black text-txt">
                     {/* Count set bits in bitmap */}
                     {(profile.badgesEarned >>> 0).toString(2).split('').filter(b => b === '1').length}
                   </div>
@@ -183,7 +183,7 @@ export default function PortfolioPage() {
 
           {/* Profile not initialized prompt */}
           {walletConnected && !profile?.initialized && !profileQ.isLoading && (
-            <div className="rounded-2xl border border-dashed border-[rgba(45,155,86,.3)] p-5 mb-4 text-center"
+            <div className="rounded-xl border border-dashed border-[rgba(45,155,86,.3)] p-5 mb-4 text-center"
               style={{ background: 'rgba(45,155,86,.03)' }}>
               <div className="text-[.85rem] text-txt mb-1">No on-chain profile yet</div>
               <div className="text-[.72rem] text-txt-2 mb-3">
@@ -235,7 +235,7 @@ export default function PortfolioPage() {
       {/* Price Chart */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-sans text-[.88rem] font-bold uppercase tracking-widest text-txt">📈 Price Chart</h3>
+          <h3 className="font-headline text-[.88rem] font-bold uppercase tracking-widest text-txt">📈 Price Chart</h3>
           {holdings.length > 0 && (
             <select
               value={chartAsset ? `${chartAsset.market}:${chartAsset.symbol}` : ''}
@@ -277,7 +277,7 @@ export default function PortfolioPage() {
       {/* Solana Holdings */}
       {solHoldings.length > 0 && (
         <div className="mb-6">
-          <h3 className="font-sans text-[.88rem] font-bold uppercase tracking-widest mb-3 text-txt">📊 Solana Positions</h3>
+          <h3 className="font-headline text-[.88rem] font-bold uppercase tracking-widest mb-3 text-txt">📊 Solana Positions</h3>
           <div className="flex flex-col gap-0.5">
             {solHoldings.map(h => {
               const t = tokens.find(t => t.symbol?.toUpperCase() === h.symbol?.toUpperCase());
@@ -286,7 +286,7 @@ export default function PortfolioPage() {
               return (
                 <div key={`sol:${h.symbol}`} className="flex items-center gap-2 md:gap-4 rounded-xl px-2.5 md:px-4 py-2.5 border border-border text-[.76rem]"
                   style={{ background: 'var(--color-card)' }}>
-                  <span className="font-sans font-bold w-14">{h.symbol}</span>
+                  <span className="font-body font-bold w-14">{h.symbol}</span>
                   <span className="text-txt-2 tabular-nums">{h.qty.toFixed(4)}</span>
                   <span className="hidden md:block text-txt-2">{fmtUSD(h.avgPrice)}</span>
                   <span className="text-txt tabular-nums">{fmtUSD(h.qty * cur)}</span>
@@ -301,7 +301,7 @@ export default function PortfolioPage() {
       {/* TTSE Holdings */}
       {ttseHoldings.length > 0 && (
         <div className="mb-6">
-          <h3 className="font-sans text-[.88rem] font-bold uppercase tracking-widest mb-3 text-[#FF4D6D]">🇹🇹 TTSE Positions</h3>
+          <h3 className="font-headline text-[.88rem] font-bold uppercase tracking-widest mb-3 text-[#FF4D6D]">🇹🇹 TTSE Positions</h3>
           <div className="flex flex-col gap-0.5">
             {ttseHoldings.map(h => {
               const s = stocks.find(s => s.sym === h.symbol);
@@ -310,7 +310,7 @@ export default function PortfolioPage() {
               return (
                 <div key={`ttse:${h.symbol}`} className="flex items-center gap-2 md:gap-4 rounded-xl px-2.5 md:px-4 py-2.5 border border-[rgba(200,16,46,.15)] text-[.76rem]"
                   style={{ background: 'var(--color-card)' }}>
-                  <span className="font-sans font-bold w-14">{h.symbol}</span>
+                  <span className="font-body font-bold w-14">{h.symbol}</span>
                   <span className="text-txt-2 tabular-nums">{h.qty.toFixed(0)} <span className="hidden md:inline">shares</span></span>
                   <span className="hidden md:block text-txt-2">{fmtTTD(h.avgPrice)}</span>
                   <span className="text-txt tabular-nums">{fmtTTD(h.qty * cur)}</span>
@@ -324,7 +324,7 @@ export default function PortfolioPage() {
 
       {/* Recent Activity */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-sans text-[.92rem] font-bold uppercase tracking-widest text-txt">All Activity</h2>
+        <h2 className="font-headline text-[.92rem] font-bold uppercase tracking-widest text-txt">All Activity</h2>
         <div className="flex gap-2">
           {trades.length > 0 && (
             <button onClick={() => exportCSV(trades)}
@@ -353,7 +353,7 @@ export default function PortfolioPage() {
               <span className={`text-[.58rem] px-1.5 py-0.5 rounded ${t.market === 'ttse' ? 'bg-[rgba(200,16,46,.08)] text-[#FF4D6D]' : 'bg-sea/8 text-sea'}`}>
                 {t.market === 'ttse' ? 'TTSE' : 'SOL'}
               </span>
-              <span className="font-sans font-bold flex-1">{t.symbol}</span>
+              <span className="font-body font-bold flex-1">{t.symbol}</span>
               <span className="text-txt-2">
                 {t.qty < 1 ? t.qty.toFixed(4) : t.qty.toFixed(2)} @ {t.currency === 'TTD' ? fmtTTD(t.price) : fmtUSD(t.price)}
               </span>
@@ -370,7 +370,7 @@ function DashCard({ label, value, sub, color }) {
   return (
     <div className="rounded-[14px] p-5 border border-border" style={{ background: 'var(--color-card)' }}>
       <div className="text-[.66rem] text-muted uppercase tracking-widest mb-1.5">{label}</div>
-      <div className={`font-serif text-[1.6rem] font-black ${color || 'text-txt'}`}>{value}</div>
+      <div className={`font-headline text-[1.6rem] font-black ${color || 'text-txt'}`}>{value}</div>
       {sub && <div className={`text-[.7rem] mt-0.5 ${color || 'text-txt-2'}`}>{sub}</div>}
     </div>
   );

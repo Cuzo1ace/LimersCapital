@@ -1,0 +1,17 @@
+# ── Limer's Capital — API Proxy Worker ──
+# Deploy:
+#   cd workers
+#   wrangler deploy api-proxy.js -c wrangler-api.toml
+#
+# Set secrets (one-time):
+#   wrangler secret put HELIUS_API_KEY -c wrangler-api.toml
+#
+# The HELIUS_API_KEY is NEVER exposed to the browser.
+# All Helius calls route through this worker.
+
+name = "limer-api-proxy"
+main = "api-proxy.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+ENVIRONMENT = "production"

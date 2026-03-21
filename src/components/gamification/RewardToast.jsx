@@ -3,7 +3,7 @@ import useStore from '../../store/useStore';
 import ShareCard from './ShareCard';
 
 const TYPE_STYLES = {
-  xp:     { border: 'var(--color-sea)', bg: 'rgba(0,200,180,.08)', icon: '⚡', color: '#00C8B4' },
+  xp:     { border: 'var(--color-sea)', bg: 'rgba(0,255,163,.08)', icon: '⚡', color: '#00ffa3' },
   lp:     { border: '#2D9B56', bg: 'rgba(45,155,86,.08)', icon: '🍋', color: '#2D9B56' },
   level:  { border: 'var(--color-sun)', bg: 'rgba(255,202,58,.08)', icon: '🎉', color: '#FFCA3A' },
   badge:  { border: 'var(--color-sun)', bg: 'rgba(255,202,58,.08)', icon: '🏅', color: '#FFCA3A' },
@@ -53,7 +53,7 @@ export default function RewardToast() {
         <div className="flex items-center gap-3">
           <span className="text-xl">{style.icon}</span>
           <div className="flex-1 min-w-0">
-            <div className="font-sans font-bold text-[.82rem] text-txt">{toast.title}</div>
+            <div className="font-body font-bold text-[.82rem] text-txt">{toast.title}</div>
             <div className="text-[.72rem] text-txt-2">{toast.message}</div>
           </div>
           {canShare && (

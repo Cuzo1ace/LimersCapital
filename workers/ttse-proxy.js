@@ -18,23 +18,38 @@
  *   VITE_TTSE_PROXY_URL=https://ttse-proxy.<your-subdomain>.workers.dev
  */
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
+const ALLOWED_ORIGINS = [
+  'https://www.limerscapital.com',
+  'https://limerscapital.com',
+  'https://caribcryptomap.pages.dev',
+  'http://localhost:3000',
+  'http://localhost:5173',
+];
+
+function getCorsHeaders(request) {
+  const origin = request.headers.get('Origin') || '';
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Vary': 'Origin',
+  };
+}
 
 const TTSE_URL = 'https://www.stockex.co.tt/market-quote/';
 
 export default {
   async fetch(request) {
+    const headers = getCorsHeaders(request);
+
     // Handle CORS preflight
     if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: CORS_HEADERS });
+      return new Response(null, { status: 204, headers });
     }
 
     if (request.method !== 'GET') {
-      return new Response('Method Not Allowed', { status: 405 });
+      return new Response('Method Not Allowed', { status: 405, headers });
     }
 
     try {
@@ -52,7 +67,7 @@ export default {
       if (!response.ok) {
         return new Response(`TTSE origin returned ${response.status}`, {
           status: 502,
-          headers: CORS_HEADERS,
+          headers,
         });
       }
 
@@ -63,7 +78,7 @@ export default {
         headers: {
           'Content-Type': 'text/html; charset=utf-8',
           'Cache-Control': 'public, max-age=300',
-          ...CORS_HEADERS,
+          ...headers,
         },
       });
     } catch (err) {

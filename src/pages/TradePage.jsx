@@ -1,4 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import GlowCard from '../components/ui/GlowCard';
+import LiquidMetalButton from '../components/ui/LiquidMetalButton';
 
 // Token logo with colored-initial fallback
 function TokenLogo({ src, symbol, col }) {
@@ -223,9 +225,9 @@ export default function TradePage() {
           style={{ background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(4px)' }}
           onClick={e => { if (e.target === e.currentTarget) setConfirmPending(null); }}
         >
-          <div className="rounded-2xl border border-border max-w-sm w-full p-6 flex flex-col gap-4"
+          <div className="rounded-xl border border-border max-w-sm w-full p-6 flex flex-col gap-4"
             style={{ background: 'var(--color-night-2)' }}>
-            <div className="font-sans font-black text-[1rem] text-txt text-center">
+            <div className="font-body font-black text-[1rem] text-txt text-center">
               {confirmPending.side === 'buy' ? '🟢 Confirm Buy' : '🔴 Confirm Sell'}
             </div>
             <div className="rounded-xl border border-border p-4 text-[.78rem] flex flex-col gap-2"
@@ -244,11 +246,11 @@ export default function TradePage() {
             <div className="text-[.65rem] text-muted text-center">⚠️ Paper trading only — no real funds involved</div>
             <div className="flex gap-3">
               <button onClick={() => setConfirmPending(null)}
-                className="flex-1 py-2.5 rounded-xl border border-border bg-transparent text-muted text-[.78rem] font-mono cursor-pointer hover:text-txt transition-all">
+                className="flex-1 py-2.5 rounded-xl border border-border bg-transparent text-muted text-[.78rem] font-headline cursor-pointer hover:text-txt transition-all">
                 Cancel
               </button>
               <button onClick={handleConfirm}
-                className={`flex-1 py-2.5 rounded-xl border-none text-[.82rem] font-sans font-bold cursor-pointer transition-all hover:brightness-90
+                className={`flex-1 py-2.5 rounded-xl border-none text-[.82rem] font-body font-bold cursor-pointer transition-all hover:brightness-90
                   ${confirmPending.side === 'buy' ? 'bg-up text-night' : 'bg-down text-white'}`}>
                 {confirmPending.side === 'buy' ? 'Confirm Buy' : 'Confirm Sell'}
               </button>
@@ -260,7 +262,7 @@ export default function TradePage() {
       {/* Solflare Affiliate Banner */}
       <a href={SOLFLARE_LINK} target="_blank" rel="noopener noreferrer"
         className="no-underline block mb-4">
-        <div className="rounded-2xl border p-4 flex items-center gap-4 transition-all hover:brightness-110 cursor-pointer"
+        <div className="rounded-xl border p-4 flex items-center gap-4 transition-all hover:brightness-110 cursor-pointer"
           style={{
             background: 'linear-gradient(135deg, rgba(252,86,2,.12) 0%, rgba(252,86,2,.04) 100%)',
             borderColor: 'rgba(252,86,2,.35)',
@@ -270,7 +272,7 @@ export default function TradePage() {
             <span className="text-white font-black text-[1rem]">☀</span>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-sans font-bold text-[.88rem]" style={{ color: SOLFLARE_ORANGE }}>
+            <div className="font-body font-bold text-[.88rem]" style={{ color: SOLFLARE_ORANGE }}>
               New to Solana? Get Solflare Wallet
             </div>
             <div className="text-[.72rem] text-txt-2 truncate">
@@ -278,7 +280,7 @@ export default function TradePage() {
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
-            <span className="text-[.68rem] uppercase tracking-widest font-mono px-3 py-1.5 rounded-lg border font-bold"
+            <span className="text-[.68rem] uppercase tracking-widest font-headline px-3 py-1.5 rounded-lg border font-bold"
               style={{ color: SOLFLARE_ORANGE, borderColor: 'rgba(252,86,2,.4)', background: 'rgba(252,86,2,.08)' }}>
               Free Download ↗
             </span>
@@ -288,11 +290,11 @@ export default function TradePage() {
 
       {/* Wallet Connection Banner */}
       {!walletConnected && (
-        <div className="rounded-2xl border border-sea/30 p-4 md:p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-5"
-          style={{ background: 'linear-gradient(135deg, rgba(0,200,180,.06), rgba(252,92,62,.04))' }}>
+        <div className="rounded-xl border border-sea/30 p-4 md:p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-5"
+          style={{ background: 'linear-gradient(135deg, rgba(0,255,163,.06), rgba(252,92,62,.04))' }}>
           <div className="text-3xl">🔗</div>
           <div className="flex-1">
-            <div className="font-sans font-bold text-[.92rem] text-txt mb-1">Connect your Solflare wallet to trade</div>
+            <div className="font-body font-bold text-[.92rem] text-txt mb-1">Connect your Solflare wallet to trade</div>
             <div className="text-[.75rem] text-txt-2 leading-relaxed">
               Use Solflare to access your Solana wallet, or top up your TTD account with Wam. Paper trading is available without a wallet.
             </div>
@@ -300,14 +302,14 @@ export default function TradePage() {
           <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0 w-full sm:w-auto">
             <a href={WAM_LINK} target="_blank" rel="noopener noreferrer"
               className="flex items-center justify-center gap-1.5 bg-[rgba(255,215,0,.08)] border border-[rgba(255,215,0,.28)]
-                rounded-lg px-4 py-2.5 text-[.75rem] font-sans font-bold text-[#FFD700] no-underline
+                rounded-lg px-4 py-2.5 text-[.75rem] font-body font-bold text-[#FFD700] no-underline
                 transition-all hover:bg-[rgba(255,215,0,.14)]">
               <span className="w-4 h-4 rounded bg-[#FFD700] flex items-center justify-center text-[.5rem] font-black text-night">W</span>
               Top up with Wam
             </a>
             <a href={SOLFLARE_LINK} target="_blank" rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 border-none no-underline
-                text-white px-4 py-2.5 rounded-lg text-[.75rem] font-sans font-extrabold cursor-pointer
+                text-white px-4 py-2.5 rounded-lg text-[.75rem] font-body font-extrabold cursor-pointer
                 transition-all hover:-translate-y-0.5"
               style={{ background: `linear-gradient(135deg, ${SOLFLARE_ORANGE}, #FF8C42)`, boxShadow: '0 0 20px rgba(252,86,2,.35)' }}>
               ☀ Get Solflare
@@ -318,18 +320,18 @@ export default function TradePage() {
 
       {/* Dual Balance Bar */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div className={`rounded-2xl p-6 border cursor-pointer transition-all ${market === 'solana' ? 'border-sea/40 ring-1 ring-sea/20' : 'border-border'}`}
-          style={{ background: 'linear-gradient(135deg, rgba(0,200,180,.1), rgba(45,155,86,.06))' }}
+        <div className={`rounded-xl p-6 border cursor-pointer transition-all ${market === 'solana' ? 'border-sea/40 ring-1 ring-sea/20' : 'border-border'}`}
+          style={{ background: 'linear-gradient(135deg, rgba(0,255,163,.1), rgba(45,155,86,.06))' }}
           onClick={() => { setMarket('solana'); setSelectedId(''); }}>
           <div className="text-[.68rem] text-muted uppercase tracking-widest mb-2">💵 USD Balance — Solana</div>
-          <div className="font-serif text-[2.2rem] font-black text-txt">{fmtUSD(balanceUSD)}</div>
+          <div className="font-headline text-[2.2rem] font-black text-txt">{fmtUSD(balanceUSD)}</div>
           <div className="text-[.72rem] text-muted mt-1">{solTokens.length} tokens available</div>
         </div>
-        <div className={`rounded-2xl p-6 border cursor-pointer transition-all ${market === 'ttse' ? 'border-[#FF4D6D]/40 ring-1 ring-[#FF4D6D]/20' : 'border-border'}`}
-          style={{ background: 'linear-gradient(135deg, rgba(200,16,46,.08), rgba(10,22,40,1))' }}
+        <div className={`rounded-xl p-6 border cursor-pointer transition-all ${market === 'ttse' ? 'border-[#FF4D6D]/40 ring-1 ring-[#FF4D6D]/20' : 'border-border'}`}
+          style={{ background: 'linear-gradient(135deg, rgba(200,16,46,.08), rgba(13,14,16,1))' }}
           onClick={() => { setMarket('ttse'); setSelectedId(''); }}>
           <div className="text-[.68rem] text-muted uppercase tracking-widest mb-2">🇹🇹 TTD Balance — TTSE Tokenized</div>
-          <div className="font-serif text-[2.2rem] font-black text-[#FF4D6D]">{fmtTTD(balanceTTD)}</div>
+          <div className="font-headline text-[2.2rem] font-black text-[#FF4D6D]">{fmtTTD(balanceTTD)}</div>
           <div className="text-[.72rem] text-muted mt-1">{ttseStocks.length} stocks tokenized</div>
         </div>
       </div>
@@ -345,13 +347,13 @@ export default function TradePage() {
       {/* Market Toggle */}
       <div className="flex gap-2 mb-5">
         <button onClick={() => { setMarket('solana'); setSelectedId(''); }}
-          className={`px-4 py-2 rounded-lg text-[.75rem] font-mono cursor-pointer border transition-all
+          className={`px-4 py-2 rounded-lg text-[.75rem] font-headline cursor-pointer border transition-all
             ${market === 'solana' ? 'bg-sea/12 border-sea/35 text-sea' : 'bg-transparent border-border text-muted hover:text-txt'}`}>
           📊 Solana Tokens
         </button>
         <FeatureLock featureKey="ttse_trading" hint="Complete Module 2 (Caribbean Markets) in Learn to unlock TTSE trading">
           <button onClick={() => { setMarket('ttse'); setSelectedId(''); }}
-            className={`px-4 py-2 rounded-lg text-[.75rem] font-mono cursor-pointer border transition-all
+            className={`px-4 py-2 rounded-lg text-[.75rem] font-headline cursor-pointer border transition-all
               ${market === 'ttse' ? 'bg-[rgba(200,16,46,.1)] border-[#FF4D6D]/35 text-[#FF4D6D]' : 'bg-transparent border-border text-muted hover:text-txt'}`}>
             🇹🇹 TTSE Stocks (Tokenized)
           </button>
@@ -362,9 +364,9 @@ export default function TradePage() {
         {/* Left: Order Book + Holdings */}
         <div>
           {/* Asset Selector + Order Book */}
-          <div className="rounded-2xl border border-border p-5 mb-5" style={{ background: 'var(--color-card)' }}>
+          <div className="rounded-xl border border-border p-5 mb-5" style={{ background: 'var(--color-card)' }}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-sans text-[.88rem] font-bold uppercase tracking-widest text-txt">
+              <h3 className="font-headline text-[.88rem] font-bold uppercase tracking-widest text-txt">
                 {isTTSE ? '🇹🇹 TTSE Order Book' : '📊 Solana Order Book'}
               </h3>
               <span className="text-[.62rem] text-muted px-2 py-0.5 border border-white/8 rounded-full">
@@ -375,13 +377,13 @@ export default function TradePage() {
             {/* Watchlist filter tabs */}
             <div className="flex gap-1.5 mb-3">
               <button onClick={() => setAssetFilter('all')}
-                className={`px-3 py-1 rounded-md text-[.65rem] font-mono cursor-pointer border transition-all
+                className={`px-3 py-1 rounded-md text-[.65rem] font-headline cursor-pointer border transition-all
                   ${assetFilter === 'all' ? 'bg-sea/12 border-sea/35 text-sea' : 'border-border text-muted hover:text-txt'}`}>
                 All
               </button>
               {watchlist.length > 0 && (
                 <button onClick={() => setAssetFilter('watchlist')}
-                  className={`px-3 py-1 rounded-md text-[.65rem] font-mono cursor-pointer border transition-all flex items-center gap-1
+                  className={`px-3 py-1 rounded-md text-[.65rem] font-headline cursor-pointer border transition-all flex items-center gap-1
                     ${assetFilter === 'watchlist' ? 'bg-[rgba(255,202,58,.1)] border-sun/35 text-sun' : 'border-border text-muted hover:text-txt'}`}>
                   ★ Watchlist ({watchlist.length})
                 </button>
@@ -427,10 +429,10 @@ export default function TradePage() {
                     )}
                     {!isTTSE && <TokenLogo src={a.image} symbol={a.symbol} col={a.col} />}
                     <div className="min-w-0">
-                      <span className="font-sans font-bold text-[.78rem]">{a.symbol}</span>
+                      <span className="font-body font-bold text-[.78rem]">{a.symbol}</span>
                       <span className="text-muted text-[.6rem] ml-1 truncate">{a.name.length > 16 ? a.name.slice(0, 16) + '…' : a.name}</span>
                     </div>
-                    <span className="font-sans font-bold text-[.78rem]">{fmtPrice(a.price)}</span>
+                    <span className="font-body font-bold text-[.78rem]">{fmtPrice(a.price)}</span>
                     <span className={`text-[.7rem] ${(a.change || 0) >= 0 ? 'text-up' : 'text-down'}`}>
                       {a.change != null ? ((a.change >= 0 ? '+' : '') + a.change.toFixed(2) + '%') : '—'}
                     </span>
@@ -475,7 +477,7 @@ export default function TradePage() {
                     ))}
                   </div>
                 </div>
-                <div className="text-center mt-2 py-1.5 rounded-lg text-[.68rem]" style={{ background: isTTSE ? 'rgba(200,16,46,.06)' : 'rgba(0,200,180,.06)' }}>
+                <div className="text-center mt-2 py-1.5 rounded-lg text-[.68rem]" style={{ background: isTTSE ? 'rgba(200,16,46,.06)' : 'rgba(0,255,163,.06)' }}>
                   <span className="text-muted">Spread: </span>
                   <span className={isTTSE ? 'text-[#FF4D6D]' : 'text-sea'}>
                     {orderBook.asks.length && orderBook.bids.length
@@ -515,7 +517,7 @@ export default function TradePage() {
           )}
 
           {/* Holdings for current market */}
-          <h3 className="font-sans text-[.88rem] font-bold uppercase tracking-widest mb-3 text-txt">
+          <h3 className="font-headline text-[.88rem] font-bold uppercase tracking-widest mb-3 text-txt">
             {isTTSE ? '🇹🇹 TTSE Holdings' : '📊 Solana Holdings'}
           </h3>
           {marketHoldings.length === 0 ? (
@@ -542,7 +544,7 @@ export default function TradePage() {
                       md:[grid-template-columns:1.5fr_1fr_1fr_1fr_90px]"
                     style={{ background: 'var(--color-card)' }}>
                     <div>
-                      <div className="font-sans font-bold text-[.84rem]">{h.symbol}</div>
+                      <div className="font-body font-bold text-[.84rem]">{h.symbol}</div>
                       {/* Show P&L inline on mobile */}
                       <div className={`md:hidden text-[.62rem] ${pnl >= 0 ? 'text-up' : 'text-down'}`}>
                         {pnl >= 0 ? '+' : ''}{pnl.toFixed(2)}%
@@ -573,14 +575,14 @@ export default function TradePage() {
           {/* Recent Trades */}
           {trades.filter(t => t.market === market).length > 0 && (
             <div className="mt-5">
-              <h3 className="font-sans text-[.88rem] font-bold uppercase tracking-widest mb-3 text-txt">Recent Trades</h3>
+              <h3 className="font-headline text-[.88rem] font-bold uppercase tracking-widest mb-3 text-txt">Recent Trades</h3>
               <div className="flex flex-col gap-1">
                 {trades.filter(t => t.market === market).slice(0, 8).map(t => (
                   <div key={t.id} className="flex items-center gap-3 rounded-xl px-4 py-2 border border-border text-[.74rem]"
                     style={{ background: 'var(--color-card)' }}>
                     <span className={`px-1.5 py-0.5 rounded text-[.62rem] font-semibold uppercase
                       ${t.side === 'buy' ? 'bg-up/12 text-up' : 'bg-down/12 text-down'}`}>{t.side}</span>
-                    <span className="font-sans font-bold flex-1">{t.symbol}</span>
+                    <span className="font-body font-bold flex-1">{t.symbol}</span>
                     <span className="text-txt-2">{t.qty < 1 ? t.qty.toFixed(6) : t.qty.toFixed(2)} @ {t.currency === 'TTD' ? fmtTTD(t.price) : fmtUSD(t.price)}</span>
                     <span className="text-muted text-[.65rem] ml-auto">{new Date(t.timestamp).toLocaleTimeString()}</span>
                   </div>
@@ -591,20 +593,20 @@ export default function TradePage() {
         </div>
 
         {/* Right: Order Panel */}
-        <div className="rounded-2xl p-5 flex flex-col gap-3.5 border h-fit sticky top-20"
+        <GlowCard className="rounded-xl p-5 flex flex-col gap-3.5 border h-fit sticky top-20" proximity={120} spread={30}
           style={{ background: 'var(--color-card)', borderColor: isTTSE ? 'rgba(200,16,46,.22)' : 'var(--color-border)' }}>
-          <h3 className="font-sans text-[.88rem] font-bold uppercase tracking-widest text-txt">
+          <h3 className="font-headline text-[.88rem] font-bold uppercase tracking-widest text-txt">
             {isTTSE ? '🇹🇹 TTSE Order' : '⚡ Solana Order'}
           </h3>
 
           {/* Buy/Sell */}
           <div className="flex rounded-lg overflow-hidden border border-border">
             <button onClick={() => setSide('buy')}
-              className={`flex-1 py-2 text-[.73rem] font-mono cursor-pointer border-none transition-all ${side === 'buy' ? 'bg-up/15 text-up' : 'bg-transparent text-muted'}`}>
+              className={`flex-1 py-2 text-[.73rem] font-headline cursor-pointer border-none transition-all ${side === 'buy' ? 'bg-up/15 text-up' : 'bg-transparent text-muted'}`}>
               Buy
             </button>
             <button onClick={() => setSide('sell')}
-              className={`flex-1 py-2 text-[.73rem] font-mono cursor-pointer border-none transition-all ${side === 'sell' ? 'bg-down/15 text-down' : 'bg-transparent text-muted'}`}>
+              className={`flex-1 py-2 text-[.73rem] font-headline cursor-pointer border-none transition-all ${side === 'sell' ? 'bg-down/15 text-down' : 'bg-transparent text-muted'}`}>
               Sell
             </button>
           </div>
@@ -612,18 +614,18 @@ export default function TradePage() {
           {/* Order Type — Market / Limit (Limit unlocked by Module 3) */}
           <div className="flex rounded-lg overflow-hidden border border-border">
             <button onClick={() => setOrderType('market')}
-              className={`flex-1 py-1.5 text-[.68rem] font-mono cursor-pointer border-none transition-all ${orderType === 'market' ? 'bg-sea/15 text-sea' : 'bg-transparent text-muted'}`}>
+              className={`flex-1 py-1.5 text-[.68rem] font-headline cursor-pointer border-none transition-all ${orderType === 'market' ? 'bg-sea/15 text-sea' : 'bg-transparent text-muted'}`}>
               Market
             </button>
             {hasLimitOrders ? (
               <button onClick={() => setOrderType('limit')}
-                className={`flex-1 py-1.5 text-[.68rem] font-mono cursor-pointer border-none transition-all ${orderType === 'limit' ? 'bg-sun/15 text-sun' : 'bg-transparent text-muted'}`}>
+                className={`flex-1 py-1.5 text-[.68rem] font-headline cursor-pointer border-none transition-all ${orderType === 'limit' ? 'bg-sun/15 text-sun' : 'bg-transparent text-muted'}`}>
                 Limit
               </button>
             ) : (
               <button
                 onClick={() => flash('error', 'Complete Module 3 in Learn to unlock Limit Orders')}
-                className="flex-1 py-1.5 text-[.68rem] font-mono cursor-pointer border-none text-muted/50 bg-transparent flex items-center justify-center gap-1"
+                className="flex-1 py-1.5 text-[.68rem] font-headline cursor-pointer border-none text-muted/50 bg-transparent flex items-center justify-center gap-1"
                 title="Complete Module 3 (Solana Ecosystem) to unlock">
                 🔒 Limit
               </button>
@@ -686,7 +688,7 @@ export default function TradePage() {
 
           {/* Preview */}
           <div className="rounded-lg p-3 text-[.74rem] border border-border"
-            style={{ background: isTTSE ? 'rgba(200,16,46,.04)' : 'rgba(0,200,180,.04)' }}>
+            style={{ background: isTTSE ? 'rgba(200,16,46,.04)' : 'rgba(0,255,163,.04)' }}>
             <PRow label="Price" value={fmtPrice(price)} />
             <PRow label="Qty" value={parseFloat(qty) || 0} />
             <PRow label="Fee (0.3%)" value={fmtPrice(fee)} />
@@ -701,18 +703,17 @@ export default function TradePage() {
             Available: {fmtPrice(balance)} {currency}
           </div>
 
-          <button
-            onClick={handleExecute}
-            disabled={!price || !qty || (orderType === 'limit' && !limitPrice)}
-            className={`w-full py-3 rounded-xl border-none cursor-pointer font-sans font-bold text-[.82rem] tracking-wide transition-all
-              ${orderType === 'limit'
-                ? 'bg-sun/90 text-night hover:brightness-90'
-                : side === 'buy' ? 'bg-up text-night hover:brightness-90' : 'bg-down text-white hover:brightness-90'}
-              disabled:opacity-40 disabled:cursor-not-allowed`}>
-            {orderType === 'limit'
-              ? `📋 Place Limit ${side === 'buy' ? 'Buy' : 'Sell'}`
-              : `${side === 'buy' ? 'Buy' : 'Sell'} ${selected?.symbol || ''}`}
-          </button>
+          <div className="flex justify-center">
+            <LiquidMetalButton
+              label={orderType === 'limit'
+                ? `📋 Place Limit ${side === 'buy' ? 'Buy' : 'Sell'}`
+                : `${side === 'buy' ? 'Buy' : 'Sell'} ${selected?.symbol || ''}`}
+              onClick={handleExecute}
+              disabled={!price || !qty || (orderType === 'limit' && !limitPrice)}
+              width={260}
+              height={48}
+            />
+          </div>
 
           {message && (
             <div className={`text-[.78rem] p-2.5 rounded-lg text-center ${message.type === 'success' ? 'text-up bg-up/8 border border-up/25' : 'text-down bg-down/8 border border-down/25'}`}>
@@ -730,11 +731,11 @@ export default function TradePage() {
               href={jupiterUrl(side, SOL_TOKENS[selected.symbol] || SOL_TOKENS[selected.symbol?.replace('zBTC','zBTC')])}
               target="_blank"
               rel="noopener noreferrer"
-              className="no-underline flex items-center justify-center gap-2 rounded-xl py-2.5 text-[.72rem] font-sans font-bold transition-all hover:brightness-110 border"
+              className="no-underline flex items-center justify-center gap-2 rounded-xl py-2.5 text-[.72rem] font-body font-bold transition-all hover:brightness-110 border"
               style={{
-                background: 'linear-gradient(135deg, rgba(0,200,180,.12), rgba(0,200,180,.05))',
-                borderColor: 'rgba(0,200,180,.35)',
-                color: '#00C8B4',
+                background: 'linear-gradient(135deg, rgba(0,255,163,.12), rgba(0,255,163,.05))',
+                borderColor: 'rgba(0,255,163,.35)',
+                color: '#00ffa3',
               }}
             >
               <span>⚡</span>
@@ -746,7 +747,7 @@ export default function TradePage() {
           {/* Solflare affiliate CTA */}
           {!isTTSE && (
             <a href={SOLFLARE_LINK} target="_blank" rel="noopener noreferrer"
-              className="no-underline flex items-center justify-center gap-2 rounded-xl py-2.5 text-[.72rem] font-sans font-bold transition-all hover:brightness-110 border"
+              className="no-underline flex items-center justify-center gap-2 rounded-xl py-2.5 text-[.72rem] font-body font-bold transition-all hover:brightness-110 border"
               style={{
                 background: 'linear-gradient(135deg, rgba(252,86,2,.1), rgba(252,86,2,.05))',
                 borderColor: 'rgba(252,86,2,.3)',
@@ -782,7 +783,7 @@ export default function TradePage() {
             </div>
           )}
 
-        </div>
+        </GlowCard>
       </div>
     </div>
   );

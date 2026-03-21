@@ -4,6 +4,10 @@ import { getTier, getNextTier, TIERS } from '../data/gamification';
 import { BADGES } from '../data/badges';
 import { fetchTradePrices } from '../api/prices';
 import { fmtUSD, fmtNum, fmtPct } from '../utils/format';
+import GlowCard from '../components/ui/GlowCard';
+import AchievementBadge from '../components/gamification/AchievementBadge';
+import LiquidMetalButton from '../components/ui/LiquidMetalButton';
+import GradientDots from '../components/ui/GradientDots';
 
 export default function DashboardPage() {
   const {
@@ -69,8 +73,17 @@ export default function DashboardPage() {
   return (
     <div>
       {/* ── Welcome Header ── */}
-      <div className="rounded-2xl p-6 md:p-8 mb-6 border border-border relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, var(--color-night-2) 0%, rgba(0,200,180,.06) 100%)' }}>
+      <div className="rounded-xl p-6 md:p-8 mb-6 border border-border relative overflow-hidden"
+        style={{ background: 'linear-gradient(135deg, var(--color-night-2) 0%, rgba(0,255,163,.06) 100%)' }}>
+        {/* Animated dot-grid background */}
+        <GradientDots
+          dotSize={6}
+          spacing={14}
+          duration={40}
+          colorCycleDuration={10}
+          backgroundColor="transparent"
+          className="opacity-15 pointer-events-none rounded-xl"
+        />
         {/* Decorative tier icon */}
         <div className="absolute right-6 top-4 text-[4rem] opacity-10 select-none pointer-events-none" aria-hidden="true">
           {tier.icon}
@@ -78,8 +91,8 @@ export default function DashboardPage() {
 
         <div className="flex items-start justify-between gap-4 flex-wrap mb-5">
           <div>
-            <div className="text-[.66rem] text-muted uppercase tracking-widest mb-1 font-mono">Your Status</div>
-            <h1 className="font-serif text-[2rem] font-black leading-tight" style={{ color: tier.color }}>
+            <div className="text-[.66rem] text-muted uppercase tracking-widest mb-1 font-headline">Your Status</div>
+            <h1 className="font-headline text-[2rem] font-black leading-tight" style={{ color: tier.color }}>
               {tier.icon} {tier.name}
             </h1>
             <div className="text-[.73rem] text-txt-2 mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -90,9 +103,9 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="text-right flex-shrink-0">
-            <div className="font-serif text-[1.9rem] font-black" style={{ color: '#2D9B56' }}>
+            <div className="font-headline text-[1.9rem] font-black" style={{ color: '#2D9B56' }}>
               {fmtNum(limerPoints)}
-              <span className="text-[.88rem] ml-1 font-sans font-bold text-muted">LP</span>
+              <span className="text-[.88rem] ml-1 font-body font-bold text-muted">LP</span>
             </div>
             <div className="text-[.7rem] text-muted">+{fmtNum(lpThisWeek)} this week</div>
             {lpMultiplier > 1 && (
@@ -103,7 +116,7 @@ export default function DashboardPage() {
 
         {/* XP Progress Bar */}
         <div>
-          <div className="flex justify-between text-[.64rem] text-muted mb-1.5 font-mono">
+          <div className="flex justify-between text-[.64rem] text-muted mb-1.5 font-headline">
             <span>{xp} XP</span>
             {nextTier
               ? <span>{nextTier.icon} {nextTier.name} in {nextTier.xp - xp} XP</span>
@@ -125,7 +138,7 @@ export default function DashboardPage() {
 
       {/* ── Quick Stats ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <QuickStat icon="💹" label="Trades" value={fmtNum(trades.length)} color="#00C8B4" onClick={() => setActiveTab('trade')} />
+        <QuickStat icon="💹" label="Trades" value={fmtNum(trades.length)} color="#00ffa3" onClick={() => setActiveTab('trade')} />
         <QuickStat icon="🎖️" label="Badges" value={`${earnedBadges.length}/25`} color="#FFCA3A" onClick={() => setActiveTab('learn')} />
         <QuickStat icon="📚" label="Modules" value={`${modulesCompleted.length}/4`} color="#2D9B56" onClick={() => setActiveTab('learn')} />
         <QuickStat icon="💰" label="USD Balance" value={fmtUSD(balanceUSD)} color="#9945FF" onClick={() => setActiveTab('portfolio')} />
@@ -135,8 +148,8 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
 
         {/* Market Pulse */}
-        <div className="rounded-2xl border border-border p-5" style={{ background: 'var(--color-card)' }}>
-          <div className="text-[.66rem] text-muted uppercase tracking-widest mb-4 font-mono">📊 Market Pulse — Top Movers</div>
+        <GlowCard className="rounded-xl border border-border p-5" style={{ background: 'var(--color-card)' }} proximity={100}>
+          <div className="text-[.66rem] text-muted uppercase tracking-widest mb-4 font-headline">📊 Market Pulse — Top Movers</div>
           {pricesQ.isLoading ? (
             <div className="flex flex-col gap-3">
               {[1,2,3,4].map(i => (
@@ -161,31 +174,32 @@ export default function DashboardPage() {
                 </div>
               ))}
               <button onClick={() => setActiveTab('market')}
-                className="mt-3 w-full text-[.72rem] text-sea font-mono bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity text-left">
+                className="mt-3 w-full text-[.72rem] text-sea font-headline bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity text-left">
                 View full market →
               </button>
             </div>
           )}
-        </div>
+        </GlowCard>
 
         {/* Next Action */}
-        <div className="rounded-2xl border border-sea/25 p-5 flex flex-col gap-4"
-          style={{ background: 'linear-gradient(135deg, rgba(0,200,180,.07), rgba(0,200,180,.02))' }}>
-          <div className="text-[.66rem] text-sea uppercase tracking-widest font-mono">🎯 Your Next Move</div>
+        <GlowCard className="rounded-xl border border-sea/25 p-5 flex flex-col gap-4" proximity={100}
+          style={{ background: 'linear-gradient(135deg, rgba(0,255,163,.07), rgba(0,255,163,.02))' }}>
+          <div className="text-[.66rem] text-sea uppercase tracking-widest font-headline">🎯 Your Next Move</div>
 
           <div className="flex-1 flex flex-col justify-between">
             <div>
               <div className="text-[1.4rem] mb-2">{nextAction.icon}</div>
-              <div className="font-sans font-bold text-[.95rem] text-txt mb-2">{nextAction.title}</div>
+              <div className="font-body font-bold text-[.95rem] text-txt mb-2">{nextAction.title}</div>
               <div className="text-[.75rem] text-txt-2 leading-relaxed">{nextAction.desc}</div>
             </div>
             {nextAction.tab && (
-              <button
-                onClick={() => setActiveTab(nextAction.tab)}
-                className="mt-4 w-full py-2.5 rounded-xl border-none font-sans font-bold text-[.8rem] cursor-pointer transition-all hover:brightness-90"
-                style={{ background: '#00C8B4', color: '#0A1628' }}>
-                {nextAction.cta} →
-              </button>
+              <div className="mt-4 flex justify-center">
+                <LiquidMetalButton
+                  label={`${nextAction.cta} →`}
+                  onClick={() => setActiveTab(nextAction.tab)}
+                  width={200}
+                />
+              </div>
             )}
           </div>
 
@@ -196,16 +210,16 @@ export default function DashboardPage() {
                 title={t.name}
                 style={{ background: xp >= t.xp ? t.color : 'rgba(255,255,255,.1)' }} />
             ))}
-            <span className="text-[.6rem] text-muted ml-1 font-mono">{tier.level}/6</span>
+            <span className="text-[.6rem] text-muted ml-1 font-headline">{tier.level}/6</span>
           </div>
-        </div>
+        </GlowCard>
       </div>
 
       {/* ── Recent Trades ── */}
       {trades.length > 0 && (
-        <div className="rounded-2xl border border-border p-5 mb-5" style={{ background: 'var(--color-card)' }}>
+        <div className="rounded-xl border border-border p-5 mb-5" style={{ background: 'var(--color-card)' }}>
           <div className="flex items-center justify-between mb-4">
-            <div className="text-[.66rem] text-muted uppercase tracking-widest font-mono">⏱ Recent Trades</div>
+            <div className="text-[.66rem] text-muted uppercase tracking-widest font-headline">⏱ Recent Trades</div>
             {holdings.length > 0 && (
               <div className={`text-[.72rem] font-mono font-bold px-2 py-0.5 rounded ${paperPnL >= 0 ? 'text-up bg-up/10' : 'text-down bg-down/10'}`}>
                 P&L {paperPnL >= 0 ? '+' : ''}{fmtUSD(paperPnL)}
@@ -231,7 +245,7 @@ export default function DashboardPage() {
             ))}
           </div>
           <button onClick={() => setActiveTab('portfolio')}
-            className="mt-3 w-full text-[.72rem] text-sea font-mono bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity text-left">
+            className="mt-3 w-full text-[.72rem] text-sea font-headline bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity text-left">
             Full portfolio & analytics →
           </button>
         </div>
@@ -239,24 +253,24 @@ export default function DashboardPage() {
 
       {/* ── Recent Badges ── */}
       {recentBadgeData.length > 0 && (
-        <div className="rounded-2xl border border-border p-5" style={{ background: 'var(--color-card)' }}>
+        <div className="rounded-xl border border-border p-5" style={{ background: 'var(--color-card)' }}>
           <div className="flex items-center justify-between mb-4">
-            <div className="text-[.66rem] text-muted uppercase tracking-widest font-mono">🎖 Recently Earned</div>
+            <div className="text-[.66rem] text-muted uppercase tracking-widest font-headline">🎖 Recently Earned</div>
             <button onClick={() => setActiveTab('learn')}
-              className="text-[.68rem] text-sea font-mono bg-transparent border-none cursor-pointer hover:opacity-70">
+              className="text-[.68rem] text-sea font-headline bg-transparent border-none cursor-pointer hover:opacity-70">
               All badges →
             </button>
           </div>
-          <div className="flex gap-3 flex-wrap">
+          <div className="grid grid-cols-3 gap-3">
             {recentBadgeData.map(b => (
-              <div key={b.id} className="flex items-center gap-2.5 rounded-xl border border-border px-3 py-2.5"
-                style={{ background: 'var(--color-night-2)' }}>
-                <span className="text-xl">{b.icon}</span>
-                <div>
-                  <div className="text-[.76rem] text-txt font-bold">{b.title}</div>
-                  <div className="text-[.64rem] text-muted">{b.desc}</div>
-                </div>
-              </div>
+              <AchievementBadge
+                key={b.id}
+                icon={b.icon}
+                title={b.title}
+                desc={b.desc}
+                cat={b.cat}
+                earned={true}
+              />
             ))}
           </div>
         </div>
@@ -264,23 +278,26 @@ export default function DashboardPage() {
 
       {/* Empty state for brand-new users */}
       {trades.length === 0 && earnedBadges.length === 0 && (
-        <div className="rounded-2xl border border-border p-8 text-center" style={{ background: 'var(--color-card)' }}>
+        <div className="rounded-xl border border-border p-8 text-center" style={{ background: 'var(--color-card)' }}>
           <div className="text-[3rem] mb-3">🌴</div>
-          <div className="font-sans font-bold text-[1rem] text-txt mb-2">Welcome to Limer's Capital</div>
+          <div className="font-body font-bold text-[1rem] text-txt mb-2">Welcome to Limer's Capital</div>
           <div className="text-[.78rem] text-txt-2 mb-5 max-w-sm mx-auto leading-relaxed">
             The Caribbean's Solana-native investment platform. Learn, paper trade, earn LP points, and get
             ready for the $LIMER token airdrop.
           </div>
-          <div className="flex gap-3 justify-center flex-wrap">
-            <button onClick={() => setActiveTab('learn')}
-              className="px-5 py-2.5 rounded-xl border-none font-sans font-bold text-[.8rem] cursor-pointer transition-all hover:brightness-90"
-              style={{ background: '#00C8B4', color: '#0A1628' }}>
-              📚 Start Learning
-            </button>
-            <button onClick={() => setActiveTab('market')}
-              className="px-5 py-2.5 rounded-xl border border-border font-sans font-bold text-[.8rem] cursor-pointer bg-transparent text-txt hover:border-white/30 transition-all">
-              📊 View Markets
-            </button>
+          <div className="flex gap-4 justify-center flex-wrap">
+            <LiquidMetalButton
+              label="Start Learning"
+              icon="📚"
+              onClick={() => setActiveTab('learn')}
+              width={180}
+            />
+            <LiquidMetalButton
+              label="View Markets"
+              icon="📊"
+              onClick={() => setActiveTab('market')}
+              width={180}
+            />
           </div>
         </div>
       )}
@@ -290,16 +307,20 @@ export default function DashboardPage() {
 
 function QuickStat({ icon, label, value, color, onClick }) {
   return (
-    <button
+    <GlowCard
+      as="button"
       onClick={onClick}
-      className="rounded-[14px] p-4 border border-border text-left w-full cursor-pointer transition-all hover:border-white/20 hover:-translate-y-0.5 bg-transparent"
+      className="rounded-[14px] p-4 border border-border text-left w-full cursor-pointer transition-all hover:-translate-y-0.5 bg-transparent"
       style={{ background: 'var(--color-card)' }}
+      proximity={80}
+      spread={40}
+      blur={0}
       aria-label={`${label}: ${value}`}>
       <div className="flex items-center gap-1.5 mb-2">
         <span className="text-base" aria-hidden="true">{icon}</span>
-        <span className="text-[.62rem] text-muted uppercase tracking-widest font-mono">{label}</span>
+        <span className="text-[.62rem] text-muted uppercase tracking-widest font-headline">{label}</span>
       </div>
-      <div className="font-serif text-[1.35rem] font-black" style={{ color }}>{value}</div>
-    </button>
+      <div className="font-headline text-[1.35rem] font-black" style={{ color }}>{value}</div>
+    </GlowCard>
   );
 }

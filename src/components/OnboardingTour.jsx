@@ -7,7 +7,7 @@ const STEPS = [
     icon: '🌴',
     title: 'Welcome to Limer\'s Capital',
     desc: 'Your all-in-one Caribbean crypto intelligence platform — real-time market data, paper trading, regulation maps, and more. Built for the Caribbean, for the world.',
-    color: '#00C8B4',
+    color: '#00ffa3',
   },
   {
     icon: '📊',
@@ -21,7 +21,7 @@ const STEPS = [
     icon: '💹',
     title: 'Paper Trade Risk-Free',
     desc: 'Practice trading Solana tokens and TTSE stocks with $100,000 USD and TT$679,000 — no real money needed. When you\'re ready, jump to Jupiter for real trades.',
-    color: '#1DCC8A',
+    color: '#00ffa3',
     tab: 'trade',
     tabLabel: 'Paper Trade tab',
   },
@@ -80,7 +80,7 @@ export default function OnboardingTour() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.94, y: 20 }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className="relative w-full max-w-md rounded-2xl border overflow-hidden"
+          className="relative w-full max-w-md rounded-xl border overflow-hidden"
           style={{
             background: 'linear-gradient(135deg, #0d1f3c 0%, #091629 100%)',
             borderColor: current.color + '40',
@@ -125,12 +125,12 @@ export default function OnboardingTour() {
                 transition={{ duration: 0.22, ease: 'easeOut' }}
               >
                 <div
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mb-5 mx-auto"
+                  className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl mb-5 mx-auto"
                   style={{ background: current.color + '18', border: `1px solid ${current.color}33` }}
                 >
                   {current.icon}
                 </div>
-                <h2 className="font-serif font-bold text-[1.3rem] text-center mb-3 text-txt leading-tight">
+                <h2 className="font-headline font-bold text-[1.3rem] text-center mb-3 text-txt leading-tight">
                   {current.title}
                 </h2>
                 <p className="text-[.82rem] text-txt-2 text-center leading-relaxed mb-2">
@@ -156,10 +156,10 @@ export default function OnboardingTour() {
               )}
               <button
                 onClick={() => isLast ? finish(current.tab) : goTo(step + 1)}
-                className="flex-1 py-2.5 rounded-xl text-[.82rem] font-sans font-bold transition-all cursor-pointer border-none"
+                className="flex-1 py-2.5 rounded-xl text-[.82rem] font-body font-bold transition-all cursor-pointer border-none"
                 style={{
                   background: `linear-gradient(135deg, ${current.color}, ${current.color}bb)`,
-                  color: '#0A1628',
+                  color: '#0d0e10',
                   boxShadow: `0 0 20px ${current.color}40`,
                 }}
               >

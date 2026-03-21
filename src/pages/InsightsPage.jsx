@@ -20,7 +20,7 @@ function fmt(n, dec = 2) {
 function Chg({ value }) {
   if (value == null) return <span className="text-muted text-[.7rem]">—</span>;
   const cls = value >= 0 ? 'text-up' : 'text-down';
-  return <span className={`font-sans font-bold text-[.75rem] ${cls}`}>{value >= 0 ? '+' : ''}{value.toFixed(2)}%</span>;
+  return <span className={`font-body font-bold text-[.75rem] ${cls}`}>{value >= 0 ? '+' : ''}{value.toFixed(2)}%</span>;
 }
 
 function Card({ title, color, source, children }) {
@@ -40,10 +40,10 @@ function TokenRow({ c, showVol }) {
     <div className="flex items-center gap-2.5 py-[5px] border-b border-white/5 last:border-b-0">
       <img src={c.image} alt={c.symbol} className="w-5 h-5 rounded-full flex-shrink-0" />
       <span className="text-[.76rem] flex-1 min-w-0">
-        <span className="font-sans font-bold text-txt">{c.symbol}</span>
+        <span className="font-body font-bold text-txt">{c.symbol}</span>
         <span className="text-muted ml-1 text-[.62rem] truncate">{c.name}</span>
       </span>
-      <span className="font-sans font-bold text-[.76rem] text-txt whitespace-nowrap">
+      <span className="font-body font-bold text-[.76rem] text-txt whitespace-nowrap">
         ${c.price < 0.01 ? c.price.toFixed(6) : c.price < 1 ? c.price.toFixed(4) : c.price.toFixed(2)}
       </span>
       <span className="w-[58px] text-right"><Chg value={c.change24h} /></span>
@@ -93,16 +93,16 @@ export default function InsightsPage() {
   return (
     <div>
       {/* Hero with Global Stats */}
-      <div className="rounded-2xl p-9 mb-7 grid grid-cols-1 md:grid-cols-2 gap-9 items-center border border-border"
-        style={{ background: 'linear-gradient(135deg, var(--color-night-2) 0%, rgba(0,200,180,.05) 100%)' }}>
+      <div className="rounded-xl p-9 mb-7 grid grid-cols-1 md:grid-cols-2 gap-9 items-center border border-border"
+        style={{ background: 'linear-gradient(135deg, var(--color-night-2) 0%, rgba(0,255,163,.05) 100%)' }}>
         <div>
           <div className="inline-block bg-sea/12 border border-sea/30 rounded-full text-[.68rem] text-sea px-3 py-0.5 tracking-widest uppercase mb-3.5">
             L1 · DeFi · RWA Intelligence
           </div>
-          <h1 className="font-serif text-[2.6rem] font-black leading-[1.05] text-txt mb-3.5">
+          <h1 className="font-headline text-[2.6rem] font-black leading-[1.05] text-txt mb-3.5">
             Market<br /><em className="italic text-sea">Insights</em>
           </h1>
-          <p className="font-mono text-txt-2 text-[.82rem] leading-relaxed">
+          <p className="font-body text-txt-2 text-[.82rem] leading-relaxed">
             Live data powered by CoinGecko, DeFiLlama, and Jupiter. Layer 1 chains, DeFi protocols, RWA tokens, and Caribbean macro — all free-tier APIs.
           </p>
         </div>
@@ -150,7 +150,7 @@ export default function InsightsPage() {
             <div key={p.name} className="flex justify-between items-center py-[5px] border-b border-white/5 last:border-b-0 text-[.76rem]">
               <span className="text-txt-2">{p.name} <span className="text-muted text-[.6rem]">{p.category}</span></span>
               <div className="text-right">
-                <span className="font-sans font-bold text-sea">{fmt(p.tvl)}</span>
+                <span className="font-body font-bold text-sea">{fmt(p.tvl)}</span>
                 {p.change_1d != null && <span className="ml-2"><Chg value={p.change_1d} /></span>}
               </div>
             </div>
@@ -167,10 +167,10 @@ export default function InsightsPage() {
             <div key={c.id} className="flex items-center gap-2.5 py-[5px] border-b border-white/5 last:border-b-0">
               <img src={c.thumb} alt={c.symbol} className="w-5 h-5 rounded-full" />
               <span className="text-[.76rem] flex-1">
-                <span className="font-sans font-bold text-txt">{c.symbol}</span>
+                <span className="font-body font-bold text-txt">{c.symbol}</span>
                 <span className="text-muted ml-1 text-[.62rem]">{c.name}</span>
               </span>
-              {c.price != null && <span className="font-sans font-bold text-[.76rem] text-txt">
+              {c.price != null && <span className="font-body font-bold text-[.76rem] text-txt">
                 ${typeof c.price === 'number' ? (c.price < 0.01 ? c.price.toFixed(6) : c.price < 1 ? c.price.toFixed(4) : c.price.toFixed(2)) : c.price}
               </span>}
               {c.change24h != null && <span className="w-[58px] text-right"><Chg value={c.change24h} /></span>}
@@ -228,7 +228,7 @@ export default function InsightsPage() {
           {fxQ.data?.map(fx => (
             <div key={fx.code} className="flex justify-between items-center py-[5px] border-b border-white/5 last:border-b-0 text-[.76rem]">
               <span className="text-txt-2">USD → {fx.code} <span className="text-muted text-[.6rem]">{fx.name}</span></span>
-              <span className="font-sans font-bold text-sun">{fx.rate.toFixed(2)}</span>
+              <span className="font-body font-bold text-sun">{fx.rate.toFixed(2)}</span>
             </div>
           ))}
           {fxQ.isError && <Err msg={fxQ.error.message} retry={fxQ.refetch} />}
@@ -280,7 +280,7 @@ function HeroStat({ label, value, sub }) {
   return (
     <div className="bg-sea/6 border border-border rounded-xl p-4">
       <div className="text-[.68rem] text-muted uppercase tracking-widest mb-1.5">{label}</div>
-      <div className="font-sans text-[1.45rem] font-extrabold text-txt">{value}</div>
+      <div className="font-body text-[1.45rem] font-extrabold text-txt">{value}</div>
       {sub && <div className="text-[.72rem] mt-1">{sub}</div>}
     </div>
   );
@@ -290,7 +290,7 @@ function Row({ label, value, cls }) {
   return (
     <div className="flex justify-between items-center py-1.5 border-b border-white/5 last:border-b-0 text-[.76rem]">
       <span className="text-txt-2">{label}</span>
-      <span className={`font-sans font-bold ${cls || 'text-txt'}`}>{value}</span>
+      <span className={`font-body font-bold ${cls || 'text-txt'}`}>{value}</span>
     </div>
   );
 }

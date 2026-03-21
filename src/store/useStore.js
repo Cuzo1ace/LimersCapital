@@ -501,9 +501,13 @@ const useStore = create(
     {
       name: 'caribcrypto-storage',
       partialize: (state) => ({
+        // SECURITY: walletAddress and walletConnected are NOT persisted.
+        // Wallet state is re-established on connect via wallet-standard.
+        // This prevents localStorage from becoming a behavioral dossier
+        // linking wallet addresses to trade history.
+        _storeVersion: 2,
         balanceUSD: state.balanceUSD, balanceTTD: state.balanceTTD,
         holdings: state.holdings, trades: state.trades,
-        walletAddress: state.walletAddress, walletConnected: state.walletConnected,
         cluster: state.cluster,
         xp: state.xp, lessonsRead: state.lessonsRead,
         quizResults: state.quizResults, quizStreak: state.quizStreak,

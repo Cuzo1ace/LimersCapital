@@ -104,7 +104,7 @@ export default function StockChart({ symbol, name, price, currency = 'USD', isTT
   }, [symbol, price, periodDays, vol, period, realCandles]);
 
   const currLabel = currency === 'TTD' ? 'TT$' : '$';
-  const accentColor = isTTSE ? '#FF4D6D' : '#00C8B4';
+  const accentColor = isTTSE ? '#FF4D6D' : '#00ffa3';
 
   const lastClose = chartData.length ? chartData[chartData.length - 1].y[3] : 0;
   const firstOpen = chartData.length ? chartData[0].y[0] : 0;
@@ -120,15 +120,15 @@ export default function StockChart({ symbol, name, price, currency = 'USD', isTT
     },
     plotOptions: {
       candlestick: {
-        colors: { upward: '#1DCC8A', downward: '#FF4A6B' },
+        colors: { upward: '#00ffa3', downward: '#FF4A6B' },
         wick: { useFillColor: true },
       },
     },
     xaxis: {
       type: 'datetime',
       labels: { style: { colors: '#5B7A9A', fontSize: '10px' } },
-      axisBorder: { color: 'rgba(0,200,180,.15)' },
-      axisTicks: { color: 'rgba(0,200,180,.15)' },
+      axisBorder: { color: 'rgba(0,255,163,.15)' },
+      axisTicks: { color: 'rgba(0,255,163,.15)' },
     },
     yaxis: {
       labels: {
@@ -137,7 +137,7 @@ export default function StockChart({ symbol, name, price, currency = 'USD', isTT
       },
       tooltip: { enabled: true },
     },
-    grid: { borderColor: 'rgba(0,200,180,.06)', strokeDashArray: 3 },
+    grid: { borderColor: 'rgba(0,255,163,.06)', strokeDashArray: 3 },
     tooltip: {
       theme: 'dark',
       x: { format: 'dd MMM yyyy' },
@@ -148,13 +148,13 @@ export default function StockChart({ symbol, name, price, currency = 'USD', isTT
     },
     subtitle: {
       text: `${currLabel}${lastClose.toFixed(price < 1 ? 4 : 2)}  ${totalChg >= 0 ? '+' : ''}${totalChg.toFixed(2)}% (${period})`,
-      style: { color: totalChg >= 0 ? '#1DCC8A' : '#FF4A6B', fontSize: '12px', fontFamily: 'DM Mono, monospace' },
+      style: { color: totalChg >= 0 ? '#00ffa3' : '#FF4A6B', fontSize: '12px', fontFamily: 'DM Mono, monospace' },
     },
   }), [symbol, name, currLabel, price, lastClose, totalChg, period]);
 
   if (!symbol || !price) {
     return (
-      <div className="rounded-2xl border border-border p-8 text-center text-muted text-[.8rem]" style={{ background: 'var(--color-card)' }}>
+      <div className="rounded-xl border border-border p-8 text-center text-muted text-[.8rem]" style={{ background: 'var(--color-card)' }}>
         <div className="text-2xl mb-2">📈</div>
         Select an asset or make a trade to view its price chart
       </div>
@@ -162,7 +162,7 @@ export default function StockChart({ symbol, name, price, currency = 'USD', isTT
   }
 
   return (
-    <div className="rounded-2xl border overflow-hidden" style={{ background: 'var(--color-card)', borderColor: isTTSE ? 'rgba(200,16,46,.22)' : 'var(--color-border)' }}>
+    <div className="rounded-xl border overflow-hidden" style={{ background: 'var(--color-card)', borderColor: isTTSE ? 'rgba(200,16,46,.22)' : 'var(--color-border)' }}>
       {/* Period selector */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-border">
         <div className="flex gap-1">
@@ -191,10 +191,10 @@ export default function StockChart({ symbol, name, price, currency = 'USD', isTT
       {/* Stats strip */}
       <div className="px-5 py-3 border-t border-border flex gap-6 flex-wrap text-[.7rem]">
         <Stat label="Open" value={`${currLabel}${firstOpen.toFixed(price < 1 ? 4 : 2)}`} color="#A0BAD8" />
-        <Stat label="High" value={`${currLabel}${Math.max(...chartData.map(d => d.y[1])).toFixed(price < 1 ? 4 : 2)}`} color="#1DCC8A" />
+        <Stat label="High" value={`${currLabel}${Math.max(...chartData.map(d => d.y[1])).toFixed(price < 1 ? 4 : 2)}`} color="#00ffa3" />
         <Stat label="Low" value={`${currLabel}${Math.min(...chartData.map(d => d.y[2])).toFixed(price < 1 ? 4 : 2)}`} color="#FF4A6B" />
-        <Stat label="Close" value={`${currLabel}${lastClose.toFixed(price < 1 ? 4 : 2)}`} color={totalChg >= 0 ? '#1DCC8A' : '#FF4A6B'} />
-        <Stat label={`${period} Chg`} value={`${totalChg >= 0 ? '+' : ''}${totalChg.toFixed(2)}%`} color={totalChg >= 0 ? '#1DCC8A' : '#FF4A6B'} />
+        <Stat label="Close" value={`${currLabel}${lastClose.toFixed(price < 1 ? 4 : 2)}`} color={totalChg >= 0 ? '#00ffa3' : '#FF4A6B'} />
+        <Stat label={`${period} Chg`} value={`${totalChg >= 0 ? '+' : ''}${totalChg.toFixed(2)}%`} color={totalChg >= 0 ? '#00ffa3' : '#FF4A6B'} />
       </div>
     </div>
   );
@@ -204,7 +204,7 @@ function Stat({ label, value, color }) {
   return (
     <div className="flex flex-col gap-0.5">
       <span className="text-[.6rem] text-muted uppercase tracking-widest">{label}</span>
-      <span className="font-sans font-bold" style={{ color }}>{value}</span>
+      <span className="font-body font-bold" style={{ color }}>{value}</span>
     </div>
   );
 }

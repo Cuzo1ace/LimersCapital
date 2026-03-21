@@ -58,7 +58,7 @@ export default function LearnPage() {
       {/* Module Cards */}
       {!activeLesson && !activeQuiz && (
         <>
-          <h2 className="font-sans text-[.92rem] font-bold uppercase tracking-widest text-txt mb-4">Learning Modules</h2>
+          <h2 className="font-headline text-[.92rem] font-bold uppercase tracking-widest text-txt mb-4">Learning Modules</h2>
           <div className="flex flex-col gap-5 mb-7">
             {MODULES.map(mod => {
               const lessonsInMod = mod.lessons.map(id => LESSONS[id]).filter(Boolean);
@@ -68,14 +68,14 @@ export default function LearnPage() {
               const progress = (readInMod / mod.lessons.length) * 100;
 
               return (
-                <div key={mod.id} className={`rounded-2xl border p-6 transition-all ${isComplete ? 'border-up/30' : 'border-border'}`}
+                <div key={mod.id} className={`rounded-xl border p-6 transition-all ${isComplete ? 'border-up/30' : 'border-border'}`}
                   style={{ background: 'var(--color-card)' }}>
                   {/* Module header */}
                   <div className="flex items-center gap-4 mb-4">
                     <div className="text-3xl">{mod.icon}</div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-sans font-bold text-[1rem] text-txt">{mod.title}</h3>
+                        <h3 className="font-body font-bold text-[1rem] text-txt">{mod.title}</h3>
                         <span className={`text-[.6rem] px-2 py-0.5 rounded-full ${mod.tagCls}`}>{mod.tag}</span>
                         {isComplete && <span className="text-[.6rem] px-2 py-0.5 rounded-full bg-up/10 text-up">Complete ✓</span>}
                       </div>
@@ -99,7 +99,7 @@ export default function LearnPage() {
                             ${isRead ? 'border-up/25 bg-up/5' : 'border-border bg-black/20 hover:border-sea/30'}`}>
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-sm">{l.emoji}</span>
-                            <span className="font-sans font-bold text-[.78rem] text-txt flex-1">{l.title}</span>
+                            <span className="font-body font-bold text-[.78rem] text-txt flex-1">{l.title}</span>
                             {isRead ? <span className="text-up text-sm">✓</span> : <span className="text-[.6rem] text-sea">+50 XP</span>}
                           </div>
                           <div className="text-[.68rem] text-muted line-clamp-2">{l.summary}</div>
@@ -130,7 +130,7 @@ export default function LearnPage() {
           </div>
 
           {/* Glossary */}
-          <h2 className="font-sans text-[.92rem] font-bold uppercase tracking-widest text-txt mb-4">
+          <h2 className="font-headline text-[.92rem] font-bold uppercase tracking-widest text-txt mb-4">
             Glossary ({viewedGlossaryTerms.length}/{GLOSSARY.length} viewed)
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-7">
@@ -143,7 +143,7 @@ export default function LearnPage() {
                     ${viewed ? 'border-sea/20 bg-sea/3' : 'border-border hover:border-sea/20'}`}
                   style={{ background: viewed ? undefined : 'var(--color-card)' }}>
                   <div className="flex items-center gap-2">
-                    <div className="font-sans font-bold text-[.84rem] text-sea">{g.term}</div>
+                    <div className="font-body font-bold text-[.84rem] text-sea">{g.term}</div>
                     {!viewed && <span className="text-[.55rem] text-sea">+5 XP</span>}
                     {viewed && <span className="text-up text-[.7rem]">✓</span>}
                   </div>
@@ -172,12 +172,12 @@ function LessonDetail({ lesson, isRead, onComplete, onClose }) {
   }, [isRead]);
 
   return (
-    <div className="rounded-2xl border border-border p-7 mb-7" style={{ background: 'var(--color-card)' }}>
+    <div className="rounded-xl border border-border p-7 mb-7" style={{ background: 'var(--color-card)' }}>
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
           <span className="text-2xl">{lesson.emoji}</span>
           <div>
-            <h2 className="font-sans font-bold text-[1.1rem] text-txt">{lesson.title}</h2>
+            <h2 className="font-body font-bold text-[1.1rem] text-txt">{lesson.title}</h2>
             <span className="text-[.68rem] text-muted">{lesson.readTime} min read · Lesson {lesson.num}</span>
           </div>
         </div>
@@ -199,7 +199,7 @@ function LessonDetail({ lesson, isRead, onComplete, onClose }) {
         ) : (
           <button onClick={() => { onComplete(); }}
             disabled={!canComplete}
-            className={`px-5 py-2.5 rounded-xl font-sans font-bold text-[.82rem] cursor-pointer border-none transition-all
+            className={`px-5 py-2.5 rounded-xl font-body font-bold text-[.82rem] cursor-pointer border-none transition-all
               ${canComplete
                 ? 'bg-up text-night hover:brightness-90'
                 : 'bg-muted/20 text-muted cursor-not-allowed'}`}>
@@ -236,9 +236,9 @@ function QuizPanel({ quiz, result, onSubmit, onClose }) {
   const passed = score / totalQ >= 0.7;
 
   return (
-    <div className="rounded-2xl border border-border p-7 mb-7" style={{ background: 'var(--color-card)' }}>
+    <div className="rounded-xl border border-border p-7 mb-7" style={{ background: 'var(--color-card)' }}>
       <div className="flex items-center justify-between mb-5">
-        <h2 className="font-sans font-bold text-[1.1rem] text-txt">🧠 {quiz.title}</h2>
+        <h2 className="font-body font-bold text-[1.1rem] text-txt">🧠 {quiz.title}</h2>
         <button onClick={onClose}
           className="text-muted hover:text-txt cursor-pointer bg-transparent border-none text-xl">✕</button>
       </div>
@@ -258,7 +258,7 @@ function QuizPanel({ quiz, result, onSubmit, onClose }) {
           <div className="flex flex-col gap-6 mb-5">
             {questions.map((q, qi) => (
               <div key={qi}>
-                <p className="font-sans font-bold text-[.88rem] text-txt mb-3">
+                <p className="font-body font-bold text-[.88rem] text-txt mb-3">
                   {qi + 1}. {q.q}
                 </p>
                 <div className="flex flex-col gap-2">
@@ -296,7 +296,7 @@ function QuizPanel({ quiz, result, onSubmit, onClose }) {
 
           {!submitted ? (
             <button onClick={handleSubmit} disabled={answeredCount < totalQ}
-              className="px-6 py-3 rounded-xl font-sans font-bold text-[.85rem] cursor-pointer border-none bg-sea text-night transition-all hover:brightness-90 disabled:opacity-40 disabled:cursor-not-allowed">
+              className="px-6 py-3 rounded-xl font-body font-bold text-[.85rem] cursor-pointer border-none bg-sea text-night transition-all hover:brightness-90 disabled:opacity-40 disabled:cursor-not-allowed">
               Submit Quiz ({answeredCount}/{totalQ} answered)
             </button>
           ) : (
@@ -336,7 +336,7 @@ function StatCard({ icon, label, value, sub, color }) {
         <span className="text-lg">{icon}</span>
         <span className="text-[.66rem] text-muted uppercase tracking-widest">{label}</span>
       </div>
-      <div className="font-serif text-[1.6rem] font-black" style={{ color }}>{value}</div>
+      <div className="font-headline text-[1.6rem] font-black" style={{ color }}>{value}</div>
       {sub && <div className="text-[.68rem] text-muted mt-0.5">{sub}</div>}
     </div>
   );

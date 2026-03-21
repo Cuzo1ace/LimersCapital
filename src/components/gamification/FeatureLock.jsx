@@ -14,7 +14,7 @@ export default function FeatureLock({ featureKey, hint, children }) {
         <div className="w-12 h-12 rounded-full bg-night-2 border border-border flex items-center justify-center text-xl">
           🔒
         </div>
-        <div className="text-[.78rem] text-txt font-sans font-bold text-center">Locked</div>
+        <div className="text-[.78rem] text-txt font-body font-bold text-center">Locked</div>
         <div className="text-[.68rem] text-muted text-center max-w-[240px] leading-relaxed">{hint}</div>
       </div>
     </div>

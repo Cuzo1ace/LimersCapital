@@ -14,13 +14,13 @@ const WAM_LINK = 'https://wam.money/';
 
 const TABS = [
   { id: 'dashboard',  label: 'Home',        icon: '🏠' },
-  { id: 'market',     label: 'Solana',      icon: '\u{1F4CA}' },
+  { id: 'regulation', label: 'Regulation',  icon: '\u{1F5FA}\uFE0F' },
+  { id: 'learn',      label: 'Learn',       icon: '\u{1F4DA}' },
   { id: 'ttse',       label: 'TTSE',        icon: '\u{1F1F9}\u{1F1F9}', ttse: true },
+  { id: 'insights',   label: 'Insights',    icon: '\u{1F310}' },
+  { id: 'market',     label: 'Solana',      icon: '\u{1F4CA}' },
   { id: 'trade',      label: 'Paper Trade', icon: '\u{1F4B9}' },
   { id: 'portfolio',  label: 'Portfolio',   icon: '\u{1F392}' },
-  { id: 'learn',      label: 'Learn',       icon: '\u{1F4DA}' },
-  { id: 'regulation', label: 'Regulation',  icon: '\u{1F5FA}\uFE0F' },
-  { id: 'insights',   label: 'Insights',    icon: '\u{1F310}' },
 ];
 
 function shortenAddress(addr) {
@@ -88,11 +88,11 @@ export default function Header() {
   return (
     <>
       <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-border"
-        style={{ background: 'rgba(10,22,40,.93)' }}>
+        style={{ background: 'rgba(13,14,16,.93)' }}>
         <div className="max-w-[1440px] mx-auto px-4 md:px-7 h-14 md:h-16 flex items-center gap-3 md:gap-4">
 
           {/* Logo */}
-          <div className="font-serif text-[1.2rem] md:text-[1.45rem] font-black italic tracking-tight whitespace-nowrap text-txt select-none">
+          <div className="font-headline text-[1.2rem] md:text-[1.45rem] font-black italic tracking-tight whitespace-nowrap text-txt select-none">
             Limer's&nbsp;<span className="text-sun">Capital</span>
           </div>
 
@@ -104,7 +104,7 @@ export default function Header() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`
                   px-3.5 py-1.5 rounded-md text-[.72rem] uppercase tracking-widest
-                  font-mono transition-all cursor-pointer border-none
+                  font-headline transition-all cursor-pointer border-none
                   ${activeTab === tab.id
                     ? tab.ttse ? 'text-[#FF4D6D] bg-[rgba(200,16,46,.1)]' : 'text-sea bg-sea/12'
                     : 'text-muted bg-transparent hover:text-txt hover:bg-sea/8'
@@ -119,7 +119,7 @@ export default function Header() {
           {/* ── Desktop $LIMER dropdown ── hidden on mobile */}
           <div className="relative hidden md:block">
             <button onClick={() => setShowLimeMenu(!showLimeMenu)}
-              className={`px-3 py-1.5 rounded-md text-[.72rem] uppercase tracking-widest font-mono transition-all cursor-pointer border-none
+              className={`px-3 py-1.5 rounded-md text-[.72rem] uppercase tracking-widest font-headline transition-all cursor-pointer border-none
                 ${isLimeTab ? 'text-[#2D9B56] bg-[rgba(45,155,86,.12)]' : 'text-[#2D9B56] bg-transparent hover:bg-[rgba(45,155,86,.08)]'}`}>
               🍋 $LIMER ▾
             </button>
@@ -129,7 +129,7 @@ export default function Header() {
                 {LIME_TABS.map(t => (
                   <button key={t.id}
                     onClick={() => { setActiveTab(t.id); setShowLimeMenu(false); }}
-                    className={`w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg text-[.75rem] font-mono cursor-pointer border-none transition-all
+                    className={`w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg text-[.75rem] font-headline cursor-pointer border-none transition-all
                       ${activeTab === t.id ? 'text-[#2D9B56] bg-[rgba(45,155,86,.12)]' : 'text-txt-2 bg-transparent hover:text-txt hover:bg-white/5'}`}>
                     <span>{t.icon}</span> {t.label}
                   </button>
@@ -151,7 +151,7 @@ export default function Header() {
               onClick={() => setCluster(cluster === 'devnet' ? 'mainnet-beta' : 'devnet')}
               aria-label={`Switch to ${cluster === 'devnet' ? 'mainnet' : 'devnet'} — currently on ${clusterLabel}`}
               title={`Switch to ${cluster === 'devnet' ? 'mainnet' : 'devnet'}`}
-              className={`px-2.5 py-1 rounded-md text-[.65rem] uppercase tracking-widest font-mono cursor-pointer border transition-all
+              className={`px-2.5 py-1 rounded-md text-[.65rem] uppercase tracking-widest font-headline cursor-pointer border transition-all
                 ${cluster === 'devnet'
                   ? 'text-[#FFB347] bg-[rgba(255,179,71,.08)] border-[rgba(255,179,71,.25)] hover:bg-[rgba(255,179,71,.15)]'
                   : 'text-up bg-up/8 border-up/25 hover:bg-up/15'
@@ -163,7 +163,7 @@ export default function Header() {
             {/* Wam — TTD Top-up */}
             <a href={WAM_LINK} target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-1.5 bg-[rgba(255,215,0,.08)] border border-[rgba(255,215,0,.28)]
-                rounded-lg px-3 py-1.5 text-[.72rem] font-sans font-bold text-[#FFD700]
+                rounded-lg px-3 py-1.5 text-[.72rem] font-body font-bold text-[#FFD700]
                 transition-all hover:bg-[rgba(255,215,0,.14)] hover:border-[rgba(255,215,0,.45)]
                 hover:-translate-y-px no-underline cursor-pointer"
               style={{ boxShadow: '0 0 10px rgba(255,215,0,.08)' }}>
@@ -174,14 +174,14 @@ export default function Header() {
             {/* Desktop wallet button */}
             <div className="relative">
               <button onClick={handleWalletClick}
-                className={`flex items-center gap-2 border-none cursor-pointer font-sans font-extrabold text-[.8rem]
+                className={`flex items-center gap-2 border-none cursor-pointer font-body font-extrabold text-[.8rem]
                   px-4 py-2 rounded-[10px] transition-all
                   ${isConnected
-                    ? 'bg-[linear-gradient(135deg,rgba(29,204,138,.18),rgba(29,204,138,.09))] border border-up/40 text-up hover:bg-up/20'
+                    ? 'bg-[linear-gradient(135deg,rgba(0,255,163,.18),rgba(0,255,163,.09))] border border-up/40 text-up hover:bg-up/20 neon-glow-primary'
                     : 'bg-[linear-gradient(135deg,#FC5C3E,#FF8C42)] text-white hover:-translate-y-0.5'
                   }`}
                 style={isConnected
-                  ? { boxShadow: '0 0 12px rgba(29,204,138,.2)' }
+                  ? { boxShadow: '0 0 12px rgba(0,255,163,.2)' }
                   : { boxShadow: '0 0 20px rgba(252,92,62,.3), 0 2px 8px rgba(0,0,0,.3)' }
                 }>
                 {isConnected ? (
@@ -237,7 +237,7 @@ export default function Header() {
                   </a>
                   <button onClick={handleDisconnect}
                     className="w-full text-[.72rem] text-down bg-down/10 border border-down/25
-                      rounded-lg py-1.5 cursor-pointer font-mono hover:bg-down hover:text-white transition-all">
+                      rounded-lg py-1.5 cursor-pointer font-headline hover:bg-down hover:text-white transition-all">
                     Disconnect
                   </button>
                 </div>
@@ -266,13 +266,13 @@ export default function Header() {
             {/* Compact wallet button */}
             <button
               onClick={handleWalletClick}
-              className={`flex items-center gap-1.5 border-none cursor-pointer font-sans font-bold text-[.72rem]
+              className={`flex items-center gap-1.5 border-none cursor-pointer font-body font-bold text-[.72rem]
                 px-3 py-1.5 rounded-lg transition-all
                 ${isConnected
-                  ? 'bg-[rgba(29,204,138,.15)] text-up border border-up/35'
+                  ? 'bg-[rgba(0,255,163,.15)] text-up border border-up/35 neon-glow-primary'
                   : 'bg-[linear-gradient(135deg,#FC5C3E,#FF8C42)] text-white'
                 }`}
-              style={isConnected ? { boxShadow: '0 0 8px rgba(29,204,138,.15)' } : {}}
+              style={isConnected ? { boxShadow: '0 0 8px rgba(0,255,163,.15)' } : {}}
             >
               {isConnected ? shortenAddress(safeDisplayAddress) : 'Connect'}
             </button>
@@ -348,7 +348,7 @@ function WalletOption({ wallet, onConnected }) {
     <button
       onClick={handleClick}
       disabled={isConnecting}
-      className="w-full text-left flex items-center gap-2.5 px-2 py-2.5 rounded-lg text-[.76rem] font-mono
+      className="w-full text-left flex items-center gap-2.5 px-2 py-2.5 rounded-lg text-[.76rem] font-headline
         cursor-pointer border-none text-txt bg-transparent hover:bg-white/5 transition-all disabled:opacity-50"
     >
       {wallet.icon && (

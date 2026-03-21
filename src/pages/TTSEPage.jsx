@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchTTSEData, getTTSEMarketStatus, SECTOR_META, TTD_RATE } from '../api/ttse';
 import useStore from '../store/useStore';
+import GlowCard from '../components/ui/GlowCard';
+import FinancialTable, { PerfPill } from '../components/ui/FinancialTable';
 
 function fmtTTD(n) {
   if (n == null) return '—';
@@ -29,17 +31,17 @@ export default function TTSEPage() {
   return (
     <div>
       {/* Hero */}
-      <div className="rounded-2xl p-9 mb-7 grid grid-cols-1 md:grid-cols-2 gap-9 items-center overflow-hidden relative border border-[rgba(200,16,46,.22)]"
-        style={{ background: 'linear-gradient(135deg, rgba(200,16,46,.08) 0%, rgba(10,22,40,1) 60%)' }}>
+      <div className="rounded-xl p-9 mb-7 grid grid-cols-1 md:grid-cols-2 gap-9 items-center overflow-hidden relative border border-[rgba(200,16,46,.22)]"
+        style={{ background: 'linear-gradient(135deg, rgba(200,16,46,.08) 0%, rgba(13,14,16,1) 60%)' }}>
         <div className="absolute right-0 bottom-[-10px] text-[130px] leading-none opacity-10 pointer-events-none select-none">{'\u{1F1F9}\u{1F1F9}'}</div>
         <div>
           <div className="inline-block bg-[rgba(200,16,46,.12)] border border-[rgba(200,16,46,.3)] rounded-full text-[.68rem] text-[#FF4D6D] px-3 py-0.5 tracking-widest uppercase mb-3.5">
             Trinidad & Tobago Stock Exchange
           </div>
-          <h1 className="font-serif text-[2.4rem] font-black leading-[1.1] text-txt mb-3.5">
+          <h1 className="font-headline text-[2.4rem] font-black leading-[1.1] text-txt mb-3.5">
             Your Local<br /><em className="italic text-[#FF4D6D]">Capital Market</em>
           </h1>
-          <p className="font-mono text-txt-2 text-[.82rem] leading-relaxed">
+          <p className="font-body text-txt-2 text-[.82rem] leading-relaxed">
             The TTSE is your home market. Learn these companies — RFHL, Massy, NCBFG — before exploring global assets on Solana.
           </p>
           <div className="mt-4 flex gap-2.5 items-center flex-wrap">
@@ -73,57 +75,43 @@ export default function TTSEPage() {
             const d = indices[idx.key] || {};
             const c = d.chg || 0;
             return (
-              <div key={idx.key} className="border border-[rgba(200,16,46,.22)] rounded-xl p-4" style={{ background: 'rgba(200,16,46,.06)' }}>
+              <GlowCard key={idx.key} className="border border-[rgba(200,16,46,.22)] rounded-xl p-4" proximity={80} spread={40} style={{ background: 'rgba(200,16,46,.06)' }}>
                 <div className="text-[.68rem] text-muted uppercase tracking-widest mb-1.5">{idx.label}</div>
-                <div className="font-sans text-[1.45rem] font-extrabold text-txt">{d.val?.toFixed(2) || '—'}</div>
+                <div className="font-body text-[1.45rem] font-extrabold text-txt">{d.val?.toFixed(2) || '—'}</div>
                 <div className={`text-[.72rem] mt-1 ${c > 0 ? 'text-up' : c < 0 ? 'text-down' : 'text-muted'}`}>
                   {c >= 0 ? '+' : ''}{c.toFixed(2)}
                 </div>
-              </div>
+              </GlowCard>
             );
           })}
         </div>
       </div>
 
       {/* Bridge card */}
-      <div className="rounded-2xl p-7 mb-6 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-6 items-center border border-border"
-        style={{ background: 'linear-gradient(135deg, rgba(200,16,46,.07), rgba(0,200,180,.07))' }}>
+      <div className="rounded-xl p-7 mb-6 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-6 items-center border border-border"
+        style={{ background: 'linear-gradient(135deg, rgba(200,16,46,.07), rgba(0,255,163,.07))' }}>
         <div>
           <div className="text-[.68rem] text-muted uppercase tracking-widest">Traditional Market</div>
-          <div className="font-serif text-[1.3rem] font-black text-[#FF4D6D]">TTSE Stock</div>
+          <div className="font-headline text-[1.3rem] font-black text-[#FF4D6D]">TTSE Stock</div>
           <div className="text-[.75rem] text-txt-2 leading-relaxed">Regulated by TTSEC. Trades Mon–Fri. Settlement in TTD.</div>
         </div>
         <div className="text-2xl text-muted text-center">⟷</div>
         <div>
           <div className="text-[.68rem] text-muted uppercase tracking-widest">Tokenized / DeFi Version</div>
-          <div className="font-serif text-[1.3rem] font-black text-sea">Solana RWA Token</div>
+          <div className="font-headline text-[1.3rem] font-black text-sea">Solana RWA Token</div>
           <div className="text-[.75rem] text-txt-2 leading-relaxed">On-chain 24/7. No broker needed. Fractional ownership.</div>
         </div>
       </div>
 
       {/* Data source label */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-sans text-[.92rem] font-bold uppercase tracking-widest text-txt">Ordinary Shares — Today's Market</h2>
+        <h2 className="font-headline text-[.92rem] font-bold uppercase tracking-widest text-txt">Ordinary Shares — Today's Market</h2>
         <span className="text-[.68rem] text-muted px-2.5 py-0.5 border border-white/8 rounded-full">
           {isLive ? '✅ Live from stockex.co.tt' : '📦 Cached data — 17 Mar 2026'}
         </span>
       </div>
 
-      {/* Table header — 4 cols mobile / 8 cols desktop */}
-      <div className="grid gap-2 md:gap-3.5 items-center px-4 py-1 text-[.68rem] text-muted uppercase tracking-widest
-        [grid-template-columns:44px_2fr_1fr_90px]
-        md:[grid-template-columns:44px_2fr_1fr_1fr_.9fr_1fr_1.1fr_100px]">
-        <span />
-        <span>Company</span>
-        <span className="hidden md:block">Open (TTD)</span>
-        <span>Close (TTD)</span>
-        <span className="hidden md:block">Change</span>
-        <span className="hidden md:block">Volume</span>
-        <span className="hidden md:block">Sector</span>
-        <span />
-      </div>
-
-      {/* Loading / Error / Data */}
+      {/* Loading */}
       {ttseQ.isLoading && (
         <div className="flex flex-col items-center gap-3.5 py-12 text-muted text-sm">
           <div className="w-7 h-7 border-[3px] border-[rgba(200,16,46,.22)] border-t-[#FF4D6D] rounded-full animate-spin" />
@@ -131,66 +119,111 @@ export default function TTSEPage() {
         </div>
       )}
 
-      <div className="flex flex-col gap-0.5">
-        {stocks.map(s => {
-          const isUp = s.chg > 0, isDn = s.chg < 0;
-          const chgPct = s.open > 0 ? ((s.chg / s.open) * 100).toFixed(2) : '0.00';
-          const cls = isUp ? 'text-up bg-up/10' : isDn ? 'text-down bg-down/10' : 'text-muted bg-muted/10';
-          const sec = SECTOR_META[s.sector] || SECTOR_META.congl;
-          return (
-            <div key={s.sym}
-              className="grid gap-2 md:gap-3.5 items-center rounded-xl px-3 md:px-4 py-3 border border-[rgba(200,16,46,.15)] cursor-pointer transition-all hover:border-[rgba(200,16,46,.4)] hover:translate-x-[3px]
-                [grid-template-columns:44px_2fr_1fr_90px]
-                md:[grid-template-columns:44px_2fr_1fr_1fr_.9fr_1fr_1.1fr_100px]"
-              style={{ background: 'var(--color-card)' }}
-              onClick={() => openTrade(s.sym)}>
-              <div className="w-9 h-9 rounded-full flex items-center justify-content-center text-[.68rem] font-extrabold"
-                style={{ background: 'rgba(200,16,46,.15)', color: '#FF4D6D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {s.sym.slice(0, 4)}
-              </div>
-              <div className="min-w-0">
-                <div className="font-sans font-bold text-[.88rem]">{s.sym}</div>
-                <div className="text-[.68rem] text-muted truncate">{s.name}</div>
-                {/* Change shown inline on mobile (hidden col) */}
-                <div className="md:hidden mt-0.5">
-                  <span className={`text-[.7rem] px-1.5 py-0.5 rounded-md inline-block ${cls}`}>
-                    {isUp ? '+' : ''}{s.chg.toFixed(2)} ({isUp ? '+' : ''}{chgPct}%)
-                  </span>
-                </div>
-              </div>
-              <div className="hidden md:block font-sans font-bold text-[.84rem]">{fmtTTD(s.open)}</div>
-              <div className="font-sans font-bold text-[.84rem]">{fmtTTD(s.close)}</div>
-              <div className="hidden md:block">
-                <span className={`text-[.78rem] px-2 py-0.5 rounded-md inline-block ${cls}`}>
-                  {isUp ? '+' : ''}{s.chg.toFixed(2)}
+      {stocks.length > 0 && (
+        <FinancialTable
+          title="Company"
+          getRowId={(r) => r.sym}
+          rows={stocks}
+          onRowClick={(row) => openTrade(row.sym)}
+          columns={[
+            {
+              key: 'company',
+              label: 'Company',
+              width: '2.2fr',
+              render: (s) => {
+                const sec = SECTOR_META[s.sector] || SECTOR_META.congl;
+                return (
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-[.65rem] font-extrabold"
+                      style={{ background: 'rgba(200,16,46,.15)', color: '#FF4D6D' }}>
+                      {s.sym.slice(0, 4)}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-body font-bold text-[.88rem] text-txt">{s.sym}</div>
+                      <div className="text-[.65rem] text-muted truncate">{s.name}</div>
+                    </div>
+                  </div>
+                );
+              },
+            },
+            {
+              key: 'open',
+              label: 'Open (TTD)',
+              width: '1fr',
+              hideOnMobile: true,
+              render: (s) => (
+                <span className="font-mono font-bold text-[.82rem] text-txt-2">{fmtTTD(s.open)}</span>
+              ),
+            },
+            {
+              key: 'close',
+              label: 'Close (TTD)',
+              width: '1fr',
+              render: (s) => (
+                <span className="font-mono font-bold text-[.82rem] text-txt">{fmtTTD(s.close)}</span>
+              ),
+            },
+            {
+              key: 'change',
+              label: 'Change',
+              width: '.9fr',
+              render: (s) => {
+                const chgPct = s.open > 0 ? (s.chg / s.open) * 100 : 0;
+                return <PerfPill value={chgPct} />;
+              },
+            },
+            {
+              key: 'volume',
+              label: 'Volume',
+              width: '1fr',
+              hideOnMobile: true,
+              render: (s) => (
+                <span className="text-[.78rem] text-txt-2 font-mono">
+                  {s.vol > 0 ? s.vol.toLocaleString() : '—'}
                 </span>
-                <div className="text-[.65rem] text-muted mt-0.5">{isUp ? '+' : ''}{chgPct}%</div>
-              </div>
-              <div className="hidden md:block text-[.8rem] text-txt-2">{s.vol > 0 ? s.vol.toLocaleString() : '—'}</div>
-              <span className={`hidden md:inline-block text-[.65rem] px-2 py-0.5 rounded-full border text-center whitespace-nowrap ${sec.cls}`}>
-                {sec.icon} {sec.label}
-              </span>
-              <button className="bg-[rgba(200,16,46,.1)] border border-[rgba(200,16,46,.22)] text-[#FF4D6D] rounded-lg px-2 md:px-3 py-1.5 text-[.7rem] font-mono cursor-pointer transition-all hover:bg-[#C8102E] hover:text-white whitespace-nowrap"
-                onClick={e => { e.stopPropagation(); openTrade(s.sym); }}>
-                Trade
-              </button>
-            </div>
-          );
-        })}
-      </div>
+              ),
+            },
+            {
+              key: 'sector',
+              label: 'Sector',
+              width: '1.1fr',
+              hideOnMobile: true,
+              render: (s) => {
+                const sec = SECTOR_META[s.sector] || SECTOR_META.congl;
+                return (
+                  <span className={`text-[.62rem] px-2 py-0.5 rounded-full border whitespace-nowrap ${sec.cls}`}>
+                    {sec.icon} {sec.label}
+                  </span>
+                );
+              },
+            },
+            {
+              key: 'trade',
+              label: '',
+              width: '90px',
+              render: (s) => (
+                <button className="bg-[rgba(200,16,46,.1)] border border-[rgba(200,16,46,.22)] text-[#FF4D6D] rounded-lg px-3 py-1.5 text-[.7rem] font-mono cursor-pointer transition-all hover:bg-[#C8102E] hover:text-white whitespace-nowrap"
+                  onClick={e => { e.stopPropagation(); openTrade(s.sym); }}>
+                  Trade
+                </button>
+              ),
+            },
+          ]}
+        />
+      )}
 
       {/* Movers */}
       <div className="mt-7">
-        <h2 className="font-sans text-[.92rem] font-bold uppercase tracking-widest text-txt mb-4">Today's Movers</h2>
+        <h2 className="font-headline text-[.92rem] font-bold uppercase tracking-widest text-txt mb-4">Today's Movers</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
           <MoverCard title="Top Gainers" color="var(--color-up)" items={gainers} renderVal={s => (
-            <><span className="font-sans font-bold text-up">+{s.chg.toFixed(2)}</span><div className="text-[.68rem] text-muted">{fmtTTD(s.close)}</div></>
+            <><span className="font-body font-bold text-up">+{s.chg.toFixed(2)}</span><div className="text-[.68rem] text-muted">{fmtTTD(s.close)}</div></>
           )} />
           <MoverCard title="Top Decliners" color="var(--color-down)" items={decliners} renderVal={s => (
-            <><span className="font-sans font-bold text-down">{s.chg.toFixed(2)}</span><div className="text-[.68rem] text-muted">{fmtTTD(s.close)}</div></>
+            <><span className="font-body font-bold text-down">{s.chg.toFixed(2)}</span><div className="text-[.68rem] text-muted">{fmtTTD(s.close)}</div></>
           )} />
           <MoverCard title="Most Traded" color="var(--color-sea)" items={topVol} renderVal={s => (
-            <><span className="font-sans font-bold text-sea">{s.vol.toLocaleString()}</span><div className="text-[.68rem] text-muted">shares</div></>
+            <><span className="font-body font-bold text-sea">{s.vol.toLocaleString()}</span><div className="text-[.68rem] text-muted">shares</div></>
           )} />
         </div>
       </div>
@@ -206,7 +239,7 @@ function MoverCard({ title, color, items, renderVal }) {
       {items.map(s => (
         <div key={s.sym} className="flex justify-between py-1.5 border-b border-border last:border-b-0">
           <div>
-            <span className="font-sans font-bold text-[.82rem]">{s.sym}</span>
+            <span className="font-body font-bold text-[.82rem]">{s.sym}</span>
             <div className="text-[.68rem] text-muted">{s.name.slice(0, 22)}</div>
           </div>
           <div className="text-right">{renderVal(s)}</div>
