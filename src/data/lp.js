@@ -7,6 +7,10 @@ export const LP_MULTIPLIERS = {
   4: 1.8,  // Island Navigator
   5: 2.0,  // Caribbean Captain
   6: 2.5,  // Limer Legend
+  7: 2.8,  // Diamond Hands
+  8: 3.2,  // Market Maker
+  9: 3.8,  // DeFi Architect
+  10: 5.0, // Sovereign
 };
 
 export function getLPMultiplier(tierLevel) {

@@ -15,3 +15,8 @@ compatibility_date = "2024-01-01"
 
 [vars]
 ENVIRONMENT = "production"
+
+# KV namespace for game state (LP, XP, quiz attempts, leaderboard)
+[[kv_namespaces]]
+binding = "GAME_STATE"
+id = "c84ffd0d5d8c40fdaf2d9900619afdb6"

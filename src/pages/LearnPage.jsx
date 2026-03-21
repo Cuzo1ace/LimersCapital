@@ -6,6 +6,7 @@ import { QUIZZES } from '../data/quizzes';
 import { GLOSSARY } from '../data/glossary';
 import { getTier, getNextTier } from '../data/gamification';
 import BadgeGrid from '../components/gamification/BadgeGrid';
+import { submitQuizToServer } from '../api/game';
 
 export default function LearnPage() {
   const {
@@ -50,7 +51,7 @@ export default function LearnPage() {
         <QuizPanel
           quiz={QUIZZES[activeQuiz]}
           result={quizResults[activeQuiz]}
-          onSubmit={(score, total) => submitQuizResult(activeQuiz, score, total)}
+          onSubmit={(score, total, serverResult) => submitQuizResult(activeQuiz, score, total, serverResult)}
           onClose={() => setActiveQuiz(null)}
         />
       )}
@@ -216,24 +217,38 @@ function LessonDetail({ lesson, isRead, onComplete, onClose }) {
 }
 
 // ─── Quiz Panel ──────────────────────────────────────────────────────────────
+// Answers are validated server-side via /game/quiz-submit.
+// The client sends user selections; the server returns correct/incorrect + explanations.
 function QuizPanel({ quiz, result, onSubmit, onClose }) {
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(!!result?.passed);
   const [showResults, setShowResults] = useState(!!result?.passed);
+  const [submitting, setSubmitting] = useState(false);
+  const [serverResult, setServerResult] = useState(null); // { correct: bool[], explanations: string[], score, total, passed, perfect }
+  const [submitError, setSubmitError] = useState(null);
 
   const questions = quiz.questions;
   const totalQ = questions.length;
   const answeredCount = Object.keys(answers).length;
 
-  function handleSubmit() {
-    const score = questions.reduce((s, q, i) => s + (answers[i] === q.ans ? 1 : 0), 0);
-    onSubmit(score, totalQ);
-    setSubmitted(true);
-    setShowResults(true);
+  async function handleSubmit() {
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const result = await submitQuizToServer(quiz.id, answers, totalQ);
+      setServerResult(result);
+      onSubmit(result.score, result.total, result);
+      setSubmitted(true);
+      setShowResults(true);
+    } catch (err) {
+      setSubmitError(err.message || 'Failed to submit quiz. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  const score = submitted ? questions.reduce((s, q, i) => s + (answers[i] === q.ans ? 1 : 0), 0) : 0;
-  const passed = score / totalQ >= 0.7;
+  const score = serverResult?.score ?? 0;
+  const passed = serverResult?.passed ?? false;
 
   return (
     <div className="rounded-xl border border-border p-7 mb-7" style={{ background: 'var(--color-card)' }}>
@@ -248,7 +263,7 @@ function QuizPanel({ quiz, result, onSubmit, onClose }) {
           <div className="text-3xl mb-3">{result.perfect ? '⭐' : '✓'}</div>
           <div className="text-up font-bold text-[1rem] mb-1">Quiz Passed!</div>
           <div className="text-muted text-[.8rem]">Score: {result.score}/{result.total}{result.perfect ? ' — Perfect!' : ''}</div>
-          <button onClick={() => { setAnswers({}); setSubmitted(false); setShowResults(false); }}
+          <button onClick={() => { setAnswers({}); setSubmitted(false); setShowResults(false); setServerResult(null); }}
             className="mt-4 px-4 py-2 rounded-lg text-[.75rem] font-mono cursor-pointer border border-border text-sea bg-transparent hover:bg-sea/8">
             Retake Quiz
           </button>
@@ -264,15 +279,16 @@ function QuizPanel({ quiz, result, onSubmit, onClose }) {
                 <div className="flex flex-col gap-2">
                   {q.opts.map((opt, oi) => {
                     let cls = 'border-border bg-black/20 text-txt-2 hover:border-sea/30';
-                    if (showResults) {
-                      if (oi === q.ans) cls = 'border-up text-up bg-up/10';
-                      else if (answers[qi] === oi) cls = 'border-down text-down bg-down/10';
+                    if (showResults && serverResult) {
+                      if (serverResult.correct[qi] && answers[qi] === oi) cls = 'border-up text-up bg-up/10';
+                      else if (!serverResult.correct[qi] && answers[qi] === oi) cls = 'border-down text-down bg-down/10';
+                      else if (serverResult.correctAnswers && serverResult.correctAnswers[qi] === oi) cls = 'border-up text-up bg-up/10';
                     } else if (answers[qi] === oi) {
                       cls = 'border-sea text-sea bg-sea/8';
                     }
                     return (
                       <button key={oi}
-                        disabled={submitted}
+                        disabled={submitted || submitting}
                         onClick={() => setAnswers({ ...answers, [qi]: oi })}
                         className={`text-left rounded-xl px-4 py-2.5 text-[.78rem] font-mono border cursor-pointer transition-all ${cls} disabled:cursor-default`}>
                         {String.fromCharCode(65 + oi)}. {opt}
@@ -280,24 +296,30 @@ function QuizPanel({ quiz, result, onSubmit, onClose }) {
                     );
                   })}
                 </div>
-                {showResults && answers[qi] !== q.ans && (
+                {showResults && serverResult && !serverResult.correct[qi] && serverResult.explanations?.[qi] && (
                   <div className="mt-2 text-[.74rem] text-coral bg-down/8 border border-down/20 rounded-lg px-3 py-2">
-                    {q.why}
+                    {serverResult.explanations[qi]}
                   </div>
                 )}
-                {showResults && answers[qi] === q.ans && (
+                {showResults && serverResult && serverResult.correct[qi] && serverResult.explanations?.[qi] && (
                   <div className="mt-2 text-[.74rem] text-up bg-up/8 border border-up/20 rounded-lg px-3 py-2">
-                    Correct! {q.why}
+                    Correct! {serverResult.explanations[qi]}
                   </div>
                 )}
               </div>
             ))}
           </div>
 
+          {submitError && (
+            <div className="rounded-xl p-3 mb-4 border border-down/30 bg-down/8 text-down text-[.78rem]">
+              {submitError}
+            </div>
+          )}
+
           {!submitted ? (
-            <button onClick={handleSubmit} disabled={answeredCount < totalQ}
+            <button onClick={handleSubmit} disabled={answeredCount < totalQ || submitting}
               className="px-6 py-3 rounded-xl font-body font-bold text-[.85rem] cursor-pointer border-none bg-sea text-night transition-all hover:brightness-90 disabled:opacity-40 disabled:cursor-not-allowed">
-              Submit Quiz ({answeredCount}/{totalQ} answered)
+              {submitting ? 'Submitting...' : `Submit Quiz (${answeredCount}/${totalQ} answered)`}
             </button>
           ) : (
             <div className={`rounded-xl p-4 border ${passed ? 'border-up/30 bg-up/8' : 'border-down/30 bg-down/8'}`}>
@@ -311,7 +333,7 @@ function QuizPanel({ quiz, result, onSubmit, onClose }) {
                   : `You need ${Math.ceil(totalQ * 0.7)} correct to pass. Try again!`}
               </div>
               {!passed && (
-                <button onClick={() => { setAnswers({}); setSubmitted(false); setShowResults(false); }}
+                <button onClick={() => { setAnswers({}); setSubmitted(false); setShowResults(false); setServerResult(null); setSubmitError(null); }}
                   className="mt-3 px-4 py-2 rounded-lg text-[.75rem] font-mono cursor-pointer border border-border text-sea bg-transparent hover:bg-sea/8">
                   Retry Quiz
                 </button>

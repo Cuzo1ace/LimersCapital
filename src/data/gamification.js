@@ -5,6 +5,10 @@ export const TIERS = [
   { level: 4, xp: 1000, name: 'Island Navigator',  color: '#FFCA3A', icon: '🧭' },
   { level: 5, xp: 2000, name: 'Caribbean Captain',color: '#bf81ff', icon: '⚓' },
   { level: 6, xp: 3500, name: 'Limer Legend',      color: '#00ffa3', icon: '👑' },
+  { level: 7, xp: 5000, name: 'Diamond Hands',     color: '#00d4ff', icon: '💎' },
+  { level: 8, xp: 7500, name: 'Market Maker',      color: '#ff6b6b', icon: '🏛️' },
+  { level: 9, xp: 10000, name: 'DeFi Architect',   color: '#ffd700', icon: '🔱' },
+  { level: 10, xp: 15000, name: 'Sovereign',        color: '#ff00ff', icon: '🌟' },
 ];
 
 export function getTier(xp) {
@@ -31,6 +35,13 @@ export const XP_VALUES = {
   fiftyTrades: 100,
   dailyStreak: 25,
   glossaryTerm: 5,
+  weeklyChallenge: 200,
+  communityPost: 15,
+  priceAlertTriggered: 10,
+  portfolioReview: 30,
+  shareMilestone: 25,
+  ttseTrade: 15,
+  firstLimitOrder: 50,
 };
 
 export const FEATURE_KEYS = {

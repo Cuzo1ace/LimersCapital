@@ -72,6 +72,140 @@ function checkRateLimit(ip) {
   return true;
 }
 
+// ── Quiz answer keys (server-side only — NEVER sent to client) ──
+const QUIZ_ANSWERS = {
+  'quiz-1': {
+    answers: [1, 1, 2, 1, 2],
+    explanations: [
+      'RWAs are blockchain tokens representing ownership in physical or traditional financial assets — bonds, real estate, gold, stocks.',
+      'Your seed phrase gives full control of your wallet. Anyone with it can steal all your assets. Never share it — not even with "support."',
+      'Solana transactions typically cost less than $0.01 (around $0.00025), making it one of the cheapest blockchains for trading.',
+      'A wallet stores your private keys and lets you send, receive, and interact with tokens on the blockchain. Popular Solana wallets: Solflare, Phantom.',
+      'Ondo Finance tokenized US Treasury yields with USDY and brought institutional-grade RWA products to Solana.',
+    ],
+  },
+  'quiz-2': {
+    answers: [1, 1, 1, 1, 1],
+    explanations: [
+      'The TTSE trades Monday to Friday, 9:30 AM to 12:30 PM AST (Atlantic Standard Time).',
+      'The Bahamas launched the Sand Dollar in October 2020 — the world\'s first fully deployed Central Bank Digital Currency.',
+      'The Digital Assets and Registered Exchanges (DARE) Act provides a comprehensive licensing framework for digital asset businesses in the Bahamas.',
+      '50 shares × TT$106.10 = TT$5,305. Always multiply price by number of shares to calculate your total cost.',
+      'The TTSEC regulates the stock exchange, brokers, and listed companies to protect investors in Trinidad & Tobago.',
+    ],
+  },
+  'quiz-3': {
+    answers: [1, 1, 1, 1, 1],
+    explanations: [
+      'TVL (Total Value Locked) is the total capital deposited in a DeFi protocol\'s smart contracts. Higher TVL = more trust and usage.',
+      'High volume means many investors are actively trading. Combined with price movement, it signals strong conviction behind the trade.',
+      'Slippage happens when low liquidity causes your order to execute at a worse price than expected. More common in thinly-traded assets.',
+      'Jupiter is Solana\'s leading DEX aggregator — it finds the best swap route across all liquidity pools to get you the best price.',
+      'TT$1,358 ÷ 6.79 = ~$200 USD. Always convert when comparing TTSE prices (TTD) with Solana token prices (USD).',
+    ],
+  },
+  'quiz-4': {
+    answers: [1, 2, 1, 1, 2],
+    explanations: [
+      'A rug pull is when developers attract investment then drain the liquidity pool and vanish. Signs: anonymous team, unrealistic APY, no audit.',
+      'Fake airdrops can contain malicious contracts. Approving or interacting with unknown tokens can give scammers access to drain your wallet.',
+      'Risking only 1-2% per trade protects you from catastrophic losses. Even professional traders follow strict position sizing rules.',
+      'TTSE stocks and Solana tokens have low correlation — when crypto drops, your TTD positions may hold value, and vice versa.',
+      'Write your seed phrase on paper and store it securely. Never store it digitally — phones, cloud storage, and screenshots can all be hacked.',
+    ],
+  },
+};
+
+// ── Quiz attempt rate limiting (in-memory, per isolate) ──
+const quizAttemptMap = new Map();
+const QUIZ_MAX_ATTEMPTS_PER_DAY = 3;
+
+function checkQuizAttempts(ip, quizId) {
+  const key = `${ip}:${quizId}`;
+  const now = Date.now();
+  const entry = quizAttemptMap.get(key);
+  const dayMs = 86400000;
+
+  if (!entry || now - entry.start > dayMs) {
+    quizAttemptMap.set(key, { start: now, count: 1 });
+    return true;
+  }
+  entry.count++;
+  return entry.count <= QUIZ_MAX_ATTEMPTS_PER_DAY;
+}
+
+// ── Game endpoints handler ──
+async function handleGameRoute(path, request, env, origin) {
+  if (path === '/game/quiz-submit' && request.method === 'POST') {
+    const clientIp = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const body = await request.json();
+    const { quizId, answers } = body;
+
+    // Validate quiz exists
+    const quiz = QUIZ_ANSWERS[quizId];
+    if (!quiz) {
+      return new Response(JSON.stringify({ error: 'Invalid quiz ID' }), {
+        status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+      });
+    }
+
+    // Rate limit: max 3 attempts per quiz per day per IP
+    if (!checkQuizAttempts(clientIp, quizId)) {
+      return new Response(JSON.stringify({ error: 'Too many attempts. Try again tomorrow.', retryAfter: '24h' }), {
+        status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '86400', ...corsHeaders(origin) },
+      });
+    }
+
+    // Validate answers array
+    if (!Array.isArray(answers) || answers.length !== quiz.answers.length) {
+      return new Response(JSON.stringify({ error: 'Invalid answers format' }), {
+        status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+      });
+    }
+
+    // Grade the quiz
+    const correct = answers.map((a, i) => a === quiz.answers[i]);
+    const score = correct.filter(Boolean).length;
+    const total = quiz.answers.length;
+    const passed = score / total >= 0.7;
+    const perfect = score === total;
+
+    return new Response(JSON.stringify({
+      passed,
+      perfect,
+      score,
+      total,
+      correct,
+      correctAnswers: quiz.answers,
+      explanations: quiz.explanations,
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...corsHeaders(origin) },
+    });
+  }
+
+  // Placeholder for future game endpoints
+  if (path === '/game/leaderboard' && request.method === 'GET') {
+    // TODO: Read from KV when available
+    return new Response(JSON.stringify({ leaderboard: [], message: 'Leaderboard coming soon' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60', ...corsHeaders(origin) },
+    });
+  }
+
+  if (path.startsWith('/game/award-') && request.method === 'POST') {
+    // TODO: Validate + store in KV when available
+    return new Response(JSON.stringify({ ok: true, message: 'Recorded' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...corsHeaders(origin) },
+    });
+  }
+
+  return new Response(JSON.stringify({ error: 'Game route not found' }), {
+    status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+  });
+}
+
 // ── Allowed upstream routes ──
 const ROUTES = {
   // Helius RPC (standard JSON-RPC calls)
@@ -181,6 +315,12 @@ export default {
     // Route matching
     const url = new URL(request.url);
     const path = url.pathname;
+
+    // Handle /game/* routes (quiz validation, LP/XP tracking, leaderboard)
+    if (path.startsWith('/game/')) {
+      return handleGameRoute(path, request, env, origin);
+    }
+
     const route = ROUTES[path];
 
     if (!route) {

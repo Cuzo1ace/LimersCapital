@@ -79,6 +79,11 @@ const useStore = create(
         get().awardLP(10, 'Trade executed', 'trade');
         const volumeLP = Math.floor(total / 100);
         if (volumeLP > 0) get().awardLP(volumeLP, `$${total.toFixed(0)} volume`, 'volume');
+        // Bonus XP for TTSE stock trades (Caribbean market engagement)
+        if (market === 'ttse') {
+          get().awardXP(XP_VALUES.ttseTrade, 'TTSE stock trade!');
+          get().awardLP(10, 'TTSE trade bonus', 'ttse_trade');
+        }
 
         get()._checkBadges();
         track('trade_executed', { side, symbol, market, total: Math.round(total) });
@@ -170,10 +175,12 @@ const useStore = create(
         track('lesson_completed', { lessonId, totalLessons: Object.keys(newRead).length });
       },
 
-      submitQuizResult: (quizId, score, total) => {
+      // Score and pass/fail come from the server response (answers validated server-side).
+      // The `serverResult` parameter is passed from the QuizPanel after /game/quiz-submit returns.
+      submitQuizResult: (quizId, score, total, serverResult) => {
         const state = get();
-        const passed = score / total >= 0.7;
-        const perfect = score === total;
+        const passed = serverResult?.passed ?? (score / total >= 0.7);
+        const perfect = serverResult?.perfect ?? (score === total);
         const result = { score, total, passed, perfect, timestamp: new Date().toISOString() };
 
         const newResults = { ...state.quizResults, [quizId]: result };
@@ -325,9 +332,10 @@ const useStore = create(
       generateReferralCode: () => {
         const state = get();
         if (state.referralCode) return state.referralCode;
-        const code = state.walletAddress
-          ? 'LIMER-' + state.walletAddress.slice(0, 6).toUpperCase()
-          : 'LIMER-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+        // Sybil guard: wallet MUST be connected to generate a referral code.
+        // Deterministic code derived from wallet address — no random codes.
+        if (!state.walletConnected || !state.walletAddress) return null;
+        const code = 'LIMER-' + state.walletAddress.slice(0, 8).toUpperCase();
         set({ referralCode: code });
         return code;
       },
@@ -405,9 +413,13 @@ const useStore = create(
         set(s => ({ priceAlerts: [...s.priceAlerts, alert] }));
       },
       removePriceAlert: (id) => set(s => ({ priceAlerts: s.priceAlerts.filter(a => a.id !== id) })),
-      markAlertTriggered: (id) => set(s => ({
-        priceAlerts: s.priceAlerts.map(a => a.id === id ? { ...a, triggered: true } : a),
-      })),
+      markAlertTriggered: (id) => {
+        set(s => ({
+          priceAlerts: s.priceAlerts.map(a => a.id === id ? { ...a, triggered: true } : a),
+        }));
+        get().awardXP(XP_VALUES.priceAlertTriggered, 'Price alert triggered!');
+        get().awardLP(3, 'Price alert triggered', 'alert');
+      },
 
       // ── Session Tracking ───────────────────────────────────
       firstSessionDate: null,
@@ -440,6 +452,11 @@ const useStore = create(
           createdAt: new Date().toISOString(),
         };
         set(s => ({ limitOrders: [order, ...s.limitOrders].slice(0, 50) }));
+        // Award XP for first limit order (one-time)
+        if (!get().unlockedFeatures.includes('first_limit_order')) {
+          get().awardXP(XP_VALUES.firstLimitOrder, 'First limit order placed!');
+          set(s => ({ unlockedFeatures: [...s.unlockedFeatures, 'first_limit_order'] }));
+        }
         get().awardLP(5, 'Limit order placed', 'limit_order');
         set(s => ({ pendingToasts: [...s.pendingToasts, {
           id: 'lo:placed:' + order.id,
