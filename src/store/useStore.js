@@ -429,6 +429,66 @@ const useStore = create(
       theme: 'dark', // 'dark' | 'light'
       setTheme: (t) => set({ theme: t }),
 
+      // ── Limit Orders ───────────────────────────────────────
+      limitOrders: [],
+
+      addLimitOrder: ({ side, symbol, qty, limitPrice, currency, market }) => {
+        const order = {
+          id: Date.now().toString(36),
+          side, symbol, qty, limitPrice, currency, market,
+          status: 'open', // 'open' | 'triggered' | 'cancelled'
+          createdAt: new Date().toISOString(),
+        };
+        set(s => ({ limitOrders: [order, ...s.limitOrders].slice(0, 50) }));
+        get().awardLP(5, 'Limit order placed', 'limit_order');
+        set(s => ({ pendingToasts: [...s.pendingToasts, {
+          id: 'lo:placed:' + order.id,
+          type: 'xp',
+          title: '📋 Limit Order Placed',
+          message: `${side === 'buy' ? 'Buy' : 'Sell'} ${qty} ${symbol} when price ${side === 'buy' ? '≤' : '≥'} ${limitPrice}`,
+        }]}));
+      },
+
+      cancelLimitOrder: (id) => {
+        set(s => ({
+          limitOrders: s.limitOrders.map(o => o.id === id ? { ...o, status: 'cancelled' } : o),
+        }));
+      },
+
+      checkLimitOrders: (currentPrices) => {
+        // currentPrices: { SOL: { price }, BONK: { price }, ... }
+        const state = get();
+        const open = state.limitOrders.filter(o => o.status === 'open');
+        if (!open.length) return;
+
+        open.forEach(order => {
+          const current = currentPrices[order.symbol]?.price
+            ?? currentPrices[order.symbol?.toLowerCase()]?.current_price;
+          if (!current) return;
+          // Buy limit: execute when price falls to or below limit price
+          // Sell limit: execute when price rises to or above limit price
+          const hit = order.side === 'buy'
+            ? current <= order.limitPrice
+            : current >= order.limitPrice;
+          if (!hit) return;
+
+          const result = get().executeTrade(
+            order.side, order.symbol, order.qty, order.limitPrice, order.currency, order.market
+          );
+          if (result.success) {
+            set(s => ({
+              limitOrders: s.limitOrders.map(o => o.id === order.id ? { ...o, status: 'triggered', triggeredAt: new Date().toISOString() } : o),
+            }));
+            set(s => ({ pendingToasts: [...s.pendingToasts, {
+              id: 'lo:fill:' + order.id,
+              type: 'level',
+              title: '⚡ Limit Order Filled!',
+              message: `${order.side === 'buy' ? 'Bought' : 'Sold'} ${order.qty} ${order.symbol} @ ${order.limitPrice}`,
+            }]}));
+          }
+        });
+      },
+
       // ── Listing Applications ───────────────────────────────
       listingApplications: [],
 
@@ -458,6 +518,7 @@ const useStore = create(
         pendingReferralCode: state.pendingReferralCode,
         simulatedRevenue: state.simulatedRevenue,
         listingApplications: state.listingApplications,
+        limitOrders: state.limitOrders,
         watchlist: state.watchlist,
         priceAlerts: state.priceAlerts,
         hasSeenOnboarding: state.hasSeenOnboarding,

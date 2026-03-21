@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 
 // Token logo with colored-initial fallback
 function TokenLogo({ src, symbol, col }) {
@@ -64,7 +64,8 @@ function jupiterUrl(side, tokenMint) {
 }
 
 export default function TradePage() {
-  const { balanceUSD, balanceTTD, holdings, trades, executeTrade, walletConnected, watchlist, toggleWatchlist } = useStore();
+  const { balanceUSD, balanceTTD, holdings, trades, executeTrade, walletConnected, watchlist, toggleWatchlist,
+          unlockedFeatures, limitOrders, addLimitOrder, cancelLimitOrder, checkLimitOrders } = useStore();
   const marketQ = useQuery({
     queryKey: ['trade-prices'],
     queryFn: fetchTradePrices,
@@ -90,6 +91,10 @@ export default function TradePage() {
   const [message, setMessage] = useState(null);
   const [assetFilter, setAssetFilter] = useState('all'); // 'all' | 'watchlist'
   const [confirmPending, setConfirmPending] = useState(null); // { side, symbol, qty, price, total, fee, currency }
+  const [orderType, setOrderType] = useState('market'); // 'market' | 'limit'
+  const [limitPrice, setLimitPrice] = useState('');
+
+  const hasLimitOrders = unlockedFeatures.includes('limit_orders');
 
   // Real candle data from DexScreener — all 5 periods fetched together when a token is selected
   const candleQ = useQuery({
@@ -164,7 +169,18 @@ export default function TradePage() {
     if (!q || q <= 0 || !isFinite(q)) { flash('error', 'Enter a valid quantity'); return; }
     if (q > 1e9) { flash('error', 'Quantity too large'); return; }
     if (!selected) { flash('error', 'Select an asset first'); return; }
-    // Show confirmation modal instead of executing immediately
+
+    // Limit order path
+    if (orderType === 'limit') {
+      const lp = parseFloat(limitPrice);
+      if (!lp || lp <= 0 || !isFinite(lp)) { flash('error', 'Enter a valid limit price'); return; }
+      addLimitOrder({ side, symbol: selected.symbol, qty: q, limitPrice: lp, currency, market });
+      setQty('');
+      setLimitPrice('');
+      return;
+    }
+
+    // Market order path — show confirmation modal
     setConfirmPending({
       side, symbol: selected.symbol, qty: q,
       price, total: q * price, fee: q * price * 0.003, currency,
@@ -186,6 +202,16 @@ export default function TradePage() {
   }
 
   const isFallback = ttseQ.data && ttseQ.data.live === false;
+
+  // Check limit orders whenever live prices update
+  useEffect(() => {
+    if (!marketQ.data?.length) return;
+    const priceMap = {};
+    marketQ.data.forEach(t => {
+      priceMap[t.symbol.toUpperCase()] = { price: t.current_price };
+    });
+    checkLimitOrders(priceMap);
+  }, [marketQ.data]);
 
   return (
     <div>
@@ -363,7 +389,11 @@ export default function TradePage() {
             </div>
 
             {/* Asset list as clickable rows */}
-            <div className="max-h-[200px] md:max-h-[280px] overflow-y-auto mb-4 border border-border rounded-xl">
+            <div
+              role="listbox"
+              aria-label={isTTSE ? 'TTSE stocks' : 'Solana tokens'}
+              className="max-h-[200px] md:max-h-[280px] overflow-y-auto mb-4 border border-border rounded-xl"
+            >
               <div className="grid items-center gap-2 px-3 py-1.5 text-[.62rem] text-muted uppercase tracking-widest border-b border-border sticky top-0 z-10"
                 style={{ gridTemplateColumns: isTTSE ? '1.5fr 1fr .8fr .8fr' : '16px 24px 1.5fr 1fr .8fr', background: 'var(--color-night-2)' }}>
                 {!isTTSE && <span />}
@@ -375,16 +405,22 @@ export default function TradePage() {
               </div>
               {visibleAssets.map(a => {
                 const starred = watchlist.includes(a.symbol);
+                const isSelected = selectedId === a.id;
                 return (
                   <div key={a.id}
+                    role="option"
+                    aria-selected={isSelected}
+                    tabIndex={0}
                     onClick={() => setSelectedId(a.id)}
-                    className={`grid items-center gap-2 px-3 py-2 cursor-pointer text-[.76rem] border-b border-white/3 transition-all hover:bg-sea/5
-                      ${selectedId === a.id ? (isTTSE ? 'bg-[rgba(200,16,46,.08)]' : 'bg-sea/8') : ''}`}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(a.id); } }}
+                    className={`grid items-center gap-2 px-3 py-2 cursor-pointer text-[.76rem] border-b border-white/3 transition-all hover:bg-sea/5 focus:outline-none focus:ring-1 focus:ring-sea/50
+                      ${isSelected ? (isTTSE ? 'bg-[rgba(200,16,46,.08)]' : 'bg-sea/8') : ''}`}
                     style={{ gridTemplateColumns: isTTSE ? '1.5fr 1fr .8fr .8fr' : '16px 24px 1.5fr 1fr .8fr' }}>
                     {!isTTSE && (
                       <button
                         onClick={e => { e.stopPropagation(); toggleWatchlist(a.symbol); }}
-                        className="text-[.75rem] leading-none cursor-pointer bg-transparent border-none p-0 transition-all hover:scale-125"
+                        aria-label={`${starred ? 'Remove' : 'Add'} ${a.symbol} ${starred ? 'from' : 'to'} watchlist`}
+                        className="text-[.75rem] leading-none cursor-pointer bg-transparent border-none p-0 transition-all hover:scale-125 focus:outline-none focus:ring-1 focus:ring-sun/50 rounded"
                         style={{ color: starred ? '#FFCA3A' : 'rgba(90,120,160,0.5)' }}>
                         {starred ? '★' : '☆'}
                       </button>
@@ -573,6 +609,27 @@ export default function TradePage() {
             </button>
           </div>
 
+          {/* Order Type — Market / Limit (Limit unlocked by Module 3) */}
+          <div className="flex rounded-lg overflow-hidden border border-border">
+            <button onClick={() => setOrderType('market')}
+              className={`flex-1 py-1.5 text-[.68rem] font-mono cursor-pointer border-none transition-all ${orderType === 'market' ? 'bg-sea/15 text-sea' : 'bg-transparent text-muted'}`}>
+              Market
+            </button>
+            {hasLimitOrders ? (
+              <button onClick={() => setOrderType('limit')}
+                className={`flex-1 py-1.5 text-[.68rem] font-mono cursor-pointer border-none transition-all ${orderType === 'limit' ? 'bg-sun/15 text-sun' : 'bg-transparent text-muted'}`}>
+                Limit
+              </button>
+            ) : (
+              <button
+                onClick={() => flash('error', 'Complete Module 3 in Learn to unlock Limit Orders')}
+                className="flex-1 py-1.5 text-[.68rem] font-mono cursor-pointer border-none text-muted/50 bg-transparent flex items-center justify-center gap-1"
+                title="Complete Module 3 (Solana Ecosystem) to unlock">
+                🔒 Limit
+              </button>
+            )}
+          </div>
+
           {/* Asset select */}
           <div className="flex flex-col gap-1">
             <label htmlFor="trade-asset-select" className="text-[.65rem] text-muted uppercase tracking-wider">
@@ -597,6 +654,36 @@ export default function TradePage() {
               className="bg-black/30 border border-border text-txt rounded-lg px-3 py-2 font-mono text-[.78rem] outline-none focus:border-sea" />
           </div>
 
+          {/* Limit Price (only in limit mode) */}
+          {orderType === 'limit' && (
+            <div className="flex flex-col gap-1">
+              <label htmlFor="trade-limit-price" className="text-[.65rem] text-sun uppercase tracking-wider flex items-center gap-1">
+                📋 Limit Price
+                <span className="text-muted normal-case text-[.58rem]">
+                  ({side === 'buy' ? 'executes when price ≤' : 'executes when price ≥'} this)
+                </span>
+              </label>
+              <input
+                id="trade-limit-price"
+                type="number" value={limitPrice} onChange={e => setLimitPrice(e.target.value)}
+                placeholder={price ? price.toFixed(4) : '0.00'} min="0" step="any"
+                aria-label="Limit order trigger price"
+                className="bg-black/30 border border-sun/40 text-txt rounded-lg px-3 py-2 font-mono text-[.78rem] outline-none focus:border-sun"
+              />
+              {price && limitPrice && (
+                <div className="text-[.62rem] text-muted">
+                  {(() => {
+                    const lp = parseFloat(limitPrice);
+                    if (!isFinite(lp) || lp <= 0) return null;
+                    const diff = ((lp - price) / price * 100);
+                    const cls = diff >= 0 ? 'text-up' : 'text-down';
+                    return <span className={cls}>{diff >= 0 ? '+' : ''}{diff.toFixed(2)}% from market</span>;
+                  })()}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Preview */}
           <div className="rounded-lg p-3 text-[.74rem] border border-border"
             style={{ background: isTTSE ? 'rgba(200,16,46,.04)' : 'rgba(0,200,180,.04)' }}>
@@ -614,11 +701,17 @@ export default function TradePage() {
             Available: {fmtPrice(balance)} {currency}
           </div>
 
-          <button onClick={handleExecute} disabled={!price || !qty}
+          <button
+            onClick={handleExecute}
+            disabled={!price || !qty || (orderType === 'limit' && !limitPrice)}
             className={`w-full py-3 rounded-xl border-none cursor-pointer font-sans font-bold text-[.82rem] tracking-wide transition-all
-              ${side === 'buy' ? 'bg-up text-night hover:brightness-90' : 'bg-down text-white hover:brightness-90'}
+              ${orderType === 'limit'
+                ? 'bg-sun/90 text-night hover:brightness-90'
+                : side === 'buy' ? 'bg-up text-night hover:brightness-90' : 'bg-down text-white hover:brightness-90'}
               disabled:opacity-40 disabled:cursor-not-allowed`}>
-            {side === 'buy' ? 'Buy' : 'Sell'} {selected?.symbol || ''}
+            {orderType === 'limit'
+              ? `📋 Place Limit ${side === 'buy' ? 'Buy' : 'Sell'}`
+              : `${side === 'buy' ? 'Buy' : 'Sell'} ${selected?.symbol || ''}`}
           </button>
 
           {message && (
@@ -663,6 +756,30 @@ export default function TradePage() {
               <span>Trade live on Solflare Wallet</span>
               <span className="text-[.6rem] opacity-70">↗</span>
             </a>
+          )}
+
+          {/* Open Limit Orders */}
+          {hasLimitOrders && limitOrders.filter(o => o.status === 'open' && o.market === market).length > 0 && (
+            <div className="border-t border-border pt-3">
+              <div className="text-[.6rem] text-sun uppercase tracking-widest mb-2">📋 Open Limit Orders</div>
+              <div className="flex flex-col gap-1.5">
+                {limitOrders.filter(o => o.status === 'open' && o.market === market).map(o => (
+                  <div key={o.id} className="flex items-center gap-2 rounded-lg px-3 py-2 border border-sun/20 text-[.7rem]"
+                    style={{ background: 'rgba(255,202,58,.04)' }}>
+                    <span className={`px-1.5 py-0.5 rounded text-[.6rem] font-semibold uppercase
+                      ${o.side === 'buy' ? 'bg-up/12 text-up' : 'bg-down/12 text-down'}`}>{o.side}</span>
+                    <span className="font-bold text-txt">{o.symbol}</span>
+                    <span className="text-muted flex-1">{o.qty} @ {fmtPrice(o.limitPrice)}</span>
+                    <button
+                      onClick={() => cancelLimitOrder(o.id)}
+                      aria-label={`Cancel limit order for ${o.symbol}`}
+                      className="text-muted hover:text-down cursor-pointer bg-transparent border-none text-[.68rem] transition-all">
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
 
         </div>

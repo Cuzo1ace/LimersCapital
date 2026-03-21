@@ -1,6 +1,11 @@
 // CoinGecko free API — no key needed
 const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
 
+import {
+  safeFloat, validatePythFeed, validateDexPair,
+  validateCGSimplePrice, validateCGMarketItem, validateJupiterPrice, validateDeFiLlamaTVL,
+} from '../utils/validate';
+
 // Jupiter Price API v2 — no key needed (last-resort fallback)
 const JUPITER_BASE = 'https://api.jup.ag/price/v2';
 
@@ -204,11 +209,14 @@ export async function fetchPythPrices() {
   for (const feed of json.parsed || []) {
     const symbol = PYTH_ID_TO_SYMBOL[feed.id];
     if (!symbol) continue;
-    // price.price is a string; multiply by 10^expo (expo is negative)
-    const price = parseInt(feed.price.price) * Math.pow(10, feed.price.expo);
-    const confidence = parseInt(feed.price.conf) * Math.pow(10, feed.price.expo);
-    if (isFinite(price) && price > 0) {
-      result[symbol] = { price, confidence };
+    try {
+      const { price: rawPrice, expo, conf: rawConf } = validatePythFeed(feed, feed.id);
+      const scale = Math.pow(10, expo);
+      const price = rawPrice * scale;
+      const confidence = rawConf * scale;
+      if (price > 0) result[symbol] = { price, confidence };
+    } catch (e) {
+      console.warn('Pyth validation:', e.message);
     }
   }
   return result;
@@ -223,25 +231,23 @@ export async function fetchDexScreenerPrices(mints) {
   const pairs = await res.json(); // array of DEX pair objects
 
   // Per mint, pick the pair with highest 24h volume (most liquid / reliable price)
-  const best = {};
+  const bestRaw = {};
   for (const pair of pairs) {
     const mint = pair.baseToken?.address;
     if (!mint) continue;
     const vol = pair.volume?.h24 ?? 0;
-    if (!best[mint] || vol > (best[mint].volume?.h24 ?? 0)) best[mint] = pair;
+    if (!bestRaw[mint] || vol > (bestRaw[mint].volume?.h24 ?? 0)) bestRaw[mint] = pair;
   }
 
-  // Translate mint → symbol and extract fields
+  // Validate and translate mint → symbol
   const result = {};
   for (const [symbol, mint] of Object.entries(SOL_TOKENS)) {
-    const pair = best[mint];
-    if (!pair) continue;
-    const price = parseFloat(pair.priceUsd);
-    if (!isFinite(price) || price <= 0) continue;
+    const validated = validateDexPair(bestRaw[mint]);
+    if (!validated) continue;
     result[symbol] = {
-      price,
-      change24h: pair.priceChange?.h24 ?? null,
-      volume24h: pair.volume?.h24 ?? null,
+      price:     validated.price,
+      change24h: validated.change24h,
+      volume24h: validated.volume24h,
     };
   }
   return result;
@@ -256,10 +262,8 @@ export async function fetchJupiterPrices() {
 
   const prices = {};
   for (const [symbol, mint] of Object.entries(SOL_TOKENS)) {
-    const data = json.data?.[mint];
-    if (data) {
-      prices[symbol] = { price: parseFloat(data.price), mint };
-    }
+    const validated = validateJupiterPrice(json.data?.[mint]);
+    if (validated) prices[symbol] = { ...validated, mint };
   }
   return prices;
 }
@@ -296,8 +300,8 @@ export async function fetchTradePrices() {
         const json = await res.json();
         for (const sym of missingSymbols) {
           const mint = SOL_TOKENS[sym];
-          const data = json.data?.[mint];
-          if (data?.price) jupPrices[sym] = { price: parseFloat(data.price) };
+          const validated = validateJupiterPrice(json.data?.[mint]);
+          if (validated) jupPrices[sym] = validated;
         }
       }
     } catch (e) {
@@ -347,8 +351,8 @@ export async function fetchSolanaMarketData() {
     try { jupPrices = await fetchJupiterPrices(); } catch {}
   }
 
-  // Start with CoinGecko data
-  const result = [...cgData];
+  // Validate CoinGecko market items — filter out any with missing/corrupt prices
+  const result = cgData.map(validateCGMarketItem).filter(Boolean);
 
   // Add Jupiter-only tokens from DexScreener / Jupiter
   const cgSymbols = new Set(cgData.map(t => (t.symbol || '').toUpperCase()));
@@ -380,10 +384,7 @@ export async function fetchSolPrice() {
   const res = await fetch(`${COINGECKO_BASE}/simple/price?ids=solana&vs_currency=usd&include_24hr_change=true`);
   if (!res.ok) throw new Error(`CoinGecko API error: ${res.status}`);
   const json = await res.json();
-  return {
-    price: json.solana.usd,
-    change24h: json.solana.usd_24h_change,
-  };
+  return validateCGSimplePrice(json, 'solana');
 }
 
 // DeFiLlama — TVL for Solana chain
@@ -391,6 +392,6 @@ export async function fetchSolanaTVL() {
   const res = await fetch('https://api.llama.fi/v2/chains');
   if (!res.ok) throw new Error(`DeFiLlama error: ${res.status}`);
   const chains = await res.json();
-  const solana = chains.find(c => c.name === 'Solana');
-  return solana ? solana.tvl : null;
+  const tvl = validateDeFiLlamaTVL(chains, 'Solana');
+  return tvl;
 }
