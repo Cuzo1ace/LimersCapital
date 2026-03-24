@@ -60,7 +60,7 @@ function TabContent() {
     case 'listing': return <ListingPage />;
     case 'squeeze': return <AgentSqueezePage />;
     case 'flywheel': return <FlywheelPage />;
-    case 'legal': return <LegalPage />;
+    case 'legal': return <RegulationPage />; // Legal merged into Regulation
     default: return <DashboardPage />;
   }
 }
@@ -74,6 +74,18 @@ function StreakCheck() {
     try { checkDailyStreak(); } catch {}
     try { migrateToLP(); } catch {}
     try { incrementSession(); } catch {}
+  }, []);
+  return null;
+}
+
+function NewUserRedirect() {
+  const modulesCompleted = useStore(s => s.modulesCompleted);
+  const hasSeenOnboarding = useStore(s => s.hasSeenOnboarding);
+  const setActiveTab = useStore(s => s.setActiveTab);
+  useEffect(() => {
+    if (!hasSeenOnboarding && modulesCompleted.length === 0) {
+      setActiveTab('learn');
+    }
   }, []);
   return null;
 }
@@ -108,6 +120,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <NetworkStatus />
       <StreakCheck />
+      <NewUserRedirect />
       <ReferralHandler />
       <ThemeSync />
       <LimerBridge />

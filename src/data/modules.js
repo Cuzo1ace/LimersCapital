@@ -1,3 +1,10 @@
+export const LEVELS = {
+  basics:       { id: 'basics',       label: 'Basics',       icon: '\u{1F331}', color: 'var(--color-sea)',  modules: ['module-1', 'module-2'], description: 'Foundations of blockchain and Caribbean markets' },
+  intermediate: { id: 'intermediate', label: 'Intermediate', icon: '\u26A1',     color: 'var(--color-sun)',  modules: ['module-3', 'module-4'], description: 'Solana ecosystem mastery and security' },
+  advanced:     { id: 'advanced',     label: 'Advanced',     icon: '\u{1F3C6}', color: 'var(--color-coral)', modules: ['module-5', 'module-6', 'module-7'], description: 'Liquidity provision strategies and Meteora mastery' },
+};
+export const LEVEL_ORDER = ['basics', 'intermediate', 'advanced'];
+
 export const MODULES = [
   {
     id: 'module-1',

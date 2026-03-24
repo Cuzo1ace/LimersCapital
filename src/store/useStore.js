@@ -308,6 +308,7 @@ const useStore = create(
         limerPoints: 0, lpHistory: [], lpMultiplier: 1.0,
         lpSimPositions: [], agentSqueezeUses: 0,
         visitedLPArmy: false, viewedFlywheel: false,
+        hasSeenLearnHero: false, experienceLevel: null, eli5Mode: false,
       }),
 
       // ── Limer Points (LP) ──────────────────────────────────
@@ -440,6 +441,17 @@ const useStore = create(
       // ── Onboarding ─────────────────────────────────────────
       hasSeenOnboarding: false,
       setHasSeenOnboarding: (v) => set({ hasSeenOnboarding: v }),
+      hasSeenLearnHero: false,
+      setHasSeenLearnHero: (v) => set({ hasSeenLearnHero: v }),
+      experienceLevel: null, // 'beginner' | 'intermediate' | 'advanced'
+      eli5Mode: false,
+      setExperienceLevel: (level) => {
+        set({ experienceLevel: level });
+        if (level === 'beginner') set({ eli5Mode: true });
+      },
+      setEli5Mode: (v) => set({ eli5Mode: v }),
+      activeLevel: 'basics', // 'basics' | 'intermediate' | 'advanced'
+      setActiveLevel: (level) => set({ activeLevel: level }),
 
       // ── Theme ──────────────────────────────────────────────
       theme: 'dark', // 'dark' | 'light'
@@ -583,7 +595,7 @@ const useStore = create(
         // Wallet state is re-established on connect via wallet-standard.
         // This prevents localStorage from becoming a behavioral dossier
         // linking wallet addresses to trade history.
-        _storeVersion: 2,
+        _storeVersion: 3,
         balanceUSD: state.balanceUSD, balanceTTD: state.balanceTTD,
         holdings: state.holdings, trades: state.trades,
         cluster: state.cluster,
@@ -609,6 +621,10 @@ const useStore = create(
         watchlist: state.watchlist,
         priceAlerts: state.priceAlerts,
         hasSeenOnboarding: state.hasSeenOnboarding,
+        hasSeenLearnHero: state.hasSeenLearnHero,
+        experienceLevel: state.experienceLevel,
+        eli5Mode: state.eli5Mode,
+        activeLevel: state.activeLevel,
         theme: state.theme,
         streakShields: state.streakShields,
         lastShieldRefill: state.lastShieldRefill,

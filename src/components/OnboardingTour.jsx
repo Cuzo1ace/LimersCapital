@@ -2,7 +2,20 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useStore from '../store/useStore';
 
+const EXPERIENCE_LEVELS = [
+  { id: 'beginner', icon: '🌱', label: 'Brand new', desc: 'What even is crypto? Explain it simply.', color: '#00ffa3' },
+  { id: 'intermediate', icon: '📊', label: 'I know the basics', desc: 'Wallets, tokens, DeFi — I get the gist.', color: '#9945FF' },
+  { id: 'advanced', icon: '🚀', label: "I'm experienced", desc: 'LPing, on-chain analysis, yield strategies.', color: '#FACC15' },
+];
+
 const STEPS = [
+  {
+    type: 'experience',
+    icon: '🤔',
+    title: 'How familiar are you with crypto?',
+    desc: 'This helps us tailor your learning experience.',
+    color: '#00ffa3',
+  },
   {
     icon: '🌴',
     title: 'Welcome to Limer\'s Capital',
@@ -34,24 +47,28 @@ const STEPS = [
     tabLabel: 'Regulation tab',
   },
   {
-    icon: '🔔',
-    title: 'Price Alerts & More',
-    desc: 'Set browser price alerts for any token — get notified the moment SOL drops below your target or JUP breaks out above it. Plus: earn LP points for every action.',
-    color: '#FB923C',
-    tab: 'trade',
-    tabLabel: 'Paper Trade tab',
+    type: 'learn-cta',
+    icon: '📚',
+    title: 'Start Your Journey',
+    desc: 'Complete lessons to earn XP, unlock trading features, and climb the tier ranks. Knowledge is your first trade — learn before you earn.',
+    color: '#00ffa3',
+    tab: 'learn',
+    tabLabel: 'Learn tab',
   },
 ];
 
 export default function OnboardingTour() {
-  const { hasSeenOnboarding, setHasSeenOnboarding, setActiveTab } = useStore();
+  const { hasSeenOnboarding, setHasSeenOnboarding, setActiveTab, setExperienceLevel } = useStore();
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
+  const [selectedLevel, setSelectedLevel] = useState(null);
 
   if (hasSeenOnboarding) return null;
 
   const current = STEPS[step];
   const isLast = step === STEPS.length - 1;
+  const isExperienceStep = current.type === 'experience';
+  const isLearnCTA = current.type === 'learn-cta';
 
   function goTo(next) {
     setDirection(next > step ? 1 : -1);
@@ -63,6 +80,11 @@ export default function OnboardingTour() {
     if (tab) setActiveTab(tab);
   }
 
+  function handleExperienceSelect(level) {
+    setSelectedLevel(level);
+    setExperienceLevel(level);
+  }
+
   return (
     <AnimatePresence>
       <motion.div
@@ -72,7 +94,7 @@ export default function OnboardingTour() {
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-[200] flex items-center justify-center p-4"
         style={{ background: 'rgba(5,12,28,.85)', backdropFilter: 'blur(6px)' }}
-        onClick={(e) => e.target === e.currentTarget && finish(null)}
+        onClick={(e) => e.target === e.currentTarget && finish('learn')}
       >
         <motion.div
           key="card"
@@ -107,7 +129,7 @@ export default function OnboardingTour() {
                 ))}
               </div>
               <button
-                onClick={() => finish(null)}
+                onClick={() => finish('learn')}
                 className="text-[.7rem] text-muted hover:text-txt transition-colors cursor-pointer bg-transparent border-none font-mono"
               >
                 Skip tour
@@ -136,9 +158,48 @@ export default function OnboardingTour() {
                 <p className="text-[.82rem] text-txt-2 text-center leading-relaxed mb-2">
                   {current.desc}
                 </p>
-                {current.tab && (
+
+                {/* Experience level picker */}
+                {isExperienceStep && (
+                  <div className="flex flex-col gap-2.5 mt-5">
+                    {EXPERIENCE_LEVELS.map(lvl => (
+                      <button
+                        key={lvl.id}
+                        onClick={() => handleExperienceSelect(lvl.id)}
+                        className={`flex items-center gap-3 rounded-xl px-4 py-3.5 border cursor-pointer transition-all text-left
+                          ${selectedLevel === lvl.id
+                            ? 'border-sea bg-sea/10'
+                            : 'border-border bg-black/20 hover:border-sea/30'}`}
+                      >
+                        <span className="text-2xl">{lvl.icon}</span>
+                        <div className="flex-1">
+                          <div className={`font-body font-bold text-[.85rem] ${selectedLevel === lvl.id ? 'text-sea' : 'text-txt'}`}>{lvl.label}</div>
+                          <div className="text-[.7rem] text-muted">{lvl.desc}</div>
+                        </div>
+                        {selectedLevel === lvl.id && <span className="text-sea text-lg">&#10003;</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Learn CTA — show benefits */}
+                {isLearnCTA && (
+                  <div className="flex flex-col gap-2 mt-4">
+                    <div className="flex items-center gap-2 text-[.76rem] text-txt-2">
+                      <span className="text-sea">&#9679;</span> Unlock TTSE trading, limit orders, portfolio tools
+                    </div>
+                    <div className="flex items-center gap-2 text-[.76rem] text-txt-2">
+                      <span className="text-sea">&#9679;</span> Earn 50 XP per lesson, 100+ per quiz
+                    </div>
+                    <div className="flex items-center gap-2 text-[.76rem] text-txt-2">
+                      <span className="text-sea">&#9679;</span> Climb 10 tiers from Sand Walker to Sovereign
+                    </div>
+                  </div>
+                )}
+
+                {current.tab && !isLearnCTA && (
                   <p className="text-[.7rem] text-center font-mono" style={{ color: current.color + 'bb' }}>
-                    → Find it in the <span style={{ color: current.color }}>{current.tabLabel}</span>
+                    &#8594; Find it in the <span style={{ color: current.color }}>{current.tabLabel}</span>
                   </p>
                 )}
               </motion.div>
@@ -151,20 +212,46 @@ export default function OnboardingTour() {
                   onClick={() => goTo(step - 1)}
                   className="px-4 py-2.5 rounded-xl text-[.78rem] font-mono border border-border text-muted hover:text-txt hover:border-white/20 transition-all cursor-pointer bg-transparent"
                 >
-                  ← Back
+                  &#8592; Back
                 </button>
               )}
-              <button
-                onClick={() => isLast ? finish(current.tab) : goTo(step + 1)}
-                className="flex-1 py-2.5 rounded-xl text-[.82rem] font-body font-bold transition-all cursor-pointer border-none"
-                style={{
-                  background: `linear-gradient(135deg, ${current.color}, ${current.color}bb)`,
-                  color: '#0d0e10',
-                  boxShadow: `0 0 20px ${current.color}40`,
-                }}
-              >
-                {isLast ? `Let's go →` : 'Next →'}
-              </button>
+              {isLearnCTA ? (
+                <>
+                  <button
+                    onClick={() => finish('learn')}
+                    className="flex-1 py-2.5 rounded-xl text-[.82rem] font-body font-bold transition-all cursor-pointer border-none"
+                    style={{
+                      background: `linear-gradient(135deg, ${current.color}, ${current.color}bb)`,
+                      color: '#0d0e10',
+                      boxShadow: `0 0 20px ${current.color}40`,
+                    }}
+                  >
+                    Start Learning &#8594;
+                  </button>
+                  <button
+                    onClick={() => finish('dashboard')}
+                    className="px-4 py-2.5 rounded-xl text-[.78rem] font-mono border border-border text-muted hover:text-txt hover:border-white/20 transition-all cursor-pointer bg-transparent"
+                  >
+                    Explore
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => {
+                    if (isExperienceStep && !selectedLevel) return;
+                    goTo(step + 1);
+                  }}
+                  disabled={isExperienceStep && !selectedLevel}
+                  className="flex-1 py-2.5 rounded-xl text-[.82rem] font-body font-bold transition-all cursor-pointer border-none disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{
+                    background: `linear-gradient(135deg, ${current.color}, ${current.color}bb)`,
+                    color: '#0d0e10',
+                    boxShadow: `0 0 20px ${current.color}40`,
+                  }}
+                >
+                  Next &#8594;
+                </button>
+              )}
             </div>
 
             <p className="text-[.65rem] text-muted text-center mt-4 font-mono">
