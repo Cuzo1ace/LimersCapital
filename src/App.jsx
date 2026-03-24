@@ -17,6 +17,8 @@ import TokenomicsPage from './pages/TokenomicsPage';
 import RevenuePage from './pages/RevenuePage';
 import CommunityPage from './pages/CommunityPage';
 import ListingPage from './pages/ListingPage';
+import AgentSqueezePage from './pages/AgentSqueezePage';
+import FlywheelPage from './pages/FlywheelPage';
 import useStore from './store/useStore';
 import LimerBridge from './components/solana/LimerBridge';
 import PriceAlertChecker from './components/PriceAlertChecker';
@@ -55,6 +57,8 @@ function TabContent() {
     case 'revenue': return <RevenuePage />;
     case 'community': return <CommunityPage />;
     case 'listing': return <ListingPage />;
+    case 'squeeze': return <AgentSqueezePage />;
+    case 'flywheel': return <FlywheelPage />;
     default: return <DashboardPage />;
   }
 }

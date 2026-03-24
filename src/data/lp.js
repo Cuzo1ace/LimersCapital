@@ -30,6 +30,13 @@ export const LP_ACTIONS = [
   { action: 'Connect wallet', lp: 50, multiplied: false, icon: '🔗', note: 'One-time' },
   { action: 'View glossary term', lp: 1, multiplied: false, icon: '📖' },
   { action: 'Referral signup', lp: 200, multiplied: false, icon: '🤝', note: 'Per referral' },
+  { action: 'Complete LP lesson', lp: 8, multiplied: true, icon: '💧' },
+  { action: 'Pass LP quiz', lp: 20, multiplied: true, icon: '🧠' },
+  { action: 'Perfect LP quiz score', lp: 35, multiplied: true, icon: '⭐' },
+  { action: 'Complete LP module', lp: 75, multiplied: true, icon: '🎓' },
+  { action: 'Open simulated LP position', lp: 30, multiplied: true, icon: '🏊' },
+  { action: 'Use Agent Squeeze', lp: 10, multiplied: true, icon: '🤖' },
+  { action: 'Visit LP Army Academy', lp: 15, multiplied: false, icon: '⚔️', note: 'One-time' },
 ];
 
 // Simulated leaderboard — deterministic fake users

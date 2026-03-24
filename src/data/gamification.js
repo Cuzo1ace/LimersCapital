@@ -42,6 +42,14 @@ export const XP_VALUES = {
   shareMilestone: 25,
   ttseTrade: 15,
   firstLimitOrder: 50,
+  lpLessonRead: 60,
+  lpQuizPass: 120,
+  lpQuizPerfect: 180,
+  lpModuleComplete: 250,
+  lpSimPosition: 100,
+  agentSqueezeUse: 30,
+  flywheelView: 20,
+  lpArmyVisit: 40,
 };
 
 export const FEATURE_KEYS = {
@@ -50,4 +58,8 @@ export const FEATURE_KEYS = {
   limit_orders: 'limit_orders',
   portfolio_analytics: 'portfolio_analytics',
   pro_trader: 'pro_trader',
+  meteora_dashboard: 'meteora_dashboard',
+  agent_squeeze_basic: 'agent_squeeze_basic',
+  agent_squeeze_pro: 'agent_squeeze_pro',
+  lp_dashboard: 'lp_dashboard',
 };

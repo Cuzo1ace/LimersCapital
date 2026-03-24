@@ -24,4 +24,14 @@ export const BADGES = [
   { id: 'lp_1000', title: 'Community Builder', desc: 'Earn 1,000 Limer Points', icon: '🏗️', cat: 'special', check: s => (s.limerPoints || 0) >= 1000 },
   { id: 'lp_5000', title: 'Protocol Pioneer', desc: 'Earn 5,000 Limer Points', icon: '🚀', cat: 'special', check: s => (s.limerPoints || 0) >= 5000 },
   { id: 'referrer', title: 'Network Effect', desc: 'Get your first referral', icon: '🤝', cat: 'special', check: s => (s.lpReferrals || []).length >= 1 },
+
+  // LP Academy
+  { id: 'first_pool', title: 'First Pool', desc: 'Open your first simulated LP position', icon: '🏊', cat: 'lp', check: s => (s.lpSimPositions || []).length >= 1 },
+  { id: 'il_survivor', title: 'IL Survivor', desc: 'Complete the Impermanent Loss lesson and pass the LP Fundamentals quiz', icon: '🛡️', cat: 'lp', check: s => s.lessonsRead?.['5-3'] && s.quizResults?.['quiz-5']?.passed },
+  { id: 'yield_farmer', title: 'Yield Farmer', desc: 'Complete all three LP Academy modules', icon: '🌾', cat: 'lp', check: s => ['module-5', 'module-6', 'module-7'].every(m => (s.modulesCompleted || []).includes(m)) },
+  { id: 'meteora_master', title: 'Meteora Master', desc: 'Score 100% on the Meteora Mastery quiz', icon: '☄️', cat: 'lp', check: s => s.quizResults?.['quiz-6']?.perfect },
+  { id: 'lp_army_recruit', title: 'LP Army Recruit', desc: 'Visit LP Army Academy through our partner link', icon: '⚔️', cat: 'lp', check: s => s.visitedLPArmy },
+  { id: 'strategy_scholar', title: 'Strategy Scholar', desc: 'Read all 8 Advanced LP Strategy lessons', icon: '📐', cat: 'lp', check: s => ['7-1','7-2','7-3','7-4','7-5','7-6','7-7','7-8'].every(l => s.lessonsRead?.[l]) },
+  { id: 'flywheel_believer', title: 'Flywheel Believer', desc: 'Explore the Solana LP Flywheel page', icon: '🔄', cat: 'lp', check: s => s.viewedFlywheel },
+  { id: 'squeeze_analyst', title: 'Squeeze Analyst', desc: 'Use Agent Squeeze to analyze LP opportunities 3 times', icon: '🤖', cat: 'lp', check: s => (s.agentSqueezeUses || 0) >= 3 },
 ];

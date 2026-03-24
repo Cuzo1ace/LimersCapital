@@ -48,6 +48,8 @@ export default function Header() {
     { id: 'revenue', label: 'Revenue', icon: '💰' },
     { id: 'community', label: 'Community', icon: '🌴' },
     { id: 'listing', label: 'List Your Company', icon: '🏛️' },
+    { id: 'flywheel', label: 'LP Flywheel', icon: '🔄' },
+    { id: 'squeeze', label: 'Agent Squeeze', icon: '🤖' },
   ];
   const isLimeTab = LIME_TABS.some(t => t.id === activeTab);
 

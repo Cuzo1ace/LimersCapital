@@ -207,6 +207,8 @@ const useStore = create(
         const state = get();
         MODULES.forEach(mod => {
           if (state.modulesCompleted.includes(mod.id)) return;
+          // Prerequisite check: module cannot complete until prereq is done
+          if (mod.prereq && !state.modulesCompleted.includes(mod.prereq)) return;
           const allRead = mod.lessons.every(l => state.lessonsRead[l]);
           const quizPassed = state.quizResults[mod.quizId]?.passed;
           if (allRead && quizPassed) {
@@ -304,6 +306,8 @@ const useStore = create(
         lastLoginDate: null, longestStreak: 0, viewedGlossaryTerms: [],
         modulesCompleted: [], pendingToasts: [],
         limerPoints: 0, lpHistory: [], lpMultiplier: 1.0,
+        lpSimPositions: [], agentSqueezeUses: 0,
+        visitedLPArmy: false, viewedFlywheel: false,
       }),
 
       // ── Limer Points (LP) ──────────────────────────────────
@@ -317,7 +321,7 @@ const useStore = create(
 
       awardLP: (baseAmount, reason, action) => {
         const state = get();
-        const multiplied = ['trade', 'volume', 'lesson', 'quiz', 'module', 'streak'].includes(action);
+        const multiplied = ['trade', 'volume', 'lesson', 'quiz', 'module', 'streak', 'lp_position', 'squeeze'].includes(action);
         const amount = multiplied ? Math.floor(baseAmount * state.lpMultiplier) : baseAmount;
         const entry = { amount, reason, action, timestamp: new Date().toISOString() };
 
@@ -506,6 +510,63 @@ const useStore = create(
         });
       },
 
+      // ── LP Simulation & Agent Squeeze ─────────────────────
+      lpSimPositions: [],
+      agentSqueezeUses: 0,
+      visitedLPArmy: false,
+      viewedFlywheel: false,
+
+      openLPPosition: (positionData) => {
+        const position = {
+          id: Date.now().toString(36),
+          ...positionData,
+          openedAt: new Date().toISOString(),
+          status: 'open',
+          feesEarned: 0,
+          ilLoss: 0,
+        };
+        set(s => ({ lpSimPositions: [position, ...s.lpSimPositions].slice(0, 20) }));
+        get().awardXP(XP_VALUES.lpSimPosition || 100, 'Simulated LP position opened!');
+        get().awardLP(30, 'LP position opened', 'lp_position');
+        get()._checkBadges();
+        track('lp_position_opened', { pair: positionData.pair, strategy: positionData.strategy });
+      },
+
+      closeLPPosition: (id) => {
+        set(s => ({
+          lpSimPositions: s.lpSimPositions.map(p =>
+            p.id === id ? { ...p, status: 'closed', closedAt: new Date().toISOString() } : p
+          ),
+        }));
+        track('lp_position_closed', { positionId: id });
+      },
+
+      recordAgentSqueezeUse: () => {
+        set(s => ({ agentSqueezeUses: s.agentSqueezeUses + 1 }));
+        get().awardXP(XP_VALUES.agentSqueezeUse || 30, 'Agent Squeeze analysis!');
+        get().awardLP(10, 'Agent Squeeze used', 'squeeze');
+        get()._checkBadges();
+        track('agent_squeeze_used', { totalUses: get().agentSqueezeUses });
+      },
+
+      markLPArmyVisited: () => {
+        if (get().visitedLPArmy) return;
+        set({ visitedLPArmy: true });
+        get().awardXP(XP_VALUES.lpArmyVisit || 40, 'LP Army Academy visited!');
+        get().awardLP(15, 'LP Army visit', 'lp_army');
+        get()._checkBadges();
+        track('lp_army_visited');
+      },
+
+      markFlywheelViewed: () => {
+        if (get().viewedFlywheel) return;
+        set({ viewedFlywheel: true });
+        get().awardXP(XP_VALUES.flywheelView || 20, 'Solana Flywheel explored!');
+        get().awardLP(5, 'Flywheel viewed', 'flywheel');
+        get()._checkBadges();
+        track('flywheel_viewed');
+      },
+
       // ── Listing Applications ───────────────────────────────
       listingApplications: [],
 
@@ -538,6 +599,11 @@ const useStore = create(
         lpReferrals: state.lpReferrals, _lpMigrated: state._lpMigrated,
         pendingReferralCode: state.pendingReferralCode,
         simulatedRevenue: state.simulatedRevenue,
+        // LP Simulation & Agent Squeeze
+        lpSimPositions: state.lpSimPositions,
+        agentSqueezeUses: state.agentSqueezeUses,
+        visitedLPArmy: state.visitedLPArmy,
+        viewedFlywheel: state.viewedFlywheel,
         listingApplications: state.listingApplications,
         limitOrders: state.limitOrders,
         watchlist: state.watchlist,

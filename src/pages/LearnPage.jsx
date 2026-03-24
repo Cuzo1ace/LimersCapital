@@ -29,9 +29,9 @@ export default function LearnPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-7">
         <StatCard icon={tier.icon} label="Tier" value={tier.name} sub={`${xp} XP`} color={tier.color} />
         <StatCard icon="📚" label="Lessons" value={`${readCount}/${totalLessons}`}
-          sub={`${modulesCompleted.length}/4 modules`} color="var(--color-sea)" />
+          sub={`${modulesCompleted.length}/${MODULES.length} modules`} color="var(--color-sea)" />
         <StatCard icon="🏅" label="Badges" value={earnedBadges.length}
-          sub={`of 13 earned`} color="var(--color-sun)" />
+          sub={`earned`} color="var(--color-sun)" />
         <StatCard icon="🔥" label="Streak" value={`${currentStreak} day${currentStreak !== 1 ? 's' : ''}`}
           sub={next ? `${next.xp - xp} XP to ${next.icon}` : 'Max tier!'} color="var(--color-coral)" />
       </div>
@@ -67,10 +67,22 @@ export default function LearnPage() {
               const quizResult = quizResults[mod.quizId];
               const isComplete = modulesCompleted.includes(mod.id);
               const progress = (readInMod / mod.lessons.length) * 100;
+              const prereqMet = !mod.prereq || modulesCompleted.includes(mod.prereq);
+              const prereqMod = mod.prereq ? MODULES.find(m => m.id === mod.prereq) : null;
 
               return (
-                <div key={mod.id} className={`rounded-xl border p-6 transition-all ${isComplete ? 'border-up/30' : 'border-border'}`}
+                <div key={mod.id} className={`rounded-xl border p-6 transition-all relative ${isComplete ? 'border-up/30' : prereqMet ? 'border-border' : 'border-border opacity-60'}`}
                   style={{ background: 'var(--color-card)' }}>
+                  {!prereqMet && (
+                    <div className="absolute inset-0 z-10 rounded-xl flex items-center justify-center backdrop-blur-[2px]"
+                      style={{ background: 'rgba(0,0,0,0.35)' }}>
+                      <div className="text-center px-6">
+                        <div className="text-2xl mb-2">🔒</div>
+                        <div className="text-[.8rem] font-bold text-txt">Complete {prereqMod?.title || 'previous module'} first</div>
+                        <div className="text-[.65rem] text-muted mt-1">Finish all lessons and pass the quiz to unlock</div>
+                      </div>
+                    </div>
+                  )}
                   {/* Module header */}
                   <div className="flex items-center gap-4 mb-4">
                     <div className="text-3xl">{mod.icon}</div>
