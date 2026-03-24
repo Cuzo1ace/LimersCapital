@@ -25,6 +25,7 @@ import StockChart from '../components/StockChart';
 import FeatureLock from '../components/gamification/FeatureLock';
 import PriceAlerts from '../components/PriceAlerts';
 import useStore from '../store/useStore';
+import { RISK_BANNER } from '../data/legal';
 
 const fmtUSD = n => {
   if (n == null) return '—';
@@ -217,6 +218,12 @@ export default function TradePage() {
 
   return (
     <div>
+      {/* ── Risk Disclosure Banner ──────────────────────────── */}
+      <div className="flex items-start gap-2.5 rounded-xl px-4 py-3 mb-5 border border-[rgba(251,146,60,.25)] bg-[rgba(251,146,60,.06)] text-[.76rem] text-[#FB923C] font-body">
+        <span className="flex-shrink-0 mt-0.5">&#9888;&#65039;</span>
+        <span>{RISK_BANNER.trade}</span>
+      </div>
+
       {/* ── Trade Confirmation Modal ─────────────────────────── */}
       {confirmPending && (
         <div

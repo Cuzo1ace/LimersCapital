@@ -61,7 +61,7 @@ export const LISTING_BENEFITS = [
 export const LISTING_FAQ = [
   { q: 'Do I need to change my TTSE listing?', a: 'No. Your TTSE listing remains unchanged. Limer\'s Capital creates a tokenized representation that trades on Solana alongside your existing listing.' },
   { q: 'How does tokenization work?', a: 'We issue SPL tokens on Solana backed by custodied shares. Each token represents fractional ownership in the underlying TTSE-listed security.' },
-  { q: 'Is this legal in Trinidad & Tobago?', a: 'We work within the TTSEC framework and Caribbean regulatory guidelines. Our legal team ensures compliance with all applicable securities laws.' },
+  { q: 'Is this legal in Trinidad & Tobago?', a: 'We are building toward alignment with the TTSEC framework and Caribbean regulatory guidelines. Our platform is currently educational and paper-trading only — no real securities are traded until proper licensing is obtained.' },
   { q: 'What does it cost?', a: 'Explorer tier is free — your company appears on our platform with live data. Pioneer and Enterprise tiers offer additional features at published rates.' },
   { q: 'How do investors buy tokenized shares?', a: 'Investors connect a Solana wallet (Solflare) and trade using USDC or SOL. They can also fund via Wam (TTD on-ramp).' },
   { q: 'Can I track investor analytics?', a: 'Pioneer and Enterprise tiers include dashboards showing investor demographics, trading volume, holder distribution, and engagement metrics.' },

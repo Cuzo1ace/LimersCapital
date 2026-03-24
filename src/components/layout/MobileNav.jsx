@@ -27,6 +27,7 @@ const LIMER_TABS = [
   { id: 'revenue',    label: 'Revenue',    icon: '💰' },
   { id: 'community',  label: 'Community',  icon: '🌴' },
   { id: 'listing',    label: 'Listing',    icon: '🏛️' },
+  { id: 'legal',      label: 'Legal',      icon: '📜' },
 ];
 
 export default function MobileNav({ open, onClose, isConnected, displayAddress, onWalletClick }) {

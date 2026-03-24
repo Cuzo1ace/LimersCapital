@@ -19,6 +19,7 @@ import CommunityPage from './pages/CommunityPage';
 import ListingPage from './pages/ListingPage';
 import AgentSqueezePage from './pages/AgentSqueezePage';
 import FlywheelPage from './pages/FlywheelPage';
+import LegalPage from './pages/LegalPage';
 import useStore from './store/useStore';
 import LimerBridge from './components/solana/LimerBridge';
 import PriceAlertChecker from './components/PriceAlertChecker';
@@ -59,6 +60,7 @@ function TabContent() {
     case 'listing': return <ListingPage />;
     case 'squeeze': return <AgentSqueezePage />;
     case 'flywheel': return <FlywheelPage />;
+    case 'legal': return <LegalPage />;
     default: return <DashboardPage />;
   }
 }

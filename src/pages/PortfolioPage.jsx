@@ -11,6 +11,7 @@ import { useWalletAddress, useWalletConnected, useUserProfile, useTradeLog } fro
 import { useCluster } from '../solana/provider';
 import { getAccountExplorerUrl } from '../solana/config';
 import { getTier } from '../data/gamification';
+import { RISK_BANNER } from '../data/legal';
 import { useLimerActions } from '../solana/bridge';
 
 const fmtUSD = n => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -84,6 +85,12 @@ export default function PortfolioPage() {
 
   return (
     <div>
+      {/* ── Risk Disclosure Banner ──────────────────────────── */}
+      <div className="flex items-start gap-2.5 rounded-xl px-4 py-3 mb-5 border border-[rgba(251,146,60,.25)] bg-[rgba(251,146,60,.06)] text-[.76rem] text-[#FB923C] font-body">
+        <span className="flex-shrink-0 mt-0.5">&#9888;&#65039;</span>
+        <span>{RISK_BANNER.portfolio}</span>
+      </div>
+
       {/* On-Chain Wallet Section — only shown when wallet connected */}
       {walletConnected && walletAddress && (
         <div className="mb-8">
