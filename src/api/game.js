@@ -4,7 +4,7 @@
  * and game state sync with Cloudflare Worker KV.
  */
 
-const API_PROXY = import.meta.env.VITE_API_PROXY_URL || '';
+const API_PROXY = import.meta.env.VITE_API_PROXY_URL || 'https://limer-api-proxy.solanacaribbean-team.workers.dev';
 
 /**
  * Submit quiz answers to the server for validation.

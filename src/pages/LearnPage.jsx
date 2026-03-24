@@ -8,6 +8,30 @@ import { getTier, getNextTier } from '../data/gamification';
 import BadgeGrid from '../components/gamification/BadgeGrid';
 import { submitQuizToServer } from '../api/game';
 
+/**
+ * Check if a module is accessible within a level.
+ * A module is accessible if:
+ * 1. It's the first module in the level, OR
+ * 2. The previous module in the level has its quiz passed
+ * 3. AND any explicit prereq (mod.prereq) is met
+ */
+function isModuleAccessible(mod, idx, levelModules, quizResults, modulesCompleted) {
+  // Explicit prereq check
+  if (mod.prereq && !modulesCompleted.includes(mod.prereq)) return false;
+  // First module in level is always accessible
+  if (idx === 0) return true;
+  // Previous module in level must have quiz passed
+  const prevMod = levelModules[idx - 1];
+  return !!quizResults[prevMod.quizId]?.passed;
+}
+
+/**
+ * Find which module a lesson belongs to within levelModules.
+ */
+function findModuleForLesson(lessonId, levelModules) {
+  return levelModules.find(mod => mod.lessons.includes(lessonId));
+}
+
 export default function LearnPage() {
   const {
     xp, lessonsRead, quizResults, modulesCompleted, earnedBadges,
@@ -38,10 +62,50 @@ export default function LearnPage() {
   const levelLessonsRead = levelLessonIds.filter(id => lessonsRead[id]).length;
   const levelProgress = levelLessonIds.length ? Math.round((levelLessonsRead / levelLessonIds.length) * 100) : 0;
 
-  // Prev/Next navigation within level
+  // Prev/Next navigation within level (respects module quiz gates)
   const currentIdx = activeLesson ? levelLessonIds.indexOf(activeLesson) : -1;
-  const prevLessonId = currentIdx > 0 ? levelLessonIds[currentIdx - 1] : null;
-  const nextLessonId = currentIdx >= 0 && currentIdx < levelLessonIds.length - 1 ? levelLessonIds[currentIdx + 1] : null;
+  const currentMod = activeLesson ? findModuleForLesson(activeLesson, levelModules) : null;
+  const currentModIdx = currentMod ? levelModules.indexOf(currentMod) : -1;
+  const isLastInModule = currentMod ? activeLesson === currentMod.lessons[currentMod.lessons.length - 1] : false;
+  const isFirstInModule = currentMod ? activeLesson === currentMod.lessons[0] : false;
+
+  // Previous: can go back freely within a module, or to prev module if accessible
+  let prevLessonId = null;
+  if (currentIdx > 0) {
+    const candidateId = levelLessonIds[currentIdx - 1];
+    const candidateMod = findModuleForLesson(candidateId, levelModules);
+    // Same module → always OK. Different module → check accessibility
+    if (candidateMod === currentMod) {
+      prevLessonId = candidateId;
+    } else {
+      const candidateModIdx = levelModules.indexOf(candidateMod);
+      if (isModuleAccessible(candidateMod, candidateModIdx, levelModules, quizResults, modulesCompleted)) {
+        prevLessonId = candidateId;
+      }
+    }
+  }
+
+  // Next: block crossing into next module if current module's quiz isn't passed
+  let nextLessonId = null;
+  let showTakeQuiz = false; // true when at last lesson → prompt quiz instead of next module
+  if (currentIdx >= 0 && currentIdx < levelLessonIds.length - 1) {
+    const candidateId = levelLessonIds[currentIdx + 1];
+    const candidateMod = findModuleForLesson(candidateId, levelModules);
+    if (candidateMod === currentMod) {
+      nextLessonId = candidateId;
+    } else if (quizResults[currentMod.quizId]?.passed) {
+      // Current module quiz passed → can advance
+      const candidateModIdx = levelModules.indexOf(candidateMod);
+      if (isModuleAccessible(candidateMod, candidateModIdx, levelModules, quizResults, modulesCompleted)) {
+        nextLessonId = candidateId;
+      }
+    } else {
+      // At boundary, quiz not passed → show "Take Quiz" prompt
+      showTakeQuiz = true;
+    }
+  } else if (isLastInModule && currentMod && !quizResults[currentMod.quizId]?.passed) {
+    showTakeQuiz = true;
+  }
 
   // Smart level detection on mount
   useEffect(() => {
@@ -138,6 +202,7 @@ export default function LearnPage() {
               level={level}
               lessonsRead={lessonsRead}
               quizResults={quizResults}
+              modulesCompleted={modulesCompleted}
               activeLesson={activeLesson}
               setActiveLesson={setActiveLesson}
               setActiveQuiz={setActiveQuiz}
@@ -199,9 +264,11 @@ export default function LearnPage() {
               onComplete={() => markLessonRead(activeLesson)}
               onClose={() => setActiveLesson(null)}
               onPrev={prevLessonId ? () => setActiveLesson(prevLessonId) : null}
-              onNext={nextLessonId ? () => setActiveLesson(nextLessonId) : null}
+              onNext={showTakeQuiz
+                ? () => { setActiveLesson(null); setActiveQuiz(currentMod.quizId); }
+                : nextLessonId ? () => setActiveLesson(nextLessonId) : null}
               prevLabel={prevLessonId ? LESSONS[prevLessonId]?.title : null}
-              nextLabel={nextLessonId ? LESSONS[nextLessonId]?.title : null}
+              nextLabel={showTakeQuiz ? '🧠 Take Quiz' : nextLessonId ? LESSONS[nextLessonId]?.title : null}
             />
           )}
 
@@ -245,7 +312,7 @@ export default function LearnPage() {
 }
 
 // ─── Level Sidebar (Desktop) ──────────────────────────────────────────────────
-function LevelSidebar({ activeLevel, onLevelSwitch, levelModules, levelProgress, level, lessonsRead, quizResults, activeLesson, setActiveLesson, setActiveQuiz }) {
+function LevelSidebar({ activeLevel, onLevelSwitch, levelModules, levelProgress, level, lessonsRead, quizResults, modulesCompleted, activeLesson, setActiveLesson, setActiveQuiz }) {
   return (
     <div className="rounded-xl border border-border p-4" style={{ background: 'var(--color-card)' }}>
       {/* Level pills */}
@@ -276,10 +343,12 @@ function LevelSidebar({ activeLevel, onLevelSwitch, levelModules, levelProgress,
 
       {/* Lesson tree */}
       <div className="flex flex-col gap-3">
-        {levelModules.map(mod => (
-          <div key={mod.id}>
+        {levelModules.map((mod, modIdx) => {
+          const accessible = isModuleAccessible(mod, modIdx, levelModules, quizResults, modulesCompleted);
+          return (
+          <div key={mod.id} className={accessible ? '' : 'opacity-40'}>
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-sm">{mod.icon}</span>
+              <span className="text-sm">{accessible ? mod.icon : '🔒'}</span>
               <span className="text-[.7rem] font-body font-bold text-txt truncate">{mod.title}</span>
             </div>
             <div className="flex flex-col gap-0.5 pl-5">
@@ -290,11 +359,11 @@ function LevelSidebar({ activeLevel, onLevelSwitch, levelModules, levelProgress,
                 const isCurrent = lessonId === activeLesson;
                 return (
                   <button key={lessonId}
-                    onClick={() => setActiveLesson(lessonId)}
-                    className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-[.7rem] cursor-pointer border-none bg-transparent text-left transition-all
-                      ${isCurrent ? 'bg-sea/10 text-sea font-bold' : isRead ? 'text-up/80' : 'text-muted hover:text-txt'}`}>
+                    onClick={() => accessible && setActiveLesson(lessonId)}
+                    className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-[.7rem] border-none bg-transparent text-left transition-all
+                      ${!accessible ? 'text-muted/50 cursor-not-allowed' : isCurrent ? 'bg-sea/10 text-sea font-bold cursor-pointer' : isRead ? 'text-up/80 cursor-pointer' : 'text-muted hover:text-txt cursor-pointer'}`}>
                     <span className="text-[.65rem] w-3.5 shrink-0 text-center">
-                      {isCurrent ? '›' : isRead ? '✓' : '○'}
+                      {!accessible ? '🔒' : isCurrent ? '›' : isRead ? '✓' : '○'}
                     </span>
                     <span className="truncate">{lesson.title}</span>
                   </button>
@@ -302,17 +371,18 @@ function LevelSidebar({ activeLevel, onLevelSwitch, levelModules, levelProgress,
               })}
               {/* Quiz row */}
               <button
-                onClick={() => setActiveQuiz(mod.quizId)}
-                className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-[.7rem] cursor-pointer border-none bg-transparent text-left transition-all
-                  ${quizResults[mod.quizId]?.passed ? 'text-up/80' : 'text-coral/80 hover:text-coral'}`}>
+                onClick={() => accessible && setActiveQuiz(mod.quizId)}
+                className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-[.7rem] border-none bg-transparent text-left transition-all
+                  ${!accessible ? 'text-muted/50 cursor-not-allowed' : quizResults[mod.quizId]?.passed ? 'text-up/80 cursor-pointer' : 'text-coral/80 hover:text-coral cursor-pointer'}`}>
                 <span className="text-[.65rem] w-3.5 shrink-0 text-center">
-                  {quizResults[mod.quizId]?.passed ? '✓' : '🧠'}
+                  {!accessible ? '🔒' : quizResults[mod.quizId]?.passed ? '✓' : '🧠'}
                 </span>
                 <span className="truncate">Quiz</span>
               </button>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -322,24 +392,24 @@ function LevelSidebar({ activeLevel, onLevelSwitch, levelModules, levelProgress,
 function LevelOverview({ levelModules, lessonsRead, quizResults, modulesCompleted, setActiveLesson, setActiveQuiz }) {
   return (
     <div className="flex flex-col gap-5">
-      {levelModules.map(mod => {
+      {levelModules.map((mod, modIdx) => {
         const lessonsInMod = mod.lessons.map(id => LESSONS[id]).filter(Boolean);
         const readInMod = mod.lessons.filter(id => lessonsRead[id]).length;
         const quizResult = quizResults[mod.quizId];
         const isComplete = modulesCompleted.includes(mod.id);
         const progress = (readInMod / mod.lessons.length) * 100;
-        const prereqMet = !mod.prereq || modulesCompleted.includes(mod.prereq);
-        const prereqMod = mod.prereq ? MODULES.find(m => m.id === mod.prereq) : null;
+        const accessible = isModuleAccessible(mod, modIdx, levelModules, quizResults, modulesCompleted);
+        const prevMod = modIdx > 0 ? levelModules[modIdx - 1] : null;
 
         return (
-          <div key={mod.id} className={`rounded-xl border p-6 transition-all relative ${isComplete ? 'border-up/30' : prereqMet ? 'border-border' : 'border-border opacity-60'}`}
+          <div key={mod.id} className={`rounded-xl border p-6 transition-all relative ${isComplete ? 'border-up/30' : accessible ? 'border-border' : 'border-border opacity-60'}`}
             style={{ background: 'var(--color-card)' }}>
-            {!prereqMet && (
+            {!accessible && (
               <div className="absolute inset-0 z-10 rounded-xl flex items-center justify-center backdrop-blur-[2px]"
                 style={{ background: 'rgba(0,0,0,0.35)' }}>
                 <div className="text-center px-6">
                   <div className="text-2xl mb-2">🔒</div>
-                  <div className="text-[.8rem] font-bold text-txt">Complete {prereqMod?.title || 'previous module'} first</div>
+                  <div className="text-[.8rem] font-bold text-txt">Complete {prevMod?.title || 'previous module'} first</div>
                   <div className="text-[.65rem] text-muted mt-1">Finish all lessons and pass the quiz to unlock</div>
                 </div>
               </div>
