@@ -281,17 +281,29 @@ const ROUTES = {
     buildUrl: () => 'https://yields.llama.fi/pools',
     cacheTtl: 300,
   },
-  // Meteora DLMM pools
+  // Meteora DLMM pools (datapi.meteora.ag — 30 RPS limit)
   '/meteora/dlmm-pools': {
     method: 'GET',
-    buildUrl: () => 'https://dlmm-api.meteora.ag/pair/all_with_pagination',
+    buildUrl: () => 'https://dlmm.datapi.meteora.ag/pools',
     cacheTtl: 60,
+    passQuery: true,
   },
   '/meteora/pool': {
     method: 'GET',
-    buildUrl: () => 'https://dlmm-api.meteora.ag/pair',
+    buildUrl: () => 'https://dlmm.datapi.meteora.ag/pools',
     cacheTtl: 60,
     passQuery: true,
+  },
+  '/meteora/pool-groups': {
+    method: 'GET',
+    buildUrl: () => 'https://dlmm.datapi.meteora.ag/pools/groups',
+    cacheTtl: 60,
+    passQuery: true,
+  },
+  '/meteora/stats': {
+    method: 'GET',
+    buildUrl: () => 'https://dlmm.datapi.meteora.ag/stats/protocol_metrics',
+    cacheTtl: 300,
   },
 };
 

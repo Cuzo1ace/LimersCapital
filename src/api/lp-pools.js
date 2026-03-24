@@ -17,21 +17,25 @@ export async function fetchMeteoraPools() {
     const res = await fetch(`${API_PROXY}/meteora/dlmm-pools`);
     if (!res.ok) throw new Error(`Meteora API ${res.status}`);
     const data = await res.json();
-    // Normalize pool data
-    const pools = (data.pairs || data.data || data || []).map(p => ({
-      address: p.address || p.pair_address || p.lb_pair,
-      name: p.name || `${p.mint_x_symbol || '?'}/${p.mint_y_symbol || '?'}`,
-      mintX: p.mint_x,
-      mintY: p.mint_y,
-      symbolX: p.mint_x_symbol || p.token_x_symbol || '?',
-      symbolY: p.mint_y_symbol || p.token_y_symbol || '?',
-      binStep: p.bin_step,
-      baseFee: p.base_fee_percentage || (p.bin_step ? p.bin_step / 100 : 0.3),
-      tvl: parseFloat(p.liquidity || p.tvl || 0),
-      volume24h: parseFloat(p.trade_volume_24h || p.volume_24h || 0),
-      fees24h: parseFloat(p.fees_24h || p.fee_24h || 0),
-      apr: parseFloat(p.apr || p.fee_apr || 0),
+    // Normalize pool data from Meteora datapi (https://dlmm.datapi.meteora.ag/pools)
+    const rawPools = data.data || data.pairs || data || [];
+    const pools = (Array.isArray(rawPools) ? rawPools : []).map(p => ({
+      address: p.address,
+      name: p.name || `${p.token_x?.symbol || '?'}/${p.token_y?.symbol || '?'}`,
+      mintX: p.token_x?.address,
+      mintY: p.token_y?.address,
+      symbolX: p.token_x?.symbol || '?',
+      symbolY: p.token_y?.symbol || '?',
+      binStep: p.pool_config?.bin_step || p.bin_step,
+      baseFee: p.pool_config?.base_fee_pct || (p.bin_step ? p.bin_step / 100 : 0.3),
+      tvl: parseFloat(p.tvl || 0),
+      volume24h: parseFloat(p.volume?.['24h'] || 0),
+      fees24h: parseFloat(p.fees?.['24h'] || 0),
+      apr: parseFloat(p.apr || 0),
+      apy: parseFloat(p.apy || 0),
       currentPrice: parseFloat(p.current_price || 0),
+      hasFarm: p.has_farm || false,
+      farmApr: parseFloat(p.farm_apr || 0),
     })).filter(p => p.tvl > 1000 && p.volume24h > 0); // Filter dead pools
 
     poolCache = { data: pools, ts: Date.now() };
