@@ -80,14 +80,44 @@ html.light body::after {
     radial-gradient(ellipse 80% 50% at -10% 80%, rgba(191,129,255,.04) 0%, transparent 60%);
 }
 html.light {
+  /* Backgrounds */
   --color-night: #f5f5f5;
   --color-night-2: #ebebeb;
   --color-night-3: #d4d4d4;
+  --color-surface-3: #e8e8e8;
+  --color-surface-4: #dedede;
+
+  /* Text */
   --color-txt: #1a1a1a;
   --color-txt-2: #555555;
-  --color-muted: #888888;
-  --color-card: rgba(235, 235, 235, 0.9);
-  --color-border: rgba(71, 72, 74, 0.2);
+  --color-muted: #777777;
+
+  /* Surfaces */
+  --color-card: rgba(255, 255, 255, 0.9);
+  --color-border: rgba(0, 0, 0, 0.12);
+
+  /* Accents — darkened for WCAG AA contrast on light backgrounds */
+  --color-sea: #00875a;
+  --color-sea-dk: #006b47;
+  --color-up: #0a8a5c;
+  --color-down: #d93535;
+  --color-sun: #c89b00;
+  --color-palm: #1d7a3f;
+  --color-coral: #8b4fcf;
+  --color-purple: #8b4fcf;
+}
+/* Light mode: header background */
+html.light header.sticky {
+  background: rgba(245, 245, 245, 0.93) !important;
+}
+/* Light mode: soften neon glow effects */
+html.light .neon-glow-primary {
+  box-shadow: 0 0 8px rgba(0, 135, 90, 0.15) !important;
+}
+/* Light mode: selection colors */
+html.light ::selection {
+  background: #00875a;
+  color: #ffffff;
 }
 
 /* Toast animation */

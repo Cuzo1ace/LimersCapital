@@ -14,7 +14,7 @@ const SOLFLARE_LINK = 'https://www.solflare.com/?af_qr=true&shortlink=carribean&
 const WAM_LINK = 'https://wam.money/';
 
 const LANGS = [
-  { code: 'en', flag: '🇺🇸', label: 'EN' },
+  { code: 'en', flag: '🇬🇧', label: 'EN' },
   { code: 'es', flag: '🇪🇸', label: 'ES' },
   { code: 'fr', flag: '🇫🇷', label: 'FR' },
 ];
