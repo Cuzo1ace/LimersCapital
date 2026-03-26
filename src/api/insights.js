@@ -173,3 +173,12 @@ export async function fetchCaribbeanGDP() {
   });
   return Object.values(byCountry).sort((a, b) => b.growth - a.growth);
 }
+
+// ─── AI Market Brief (Claude API via Worker proxy) ──────────────────────────
+const API_PROXY = import.meta.env.VITE_API_PROXY_URL || 'https://limer-api-proxy.solanacaribbean-team.workers.dev';
+
+export async function fetchMarketBrief() {
+  const res = await fetch(`${API_PROXY}/ai/market-brief`);
+  if (!res.ok) throw new Error(`AI brief error: ${res.status}`);
+  return res.json();
+}

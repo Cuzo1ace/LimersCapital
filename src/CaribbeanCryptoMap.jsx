@@ -41,16 +41,17 @@ export default function CaribbeanCryptoMap() {
   return (
     <div
       style={{
-        minHeight: "100vh",
         background: "linear-gradient(135deg, #020818 0%, #041529 50%, #050d1f 100%)",
         fontFamily: "'Georgia', 'Palatino', serif",
         color: "#E2E8F0",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        padding: "32px 16px",
+        padding: "24px 16px",
         position: "relative",
         overflow: "hidden",
+        borderRadius: 16,
+        border: "1px solid #0f2d50",
       }}
     >
       {/* Background decoration */}
@@ -93,7 +94,7 @@ export default function CaribbeanCryptoMap() {
           color: "#64748B", fontSize: 13, marginTop: 10,
           fontFamily: "'Courier New', monospace", letterSpacing: "0.05em",
         }}>
-          Legal framework status across {COUNTRIES.length} jurisdictions — 2025
+          Legal framework status across {COUNTRIES.length} jurisdictions — 2026
         </p>
       </div>
 
@@ -620,7 +621,7 @@ export default function CaribbeanCryptoMap() {
         fontFamily: "monospace", letterSpacing: "0.2em",
         zIndex: 1, textAlign: "center",
       }}>
-        Sources: ECCB · Atlantic Council · Bermuda Monetary Authority · CoinTelegraph · Bolder Group · 2025
+        Sources: ECCB · Atlantic Council · Bermuda Monetary Authority · CoinTelegraph · Bolder Group · 2026
       </p>
     </div>
   );

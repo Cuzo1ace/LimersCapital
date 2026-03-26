@@ -13,7 +13,8 @@
  *   - Caching for price data (30s edge cache)
  *
  * Environment variables (set via wrangler secret):
- *   HELIUS_API_KEY  — Helius RPC + DAS API key
+ *   HELIUS_API_KEY     — Helius RPC + DAS API key
+ *   ANTHROPIC_API_KEY  — Claude API key for AI market briefs
  *
  * Deploy:
  *   cd workers
@@ -236,6 +237,165 @@ async function handleGameRoute(path, request, env, origin) {
   });
 }
 
+// ── AI Market Brief (Claude API) ──
+// In-memory cache for market brief (4-hour TTL)
+let marketBriefCache = { data: null, timestamp: 0 };
+const BRIEF_CACHE_TTL = 4 * 60 * 60 * 1000; // 4 hours
+
+async function handleAIRoute(path, request, env, origin) {
+  if (path === '/ai/market-brief' && request.method === 'GET') {
+    // Check cache first
+    const now = Date.now();
+    if (marketBriefCache.data && now - marketBriefCache.timestamp < BRIEF_CACHE_TTL) {
+      return new Response(JSON.stringify(marketBriefCache.data), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=3600',
+          'X-Cache': 'HIT',
+          ...corsHeaders(origin),
+        },
+      });
+    }
+
+    // Fetch live market data to feed Claude
+    let marketContext = '';
+    try {
+      // Fetch SOL price + global market data
+      const [solRes, globalRes] = await Promise.allSettled([
+        fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana,bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true'),
+        fetch('https://api.coingecko.com/api/v3/global'),
+      ]);
+
+      if (solRes.status === 'fulfilled') {
+        const prices = await solRes.value.json();
+        marketContext += `Current prices: SOL $${prices.solana?.usd} (${prices.solana?.usd_24h_change?.toFixed(2)}% 24h), BTC $${prices.bitcoin?.usd} (${prices.bitcoin?.usd_24h_change?.toFixed(2)}% 24h), ETH $${prices.ethereum?.usd} (${prices.ethereum?.usd_24h_change?.toFixed(2)}% 24h). `;
+      }
+
+      if (globalRes.status === 'fulfilled') {
+        const global = await globalRes.value.json();
+        const d = global.data;
+        marketContext += `Global crypto market cap: $${(d.total_market_cap?.usd / 1e12).toFixed(2)}T. BTC dominance: ${d.market_cap_percentage?.btc?.toFixed(1)}%. 24h volume: $${(d.total_volume?.usd / 1e9).toFixed(1)}B. `;
+      }
+    } catch (e) {
+      marketContext = 'Market data temporarily unavailable. ';
+    }
+
+    // Check for ANTHROPIC_API_KEY
+    if (!env.ANTHROPIC_API_KEY) {
+      // Return a static brief if no API key configured
+      return new Response(JSON.stringify({
+        brief: {
+          title: 'Caribbean Crypto Market Intelligence',
+          date: new Date().toISOString().split('T')[0],
+          sentiment: 'neutral',
+          bullets: [
+            'AI market briefs require API configuration — contact the team to enable live intelligence.',
+            marketContext || 'Market data loading...',
+          ],
+          disclaimer: 'This is not financial advice. Always do your own research.',
+        },
+        cached: false,
+        source: 'fallback',
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+      });
+    }
+
+    // Call Claude API (Haiku for speed and cost)
+    try {
+      const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-20250414',
+          max_tokens: 600,
+          messages: [{
+            role: 'user',
+            content: `You are a Caribbean crypto market analyst for Limer's Capital, a platform focused on Caribbean crypto adoption and the Trinidad & Tobago Stock Exchange (TTSE). Write a concise daily market brief.
+
+Current market data: ${marketContext}
+
+Caribbean context: The region has 22 jurisdictions with varying crypto regulation. The Bahamas has the DARE Act, ECCU countries have the Virtual Asset Business Bill, Jamaica has JAM-DEX CBDC, and T&T has the TTSE (24 listed stocks). Remittances to the Caribbean exceed $20B/year.
+
+Return ONLY valid JSON in this exact format (no markdown, no code fences):
+{"title":"Brief title","sentiment":"bullish|bearish|neutral","bullets":["point 1","point 2","point 3","point 4","point 5"],"caribbeanInsight":"One insight specifically about Caribbean crypto adoption or regulation","tradingNote":"One actionable observation for Caribbean traders"}`,
+          }],
+        }),
+      });
+
+      if (!claudeRes.ok) {
+        throw new Error(`Claude API error: ${claudeRes.status}`);
+      }
+
+      const claudeData = await claudeRes.json();
+      const content = claudeData.content?.[0]?.text || '';
+
+      // Parse Claude's response
+      let brief;
+      try {
+        brief = JSON.parse(content);
+      } catch {
+        // If parsing fails, create a structured response from raw text
+        brief = {
+          title: 'Caribbean Crypto Market Update',
+          sentiment: 'neutral',
+          bullets: content.split('\n').filter(l => l.trim()).slice(0, 5),
+          caribbeanInsight: 'Caribbean markets continue to evolve with new regulatory frameworks.',
+          tradingNote: 'Monitor TTSE alongside crypto markets for diversification opportunities.',
+        };
+      }
+
+      const result = {
+        brief: {
+          ...brief,
+          date: new Date().toISOString().split('T')[0],
+          disclaimer: 'AI-generated analysis. Not financial advice. Always do your own research.',
+        },
+        cached: false,
+        source: 'claude-haiku',
+        generatedAt: new Date().toISOString(),
+      };
+
+      // Cache the result
+      marketBriefCache = { data: result, timestamp: now };
+
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=3600',
+          'X-Cache': 'MISS',
+          ...corsHeaders(origin),
+        },
+      });
+    } catch (e) {
+      return new Response(JSON.stringify({
+        error: 'AI service temporarily unavailable',
+        fallback: {
+          title: 'Market Update',
+          date: new Date().toISOString().split('T')[0],
+          sentiment: 'neutral',
+          bullets: [marketContext || 'Market data loading...'],
+          disclaimer: 'AI-generated analysis unavailable. Showing raw market data.',
+        },
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+      });
+    }
+  }
+
+  return new Response(JSON.stringify({ error: 'AI route not found' }), {
+    status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+  });
+}
+
 // ── Allowed upstream routes ──
 const ROUTES = {
   // Helius RPC (standard JSON-RPC calls)
@@ -378,6 +538,11 @@ export default {
     // Handle /game/* routes (quiz validation, LP/XP tracking, leaderboard)
     if (path.startsWith('/game/')) {
       return handleGameRoute(path, request, env, origin);
+    }
+
+    // Handle /ai/* routes (Claude API powered intelligence)
+    if (path.startsWith('/ai/')) {
+      return handleAIRoute(path, request, env, origin);
     }
 
     const route = ROUTES[path];

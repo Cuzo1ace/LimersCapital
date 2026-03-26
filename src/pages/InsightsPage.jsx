@@ -5,8 +5,10 @@ import {
   fetchSolanaProtocols, fetchCryptoMarket, fetchRWATokens, fetchL1Tokens,
   fetchDeFiMarket, fetchTrending, fetchGlobalMarket,
   fetchJupiterQuote, fetchCaribFXRates, fetchCaribbeanGDP, fetchCryptoNews,
+  fetchMarketBrief,
 } from '../api/insights';
 import { SkeletonRows, SkeletonCard } from '../components/ui/Skeleton';
+import RemittanceCalculator from '../components/RemittanceCalculator';
 
 function fmt(n, dec = 2) {
   if (n == null) return '—';
@@ -64,6 +66,7 @@ export default function InsightsPage() {
   const fxQ       = useQuery({ queryKey: ['fx-rates'],    queryFn: fetchCaribFXRates,    staleTime: 300000 });
   const gdpQ      = useQuery({ queryKey: ['carib-gdp'],   queryFn: fetchCaribbeanGDP,    staleTime: 600000 });
   const newsQ     = useQuery({ queryKey: ['crypto-news'], queryFn: fetchCryptoNews,      staleTime: 300000 });
+  const briefQ    = useQuery({ queryKey: ['ai-brief'],   queryFn: fetchMarketBrief,    staleTime: 3600000, retry: 1 });
 
   const [jupIn, setJupIn] = useState('So11111111111111111111111111111111111111112');
   const [jupOut, setJupOut] = useState('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
@@ -120,6 +123,84 @@ export default function InsightsPage() {
           ↻ Refresh All
         </button>
       </div>
+
+      {/* ── AI Market Intelligence ──────────────────────────────── */}
+      {briefQ.data && (
+        <div className="mb-4">
+          <div className="rounded-[14px] p-5 border border-sea/20 relative overflow-hidden"
+            style={{ background: 'linear-gradient(135deg, rgba(56,189,248,.06) 0%, var(--color-card) 100%)' }}>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-sea/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-full bg-sea/15 flex items-center justify-center text-lg">🤖</div>
+              <div className="flex-1">
+                <div className="text-[.66rem] uppercase tracking-widest text-sea flex items-center gap-2">
+                  AI Market Intelligence
+                  <span className="text-[.55rem] bg-sea/10 border border-sea/20 rounded-full px-2 py-0.5 normal-case tracking-normal text-sea/70">
+                    Powered by Claude
+                  </span>
+                </div>
+                <div className="text-[.6rem] text-muted">
+                  {(briefQ.data.brief || briefQ.data.fallback)?.date || 'Today'}
+                  {briefQ.data.cached && ' · Cached'}
+                </div>
+              </div>
+              {(briefQ.data.brief || briefQ.data.fallback)?.sentiment && (
+                <span className={`text-[.65rem] font-bold px-2.5 py-1 rounded-full border
+                  ${(briefQ.data.brief || briefQ.data.fallback).sentiment === 'bullish' ? 'bg-up/10 border-up/30 text-up' :
+                    (briefQ.data.brief || briefQ.data.fallback).sentiment === 'bearish' ? 'bg-down/10 border-down/30 text-down' :
+                    'bg-sun/10 border-sun/30 text-sun'}`}>
+                  {(briefQ.data.brief || briefQ.data.fallback).sentiment === 'bullish' ? '📈 Bullish' :
+                   (briefQ.data.brief || briefQ.data.fallback).sentiment === 'bearish' ? '📉 Bearish' : '➡️ Neutral'}
+                </span>
+              )}
+            </div>
+
+            {(() => {
+              const b = briefQ.data.brief || briefQ.data.fallback;
+              if (!b) return null;
+              return (
+                <>
+                  {b.title && (
+                    <h3 className="font-headline text-[.95rem] font-bold text-txt mb-3">{b.title}</h3>
+                  )}
+                  <ul className="flex flex-col gap-1.5 mb-3 list-none p-0 m-0">
+                    {b.bullets?.map((bullet, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[.78rem] text-txt-2 leading-relaxed">
+                        <span className="text-sea mt-0.5 flex-shrink-0">▸</span>
+                        <span>{bullet}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                    {b.caribbeanInsight && (
+                      <div className="rounded-lg p-3 border border-palm/20 bg-palm/5">
+                        <div className="text-[.58rem] text-palm uppercase tracking-widest mb-1">🌴 Caribbean Insight</div>
+                        <div className="text-[.74rem] text-txt-2 leading-relaxed">{b.caribbeanInsight}</div>
+                      </div>
+                    )}
+                    {b.tradingNote && (
+                      <div className="rounded-lg p-3 border border-sun/20 bg-sun/5">
+                        <div className="text-[.58rem] text-sun uppercase tracking-widest mb-1">💡 Trading Note</div>
+                        <div className="text-[.74rem] text-txt-2 leading-relaxed">{b.tradingNote}</div>
+                      </div>
+                    )}
+                  </div>
+                  {b.disclaimer && (
+                    <div className="text-[.58rem] text-muted mt-3 italic">{b.disclaimer}</div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+      {briefQ.isLoading && (
+        <div className="mb-4">
+          <Card title="🤖 AI Market Intelligence" color="var(--color-sea)" source="Loading...">
+            <SkeletonRows count={5} cols={1} />
+          </Card>
+        </div>
+      )}
 
       {/* ── Row 1: RWA Tokens + L1 Chains ────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -245,7 +326,12 @@ export default function InsightsPage() {
         </Card>
       </div>
 
-      {/* ── Row 5: Crypto News Feed ────────────────────────────── */}
+      {/* ── Row 5: Remittance Calculator ─────────────────────── */}
+      <div className="mb-4">
+        <RemittanceCalculator />
+      </div>
+
+      {/* ── Row 6: Crypto News Feed ────────────────────────────── */}
       <div className="mb-4">
         <Card title="📰 Crypto News" color="var(--color-sea)" source="CoinGecko · latest">
           {newsQ.isLoading && (
