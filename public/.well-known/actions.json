@@ -1,0 +1,8 @@
+{
+  "rules": [
+    {
+      "pathPattern": "/actions/**",
+      "apiPath": "https://limer-api-proxy.solanacaribbean-team.workers.dev/actions/**"
+    }
+  ]
+}

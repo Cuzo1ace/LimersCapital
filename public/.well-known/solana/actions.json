@@ -1,0 +1,16 @@
+{
+  "rules": [
+    {
+      "pathPattern": "/actions/learn",
+      "apiPath": "https://limer-api-proxy.solanacaribbean-team.workers.dev/actions/learn"
+    },
+    {
+      "pathPattern": "/actions/trade",
+      "apiPath": "https://limer-api-proxy.solanacaribbean-team.workers.dev/actions/trade"
+    },
+    {
+      "pathPattern": "/actions/ttse",
+      "apiPath": "https://limer-api-proxy.solanacaribbean-team.workers.dev/actions/ttse"
+    }
+  ]
+}

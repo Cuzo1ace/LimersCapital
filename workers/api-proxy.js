@@ -242,6 +242,109 @@ async function handleGameRoute(path, request, env, origin) {
 let marketBriefCache = { data: null, timestamp: 0 };
 const BRIEF_CACHE_TTL = 4 * 60 * 60 * 1000; // 4 hours
 
+// ── Solana Blinks/Actions handler ──
+// Implements the Solana Actions spec (https://docs.dialect.to/documentation/actions/specification)
+// Returns ActionGetResponse for GET, handles POST for transaction creation
+const SITE_URL = 'https://www.limerscapital.com';
+
+function actionsCorsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept, Accept-Encoding',
+    'Access-Control-Expose-Headers': 'X-Action-Version, X-Blockchain-Ids',
+    'X-Action-Version': '2.1.3',
+    'X-Blockchain-Ids': 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    'Content-Type': 'application/json',
+  };
+}
+
+async function handleActionsRoute(path, request, env) {
+  // OPTIONS preflight
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: actionsCorsHeaders() });
+  }
+
+  const actionId = path.replace('/actions/', '').split('/')[0];
+  const headers = actionsCorsHeaders();
+
+  // Only GET is needed for Blink preview cards
+  if (request.method === 'GET') {
+    const actions = {
+      learn: {
+        type: 'action',
+        icon: `${SITE_URL}/og-learn.png`,
+        title: 'Learn Crypto — Limer\'s Capital',
+        description: 'Master crypto, Caribbean markets & LP strategies. Earn badges, XP, and Limer Points. The Caribbean\'s learn-to-earn Solana platform.',
+        label: 'Start Learning',
+        links: {
+          actions: [
+            {
+              label: 'Start Learning',
+              href: `${SITE_URL}?tab=learn`,
+              type: 'external-link',
+            },
+          ],
+        },
+      },
+      trade: {
+        type: 'action',
+        icon: `${SITE_URL}/og-trade.png`,
+        title: 'Paper Trade on Solana — Limer\'s Capital',
+        description: 'Practice trading SOL, USDC, JUP, BONK and more — risk-free. Then swap for real via Jupiter. The Caribbean\'s trading simulator.',
+        label: 'Start Trading',
+        links: {
+          actions: [
+            {
+              label: 'Paper Trade',
+              href: `${SITE_URL}?tab=trade`,
+              type: 'external-link',
+            },
+            {
+              label: 'Real Swap (Jupiter)',
+              href: `${SITE_URL}?tab=trade&market=jupiter`,
+              type: 'external-link',
+            },
+          ],
+        },
+      },
+      ttse: {
+        type: 'action',
+        icon: `${SITE_URL}/og-ttse.png`,
+        title: 'TTSE Live Stocks — Limer\'s Capital',
+        description: 'Trinidad & Tobago Stock Exchange live data on Solana. Track Caribbean equities, simulate tokenized stock trades, and bridge TradFi to DeFi.',
+        label: 'View TTSE',
+        links: {
+          actions: [
+            {
+              label: 'View TTSE Stocks',
+              href: `${SITE_URL}?tab=ttse`,
+              type: 'external-link',
+            },
+          ],
+        },
+      },
+    };
+
+    const action = actions[actionId];
+    if (!action) {
+      return new Response(JSON.stringify({ error: 'Unknown action' }), { status: 404, headers });
+    }
+
+    return new Response(JSON.stringify(action), { status: 200, headers });
+  }
+
+  // POST — for future on-chain transaction creation (placeholder)
+  if (request.method === 'POST') {
+    return new Response(JSON.stringify({
+      type: 'external-link',
+      externalLink: `${SITE_URL}?tab=${actionId}`,
+    }), { status: 200, headers });
+  }
+
+  return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers });
+}
+
 async function handleAIRoute(path, request, env, origin) {
   if (path === '/ai/market-brief' && request.method === 'GET') {
     // Check cache first
@@ -543,6 +646,11 @@ export default {
     // Handle /ai/* routes (Claude API powered intelligence)
     if (path.startsWith('/ai/')) {
       return handleAIRoute(path, request, env, origin);
+    }
+
+    // Handle /actions/* routes (Solana Blinks/Actions)
+    if (path.startsWith('/actions/')) {
+      return handleActionsRoute(path, request, env);
     }
 
     const route = ROUTES[path];

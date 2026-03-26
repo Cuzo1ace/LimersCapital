@@ -132,6 +132,41 @@ export default function CommunityPage() {
         </div>
       </div>
 
+      {/* Share as Blink */}
+      <h2 className="font-headline text-[.92rem] font-bold uppercase tracking-widest text-txt mb-4">Share as Solana Blink</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-7">
+        {[
+          { icon: '📚', title: 'Learn', desc: 'Share the learn-to-earn experience', action: 'learn', color: '#00ffa3' },
+          { icon: '💹', title: 'Trade', desc: 'Share the trading simulator', action: 'trade', color: '#C46CFF' },
+          { icon: '🇹🇹', title: 'TTSE', desc: 'Share Caribbean stock data', action: 'ttse', color: '#FF4D6D' },
+        ].map(blink => {
+          const blinkUrl = `https://dial.to/?action=solana-action:https://limer-api-proxy.solanacaribbean-team.workers.dev/actions/${blink.action}`;
+          const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out Limer's Capital — the Caribbean's Solana-native platform! 🌴`)}&url=${encodeURIComponent(blinkUrl)}`;
+          return (
+            <div key={blink.action} className="rounded-xl border border-border p-5 flex flex-col gap-3" style={{ background: 'var(--color-card)' }}>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{blink.icon}</span>
+                <span className="font-body font-bold text-[.88rem] text-txt">{blink.title}</span>
+              </div>
+              <p className="text-[.72rem] text-txt-2">{blink.desc}</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { navigator.clipboard.writeText(blinkUrl); }}
+                  className="flex-1 px-3 py-2 rounded-lg text-[.72rem] font-headline cursor-pointer border transition-all bg-transparent text-muted hover:text-txt"
+                  style={{ borderColor: `${blink.color}33` }}>
+                  📋 Copy Blink
+                </button>
+                <a href={tweetUrl} target="_blank" rel="noopener noreferrer"
+                  className="flex-1 px-3 py-2 rounded-lg text-[.72rem] font-headline cursor-pointer border text-center no-underline transition-all hover:opacity-80"
+                  style={{ borderColor: `${blink.color}33`, color: blink.color, background: `${blink.color}0a` }}>
+                  Share on 𝕏
+                </a>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       {/* CTA */}
       {!walletConnected && (
         <div className="rounded-xl border border-sea/30 p-8 text-center"

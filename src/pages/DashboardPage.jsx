@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import useStore from '../store/useStore';
 import { getTier, getNextTier, TIERS } from '../data/gamification';
 import { BADGES } from '../data/badges';
@@ -10,6 +11,7 @@ import LiquidMetalButton from '../components/ui/LiquidMetalButton';
 import GradientDots from '../components/ui/GradientDots';
 
 export default function DashboardPage() {
+  const { t } = useTranslation();
   const {
     xp, limerPoints, currentStreak, longestStreak, trades, holdings,
     earnedBadges, modulesCompleted, walletConnected, walletAddress,
@@ -91,15 +93,15 @@ export default function DashboardPage() {
 
         <div className="flex items-start justify-between gap-4 flex-wrap mb-5">
           <div>
-            <div className="text-[.66rem] text-muted uppercase tracking-widest mb-1 font-headline">Your Status</div>
+            <div className="text-[.66rem] text-muted uppercase tracking-widest mb-1 font-headline">{t('dashboard.yourStatus')}</div>
             <h1 className="font-headline text-[2rem] font-black leading-tight" style={{ color: tier.color }}>
               {tier.icon} {tier.name}
             </h1>
             <div className="text-[.73rem] text-txt-2 mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-              {currentStreak > 0 && <span>🔥 {currentStreak}-day streak</span>}
-              {streakShields > 0 && <span>🛡️ {streakShields} shield{streakShields > 1 ? 's' : ''}</span>}
-              {sessionCount > 0 && <span className="text-muted">· {sessionCount} sessions</span>}
-              {firstSessionDate && <span className="text-muted">· since {firstSessionDate}</span>}
+              {currentStreak > 0 && <span>🔥 {t('dashboard.streak', { count: currentStreak })}</span>}
+              {streakShields > 0 && <span>🛡️ {t('dashboard.shield', { count: streakShields })}</span>}
+              {sessionCount > 0 && <span className="text-muted">· {t('dashboard.sessions', { count: sessionCount })}</span>}
+              {firstSessionDate && <span className="text-muted">· {t('dashboard.since', { date: firstSessionDate })}</span>}
             </div>
           </div>
           <div className="text-right flex-shrink-0">
@@ -138,10 +140,10 @@ export default function DashboardPage() {
 
       {/* ── Quick Stats ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <QuickStat icon="💹" label="Trades" value={fmtNum(trades.length)} color="#00ffa3" onClick={() => setActiveTab('trade')} />
-        <QuickStat icon="🎖️" label="Badges" value={`${earnedBadges.length}/25`} color="#FFCA3A" onClick={() => setActiveTab('learn')} />
-        <QuickStat icon="📚" label="Modules" value={`${modulesCompleted.length}/4`} color="#2D9B56" onClick={() => setActiveTab('learn')} />
-        <QuickStat icon="💰" label="USD Balance" value={fmtUSD(balanceUSD)} color="#9945FF" onClick={() => setActiveTab('portfolio')} />
+        <QuickStat icon="💹" label={t('dashboard.trades')} value={fmtNum(trades.length)} color="#00ffa3" onClick={() => setActiveTab('trade')} />
+        <QuickStat icon="🎖️" label={t('dashboard.badges')} value={`${earnedBadges.length}/25`} color="#FFCA3A" onClick={() => setActiveTab('learn')} />
+        <QuickStat icon="📚" label={t('dashboard.modules')} value={`${modulesCompleted.length}/4`} color="#2D9B56" onClick={() => setActiveTab('learn')} />
+        <QuickStat icon="💰" label={t('dashboard.usdBalance')} value={fmtUSD(balanceUSD)} color="#9945FF" onClick={() => setActiveTab('portfolio')} />
       </div>
 
       {/* ── Two-column grid: Market Pulse + Next Action ── */}
@@ -149,7 +151,7 @@ export default function DashboardPage() {
 
         {/* Market Pulse */}
         <GlowCard className="rounded-xl border border-border p-5" style={{ background: 'var(--color-card)' }} proximity={100}>
-          <div className="text-[.66rem] text-muted uppercase tracking-widest mb-4 font-headline">📊 Market Pulse — Top Movers</div>
+          <div className="text-[.66rem] text-muted uppercase tracking-widest mb-4 font-headline">📊 {t('dashboard.marketPulse')}</div>
           {pricesQ.isLoading ? (
             <div className="flex flex-col gap-3">
               {[1,2,3,4].map(i => (
@@ -157,7 +159,7 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : topMovers.length === 0 ? (
-            <div className="text-muted text-[.78rem]">No price data available</div>
+            <div className="text-muted text-[.78rem]">{t('dashboard.noPrice')}</div>
           ) : (
             <div>
               {topMovers.map(t => (
@@ -184,7 +186,7 @@ export default function DashboardPage() {
         {/* Next Action */}
         <GlowCard className="rounded-xl border border-sea/25 p-5 flex flex-col gap-4" proximity={100}
           style={{ background: 'linear-gradient(135deg, rgba(0,255,163,.07), rgba(0,255,163,.02))' }}>
-          <div className="text-[.66rem] text-sea uppercase tracking-widest font-headline">🎯 Your Next Move</div>
+          <div className="text-[.66rem] text-sea uppercase tracking-widest font-headline">🎯 {t('dashboard.yourNextMove')}</div>
 
           <div className="flex-1 flex flex-col justify-between">
             <div>
@@ -219,7 +221,7 @@ export default function DashboardPage() {
       {trades.length > 0 && (
         <div className="rounded-xl border border-border p-5 mb-5" style={{ background: 'var(--color-card)' }}>
           <div className="flex items-center justify-between mb-4">
-            <div className="text-[.66rem] text-muted uppercase tracking-widest font-headline">⏱ Recent Trades</div>
+            <div className="text-[.66rem] text-muted uppercase tracking-widest font-headline">⏱ {t('dashboard.recentTrades')}</div>
             {holdings.length > 0 && (
               <div className={`text-[.72rem] font-mono font-bold px-2 py-0.5 rounded ${paperPnL >= 0 ? 'text-up bg-up/10' : 'text-down bg-down/10'}`}>
                 P&L {paperPnL >= 0 ? '+' : ''}{fmtUSD(paperPnL)}
@@ -255,7 +257,7 @@ export default function DashboardPage() {
       {recentBadgeData.length > 0 && (
         <div className="rounded-xl border border-border p-5" style={{ background: 'var(--color-card)' }}>
           <div className="flex items-center justify-between mb-4">
-            <div className="text-[.66rem] text-muted uppercase tracking-widest font-headline">🎖 Recently Earned</div>
+            <div className="text-[.66rem] text-muted uppercase tracking-widest font-headline">🎖 {t('dashboard.recentBadges')}</div>
             <button onClick={() => setActiveTab('learn')}
               className="text-[.68rem] text-sea font-headline bg-transparent border-none cursor-pointer hover:opacity-70">
               All badges →
@@ -280,20 +282,20 @@ export default function DashboardPage() {
       {trades.length === 0 && earnedBadges.length === 0 && (
         <div className="rounded-xl border border-border p-8 text-center" style={{ background: 'var(--color-card)' }}>
           <div className="text-[3rem] mb-3">🌴</div>
-          <div className="font-body font-bold text-[1rem] text-txt mb-2">Welcome to Limer's Capital</div>
+          <div className="font-body font-bold text-[1rem] text-txt mb-2">{t('onboarding.welcome')}</div>
           <div className="text-[.78rem] text-txt-2 mb-5 max-w-sm mx-auto leading-relaxed">
             The Caribbean's Solana-native investment platform. Learn, paper trade, earn LP points, and get
             ready for the $LIMER token airdrop.
           </div>
           <div className="flex gap-4 justify-center flex-wrap">
             <LiquidMetalButton
-              label="Start Learning"
+              label={t('onboarding.startLearning')}
               icon="📚"
               onClick={() => setActiveTab('learn')}
               width={180}
             />
             <LiquidMetalButton
-              label="View Markets"
+              label={t('common.viewAll')}
               icon="📊"
               onClick={() => setActiveTab('market')}
               width={180}

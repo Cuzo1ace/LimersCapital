@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import useStore from '../../store/useStore';
 import { useSelectedWalletAccount } from '@solana/react';
 import { useWallets, useConnect, useDisconnect } from '@wallet-standard/react';
@@ -12,15 +13,21 @@ import MobileNav from './MobileNav';
 const SOLFLARE_LINK = 'https://www.solflare.com/?af_qr=true&shortlink=carribean&c=Carribean&pid=Solana%20Carribean&af_xp=qr&source_caller=ui';
 const WAM_LINK = 'https://wam.money/';
 
+const LANGS = [
+  { code: 'en', flag: '🇺🇸', label: 'EN' },
+  { code: 'es', flag: '🇪🇸', label: 'ES' },
+  { code: 'fr', flag: '🇫🇷', label: 'FR' },
+];
+
 const TABS = [
-  { id: 'dashboard',  label: 'Home',        icon: '🏠' },
-  { id: 'regulation', label: 'Regulation',  icon: '\u{1F5FA}\uFE0F' },
-  { id: 'learn',      label: 'Learn',       icon: '\u{1F4DA}' },
-  { id: 'ttse',       label: 'TTSE',        icon: '\u{1F1F9}\u{1F1F9}', ttse: true },
-  { id: 'insights',   label: 'Insights',    icon: '\u{1F310}' },
-  { id: 'market',     label: 'Solana',      icon: '\u{1F4CA}' },
-  { id: 'trade',      label: 'Paper Trade', icon: '\u{1F4B9}' },
-  { id: 'portfolio',  label: 'Portfolio',   icon: '\u{1F392}' },
+  { id: 'dashboard',  labelKey: 'nav.dashboard', icon: '🏠' },
+  { id: 'regulation', labelKey: 'nav.regulation', icon: '\u{1F5FA}\uFE0F' },
+  { id: 'learn',      labelKey: 'nav.learn',      icon: '\u{1F4DA}' },
+  { id: 'ttse',       labelKey: 'nav.ttse',       icon: '\u{1F1F9}\u{1F1F9}', ttse: true },
+  { id: 'insights',   labelKey: 'nav.insights',   icon: '\u{1F310}' },
+  { id: 'market',     labelKey: 'nav.market',     icon: '\u{1F4CA}' },
+  { id: 'trade',      labelKey: 'nav.trade',      icon: '\u{1F4B9}' },
+  { id: 'portfolio',  labelKey: 'nav.portfolio',  icon: '\u{1F392}' },
 ];
 
 function shortenAddress(addr) {
@@ -29,11 +36,14 @@ function shortenAddress(addr) {
 }
 
 export default function Header() {
+  const { t, i18n } = useTranslation();
   const { activeTab, setActiveTab, connectWallet, disconnectWallet, theme, setTheme } = useStore();
   const [showWalletMenu, setShowWalletMenu] = useState(false);
   const [showLimeMenu, setShowLimeMenu] = useState(false);
   const [showWalletPicker, setShowWalletPicker] = useState(false);
+  const [showLangMenu, setShowLangMenu] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const currentLang = LANGS.find(l => l.code === i18n.language) || LANGS[0];
 
   // Wallet standard hooks (called at top level — never inside callbacks)
   const wallets = useWallets();
@@ -113,7 +123,7 @@ export default function Header() {
                   }
                 `}
               >
-                {tab.icon} {tab.label}
+                {tab.icon} {t(tab.labelKey)}
               </button>
             ))}
           </nav>
@@ -193,7 +203,7 @@ export default function Header() {
                   </span>
                 ) : (
                   <span className="flex flex-col leading-tight">
-                    <span>{wallets.length > 0 ? 'Connect Wallet' : 'Get Wallet'}</span>
+                    <span>{wallets.length > 0 ? t('nav.connect') : 'Get Wallet'}</span>
                     <span className="text-[.58rem] font-normal opacity-75">
                       {wallets.length > 0 ? `${wallets.length} wallet${wallets.length > 1 ? 's' : ''} detected` : 'Solana Wallet'}
                     </span>
@@ -240,8 +250,34 @@ export default function Header() {
                   <button onClick={handleDisconnect}
                     className="w-full text-[.72rem] text-down bg-down/10 border border-down/25
                       rounded-lg py-1.5 cursor-pointer font-headline hover:bg-down hover:text-white transition-all">
-                    Disconnect
+                    {t('nav.disconnect')}
                   </button>
+                </div>
+              )}
+            </div>
+
+            {/* Language picker */}
+            <div className="relative">
+              <button
+                onClick={() => setShowLangMenu(!showLangMenu)}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg border border-border text-[.72rem] font-headline cursor-pointer bg-transparent text-muted hover:text-txt hover:border-white/20 transition-all"
+                aria-label={t('common.language')}
+                title={t('common.language')}
+              >
+                <span>{currentLang.flag}</span>
+                <span className="text-[.6rem] uppercase tracking-widest">{currentLang.label}</span>
+              </button>
+              {showLangMenu && (
+                <div className="absolute right-0 top-full mt-1 rounded-xl border border-border p-1 z-50"
+                  style={{ background: 'var(--color-night-2)', boxShadow: '0 8px 28px rgba(0,0,0,.5)', minWidth: '7rem' }}>
+                  {LANGS.map(lang => (
+                    <button key={lang.code}
+                      onClick={() => { i18n.changeLanguage(lang.code); setShowLangMenu(false); }}
+                      className={`w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg text-[.75rem] font-headline cursor-pointer border-none transition-all
+                        ${i18n.language === lang.code ? 'text-sea bg-sea/12' : 'text-txt-2 bg-transparent hover:text-txt hover:bg-white/5'}`}>
+                      <span>{lang.flag}</span> {lang.label}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
@@ -294,8 +330,8 @@ export default function Header() {
         </div>
 
         {/* Close menus when clicking outside */}
-        {(showWalletMenu || showLimeMenu || showWalletPicker) && (
-          <div className="fixed inset-0 z-40" onClick={() => { setShowWalletMenu(false); setShowLimeMenu(false); setShowWalletPicker(false); }} />
+        {(showWalletMenu || showLimeMenu || showWalletPicker || showLangMenu) && (
+          <div className="fixed inset-0 z-40" onClick={() => { setShowWalletMenu(false); setShowLimeMenu(false); setShowWalletPicker(false); setShowLangMenu(false); }} />
         )}
       </header>
 

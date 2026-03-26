@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import GlowCard from '../components/ui/GlowCard';
 import LiquidMetalButton from '../components/ui/LiquidMetalButton';
 
@@ -68,6 +69,7 @@ function jupiterUrl(side, tokenMint) {
 }
 
 export default function TradePage() {
+  const { t } = useTranslation();
   const { balanceUSD, balanceTTD, holdings, trades, executeTrade, walletConnected, watchlist, toggleWatchlist,
           unlockedFeatures, limitOrders, addLimitOrder, cancelLimitOrder, checkLimitOrders } = useStore();
   const marketQ = useQuery({
@@ -357,20 +359,20 @@ export default function TradePage() {
         <button onClick={() => { setMarket('solana'); setSelectedId(''); }}
           className={`px-4 py-2 rounded-lg text-[.75rem] font-headline cursor-pointer border transition-all
             ${market === 'solana' ? 'bg-sea/12 border-sea/35 text-sea' : 'bg-transparent border-border text-muted hover:text-txt'}`}>
-          📊 Solana Tokens
+          📊 {t('trade.solanaTokens')}
         </button>
         <FeatureLock featureKey="ttse_trading" hint="Complete Module 2 (Caribbean Markets) in Learn to unlock TTSE trading">
           <button onClick={() => { setMarket('ttse'); setSelectedId(''); }}
             className={`px-4 py-2 rounded-lg text-[.75rem] font-headline cursor-pointer border transition-all
               ${market === 'ttse' ? 'bg-[rgba(200,16,46,.1)] border-[#FF4D6D]/35 text-[#FF4D6D]' : 'bg-transparent border-border text-muted hover:text-txt'}`}>
-            🇹🇹 TTSE Stocks (Tokenized)
+            🇹🇹 {t('trade.ttseStocks')}
           </button>
         </FeatureLock>
         <button onClick={() => setMarket('jupiter')}
           className={`px-4 py-2 rounded-lg text-[.75rem] font-headline cursor-pointer border transition-all flex items-center gap-1.5
             ${market === 'jupiter' ? 'bg-[rgba(196,108,255,.1)] border-[#C46CFF]/35 text-[#C46CFF]' : 'bg-transparent border-border text-muted hover:text-txt'}`}>
-          ⚡ Real Swap
-          <span className="text-[.55rem] bg-up/15 text-up rounded px-1.5 py-0.5 font-bold uppercase">Live</span>
+          ⚡ {t('trade.realSwap')}
+          <span className="text-[.55rem] bg-up/15 text-up rounded px-1.5 py-0.5 font-bold uppercase">{t('trade.live')}</span>
         </button>
       </div>
 
@@ -667,11 +669,11 @@ export default function TradePage() {
           <div className="flex rounded-lg overflow-hidden border border-border">
             <button onClick={() => setSide('buy')}
               className={`flex-1 py-2 text-[.73rem] font-headline cursor-pointer border-none transition-all ${side === 'buy' ? 'bg-up/15 text-up' : 'bg-transparent text-muted'}`}>
-              Buy
+              {t('trade.buy')}
             </button>
             <button onClick={() => setSide('sell')}
               className={`flex-1 py-2 text-[.73rem] font-headline cursor-pointer border-none transition-all ${side === 'sell' ? 'bg-down/15 text-down' : 'bg-transparent text-muted'}`}>
-              Sell
+              {t('trade.sell')}
             </button>
           </div>
 
@@ -679,7 +681,7 @@ export default function TradePage() {
           <div className="flex rounded-lg overflow-hidden border border-border">
             <button onClick={() => setOrderType('market')}
               className={`flex-1 py-1.5 text-[.68rem] font-headline cursor-pointer border-none transition-all ${orderType === 'market' ? 'bg-sea/15 text-sea' : 'bg-transparent text-muted'}`}>
-              Market
+              {t('trade.marketOrder')}
             </button>
             {hasLimitOrders ? (
               <button onClick={() => setOrderType('limit')}
