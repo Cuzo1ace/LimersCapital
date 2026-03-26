@@ -26,6 +26,7 @@ import FeatureLock from '../components/gamification/FeatureLock';
 import PriceAlerts from '../components/PriceAlerts';
 import useStore from '../store/useStore';
 import { RISK_BANNER } from '../data/legal';
+import JupiterSwap from '../components/JupiterSwap';
 
 const fmtUSD = n => {
   if (n == null) return '—';
@@ -352,7 +353,7 @@ export default function TradePage() {
       )}
 
       {/* Market Toggle */}
-      <div className="flex gap-2 mb-5">
+      <div className="flex gap-2 mb-5 flex-wrap">
         <button onClick={() => { setMarket('solana'); setSelectedId(''); }}
           className={`px-4 py-2 rounded-lg text-[.75rem] font-headline cursor-pointer border transition-all
             ${market === 'solana' ? 'bg-sea/12 border-sea/35 text-sea' : 'bg-transparent border-border text-muted hover:text-txt'}`}>
@@ -365,8 +366,64 @@ export default function TradePage() {
             🇹🇹 TTSE Stocks (Tokenized)
           </button>
         </FeatureLock>
+        <button onClick={() => setMarket('jupiter')}
+          className={`px-4 py-2 rounded-lg text-[.75rem] font-headline cursor-pointer border transition-all flex items-center gap-1.5
+            ${market === 'jupiter' ? 'bg-[rgba(196,108,255,.1)] border-[#C46CFF]/35 text-[#C46CFF]' : 'bg-transparent border-border text-muted hover:text-txt'}`}>
+          ⚡ Real Swap
+          <span className="text-[.55rem] bg-up/15 text-up rounded px-1.5 py-0.5 font-bold uppercase">Live</span>
+        </button>
       </div>
 
+      {/* Jupiter Real Swap View */}
+      {market === 'jupiter' && (
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5">
+          <JupiterSwap />
+          <div className="flex flex-col gap-4">
+            {/* Why Real Swap */}
+            <div className="rounded-xl border border-border p-5" style={{ background: 'var(--color-card)' }}>
+              <h3 className="font-headline text-[.82rem] font-bold text-txt mb-3">⚡ Real On-Chain Swaps</h3>
+              <div className="flex flex-col gap-2.5 text-[.74rem] text-txt-2">
+                <div className="flex items-start gap-2">
+                  <span className="text-up mt-0.5">✓</span>
+                  <span>Execute real token swaps on Solana mainnet via Jupiter aggregator</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-up mt-0.5">✓</span>
+                  <span>Best price across all Solana DEXs (Raydium, Orca, Meteora, etc.)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-up mt-0.5">✓</span>
+                  <span>Sub-second settlement with transaction proof on Solscan</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-up mt-0.5">✓</span>
+                  <span>Network fee: ~$0.00025 per transaction</span>
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-white/5 text-[.62rem] text-muted">
+                Swaps use your connected wallet. Paper trading is separate — switch to "Solana Tokens" tab to practice with no risk.
+              </div>
+            </div>
+            {/* Paper vs Real comparison */}
+            <div className="rounded-xl border border-border p-5" style={{ background: 'var(--color-card)' }}>
+              <h3 className="font-headline text-[.76rem] font-bold text-txt mb-3">📊 Paper vs Real</h3>
+              <div className="grid grid-cols-2 gap-2 text-[.68rem]">
+                <div className="bg-sea/8 border border-sea/20 rounded-lg p-2.5 text-center">
+                  <div className="text-sea font-bold mb-0.5">Paper Trading</div>
+                  <div className="text-muted">Practice · No risk · Earn XP</div>
+                </div>
+                <div className="bg-[#C46CFF]/8 border border-[#C46CFF]/20 rounded-lg p-2.5 text-center">
+                  <div className="text-[#C46CFF] font-bold mb-0.5">Real Swap</div>
+                  <div className="text-muted">On-chain · Real tokens · Jupiter</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Paper Trading Views (Solana + TTSE) */}
+      {market !== 'jupiter' ? (
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5">
         {/* Left: Order Book + Holdings */}
         <div>
@@ -792,6 +849,7 @@ export default function TradePage() {
 
         </GlowCard>
       </div>
+      ) : null}
     </div>
   );
 }
