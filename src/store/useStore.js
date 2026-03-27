@@ -90,7 +90,7 @@ const useStore = create(
         return { success: true };
       },
 
-      resetPortfolio: () => set({ balanceUSD: INITIAL_USD, balanceTTD: INITIAL_TTD, holdings: [], trades: [] }),
+      resetPortfolio: () => set({ balanceUSD: INITIAL_USD, balanceTTD: INITIAL_TTD, holdings: [], trades: [], perpPositions: [], perpTradeCount: 0, perpTotalPnl: 0 }),
 
       // ── Wallet ────────────────────────────────────────────────
       walletAddress: null,
@@ -613,6 +613,215 @@ const useStore = create(
         track('lp_army_visited');
       },
 
+      // ── Paper Perpetual Futures ──────────────────────────
+      perpPositions: [],
+      perpTradeCount: 0,
+      perpTotalPnl: 0,
+
+      openPerpPosition: (symbol, side, leverage, collateral, entryPrice) => {
+        if (!symbol || !side || !leverage || !collateral || !entryPrice) return { error: 'Missing parameters' };
+        if (collateral <= 0 || leverage < 1 || leverage > 20) return { error: 'Invalid leverage or collateral' };
+        if (!Number.isFinite(collateral) || !Number.isFinite(entryPrice)) return { error: 'Invalid numbers' };
+
+        const state = get();
+        if (collateral > state.balanceUSD) return { error: 'Insufficient USD balance' };
+
+        const size = collateral * leverage;
+        const maintenanceMargin = 0.05; // 5%
+        const direction = side === 'long' ? 1 : -1;
+
+        // Liquidation price calculation
+        const liqPrice = side === 'long'
+          ? entryPrice * (1 - (1 / leverage) + maintenanceMargin)
+          : entryPrice * (1 + (1 / leverage) - maintenanceMargin);
+
+        const position = {
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+          symbol,
+          side,
+          leverage,
+          collateral,
+          size,
+          entryPrice,
+          liquidationPrice: Math.max(0, liqPrice),
+          unrealizedPnl: 0,
+          accumulatedFunding: 0,
+          status: 'open',
+          openedAt: new Date().toISOString(),
+          closedAt: null,
+        };
+
+        // Deduct collateral from paper balance
+        set({
+          balanceUSD: state.balanceUSD - collateral,
+          perpPositions: [position, ...state.perpPositions].slice(0, 50),
+          perpTradeCount: state.perpTradeCount + 1,
+        });
+
+        // Gamification rewards
+        if (state.perpTradeCount === 0) {
+          get().awardXP(100, 'First perp position opened!');
+          get().awardLP(20, 'First perp position', 'perp_trade');
+        } else {
+          get().awardLP(10, 'Perp position opened', 'perp_trade');
+        }
+        if (state.perpTradeCount + 1 === 10) {
+          get().awardXP(200, '10 perp trades milestone!');
+          get().awardLP(50, '10 perp trades', 'perp_milestone');
+        }
+
+        // Record as trade for history
+        const trade = {
+          id: position.id, side: `perp_${side}`, symbol, qty: size / entryPrice,
+          price: entryPrice, total: size, currency: 'USD', market: 'perpetuals',
+          timestamp: position.openedAt, leverage,
+        };
+        set({ trades: [trade, ...get().trades].slice(0, 100) });
+
+        // Track revenue (0.1% opening fee)
+        const fee = size * 0.001;
+        const rev = get().simulatedRevenue;
+        set({
+          simulatedRevenue: {
+            ...rev,
+            totalPlatformRevenue: rev.totalPlatformRevenue + fee,
+            communityPool: rev.communityPool + fee / 2,
+            platformPool: rev.platformPool + fee / 2,
+            userTrades: rev.userTrades + 1,
+            feeRevenue: rev.feeRevenue + fee,
+          },
+        });
+
+        get()._checkBadges();
+        track('perp_position_opened', { symbol, side, leverage, size: Math.round(size) });
+        return { success: true, position };
+      },
+
+      closePerpPosition: (positionId, markPrice) => {
+        const state = get();
+        const pos = state.perpPositions.find(p => p.id === positionId && p.status === 'open');
+        if (!pos) return { error: 'Position not found' };
+
+        const direction = pos.side === 'long' ? 1 : -1;
+        const priceDelta = (markPrice - pos.entryPrice) * direction;
+        const pnl = (priceDelta / pos.entryPrice) * pos.size - pos.accumulatedFunding;
+
+        // Return collateral + PnL to balance (min 0 — can't go negative from balance)
+        const returnAmount = Math.max(0, pos.collateral + pnl);
+
+        set({
+          balanceUSD: state.balanceUSD + returnAmount,
+          perpPositions: state.perpPositions.map(p =>
+            p.id === positionId ? { ...p, status: 'closed', closedAt: new Date().toISOString(), unrealizedPnl: pnl } : p
+          ),
+          perpTotalPnl: state.perpTotalPnl + pnl,
+        });
+
+        // Record close trade
+        const trade = {
+          id: Date.now().toString(36), side: `close_${pos.side}`, symbol: pos.symbol,
+          qty: pos.size / markPrice, price: markPrice, total: pos.size,
+          currency: 'USD', market: 'perpetuals', timestamp: new Date().toISOString(),
+          leverage: pos.leverage, pnl,
+        };
+        set({ trades: [trade, ...get().trades].slice(0, 100) });
+
+        // Reward profitable closes
+        if (pnl > 0) {
+          get().awardLP(15, `Perp profit +$${pnl.toFixed(0)}`, 'perp_profit');
+          get().awardXP(50, 'Profitable perp close!');
+        } else {
+          get().awardLP(5, 'Perp position closed', 'perp_close');
+        }
+
+        get()._checkBadges();
+        track('perp_position_closed', { symbol: pos.symbol, pnl: Math.round(pnl), leverage: pos.leverage });
+        return { success: true, pnl };
+      },
+
+      checkPerpLiquidations: (currentPrices) => {
+        // currentPrices: { SOL: price, BTC: price, ... }
+        const state = get();
+        const open = state.perpPositions.filter(p => p.status === 'open');
+        if (!open.length) return;
+
+        open.forEach(pos => {
+          const markPrice = currentPrices[pos.symbol];
+          if (!markPrice) return;
+
+          const isLiquidated = pos.side === 'long'
+            ? markPrice <= pos.liquidationPrice
+            : markPrice >= pos.liquidationPrice;
+
+          if (isLiquidated) {
+            // Liquidation penalty: lose entire collateral minus 1% insurance fee
+            const penaltyFee = pos.collateral * 0.01;
+            set({
+              perpPositions: get().perpPositions.map(p =>
+                p.id === pos.id ? {
+                  ...p, status: 'liquidated', closedAt: new Date().toISOString(),
+                  unrealizedPnl: -pos.collateral,
+                } : p
+              ),
+              perpTotalPnl: get().perpTotalPnl - pos.collateral,
+            });
+
+            // Track revenue from liquidation penalty
+            const rev = get().simulatedRevenue;
+            set({
+              simulatedRevenue: {
+                ...rev,
+                totalPlatformRevenue: rev.totalPlatformRevenue + penaltyFee,
+                communityPool: rev.communityPool + penaltyFee / 2,
+                platformPool: rev.platformPool + penaltyFee / 2,
+              },
+            });
+
+            // Record liquidation as trade
+            set({ trades: [{
+              id: Date.now().toString(36) + 'liq', side: 'liquidated', symbol: pos.symbol,
+              qty: pos.size / markPrice, price: markPrice, total: pos.collateral,
+              currency: 'USD', market: 'perpetuals', timestamp: new Date().toISOString(),
+              leverage: pos.leverage, pnl: -pos.collateral,
+            }, ...get().trades].slice(0, 100) });
+
+            get().awardLP(5, 'Liquidated — lesson learned!', 'perp_liquidation');
+            get().awardXP(20, 'Experienced liquidation');
+            set(s => ({ pendingToasts: [...s.pendingToasts, {
+              id: 'liq:' + pos.id,
+              type: 'badge',
+              title: '💀 Position Liquidated',
+              message: `${pos.side.toUpperCase()} ${pos.symbol} ${pos.leverage}x — lost $${pos.collateral.toFixed(0)} collateral`,
+            }]}));
+
+            track('perp_liquidated', { symbol: pos.symbol, leverage: pos.leverage, collateral: Math.round(pos.collateral) });
+          }
+        });
+      },
+
+      accruePerpFunding: () => {
+        // Simulated funding rate: 0.01% per 8 hours
+        // Called periodically (e.g., every price refresh)
+        const state = get();
+        const open = state.perpPositions.filter(p => p.status === 'open');
+        if (!open.length) return;
+
+        // Only accrue every 5 minutes (avoid spam on 12s refresh)
+        const now = Date.now();
+        const lastAccrual = state._lastFundingAccrual || 0;
+        if (now - lastAccrual < 5 * 60 * 1000) return;
+
+        const fundingRate = 0.0001; // 0.01% per interval (simplified)
+        set({
+          _lastFundingAccrual: now,
+          perpPositions: state.perpPositions.map(p => {
+            if (p.status !== 'open') return p;
+            const funding = p.size * fundingRate;
+            return { ...p, accumulatedFunding: p.accumulatedFunding + funding };
+          }),
+        });
+      },
+
       markFlywheelViewed: () => {
         if (get().viewedFlywheel) return;
         set({ viewedFlywheel: true });
@@ -661,6 +870,10 @@ const useStore = create(
         viewedFlywheel: state.viewedFlywheel,
         listingApplications: state.listingApplications,
         limitOrders: state.limitOrders,
+        // Paper Perpetual Futures
+        perpPositions: state.perpPositions,
+        perpTradeCount: state.perpTradeCount,
+        perpTotalPnl: state.perpTotalPnl,
         watchlist: state.watchlist,
         priceAlerts: state.priceAlerts,
         hasSeenOnboarding: state.hasSeenOnboarding,

@@ -71,7 +71,9 @@ function jupiterUrl(side, tokenMint) {
 export default function TradePage() {
   const { t } = useTranslation();
   const { balanceUSD, balanceTTD, holdings, trades, executeTrade, walletConnected, watchlist, toggleWatchlist,
-          unlockedFeatures, limitOrders, addLimitOrder, cancelLimitOrder, checkLimitOrders } = useStore();
+          unlockedFeatures, limitOrders, addLimitOrder, cancelLimitOrder, checkLimitOrders,
+          perpPositions, perpTradeCount, perpTotalPnl, openPerpPosition, closePerpPosition,
+          checkPerpLiquidations, accruePerpFunding } = useStore();
   const marketQ = useQuery({
     queryKey: ['trade-prices'],
     queryFn: fetchTradePrices,
@@ -90,7 +92,7 @@ export default function TradePage() {
   });
   const heliusLogos = heliusLogosQ.data || {}; // { mint: logoUrl }
 
-  const [market, setMarket] = useState('solana'); // 'solana' | 'ttse'
+  const [market, setMarket] = useState('solana'); // 'solana' | 'ttse' | 'jupiter' | 'perpetuals'
   const [side, setSide] = useState('buy');
   const [selectedId, setSelectedId] = useState('');
   const [qty, setQty] = useState('');
@@ -98,6 +100,12 @@ export default function TradePage() {
   const [assetFilter, setAssetFilter] = useState('all'); // 'all' | 'watchlist'
   const [confirmPending, setConfirmPending] = useState(null); // { side, symbol, qty, price, total, fee, currency }
   const [orderType, setOrderType] = useState('market'); // 'market' | 'limit'
+  // Perpetuals-specific state
+  const [perpSide, setPerpSide] = useState('long');
+  const [perpLeverage, setPerpLeverage] = useState(5);
+  const [perpCollateral, setPerpCollateral] = useState('');
+  const [perpSelectedToken, setPerpSelectedToken] = useState('SOL');
+  const [perpConfirm, setPerpConfirm] = useState(null);
   const [limitPrice, setLimitPrice] = useState('');
 
   const hasLimitOrders = unlockedFeatures.includes('limit_orders');
@@ -209,14 +217,19 @@ export default function TradePage() {
 
   const isFallback = ttseQ.data && ttseQ.data.live === false;
 
-  // Check limit orders whenever live prices update
+  // Check limit orders + perp liquidations whenever live prices update
   useEffect(() => {
     if (!marketQ.data?.length) return;
     const priceMap = {};
+    const perpPriceMap = {};
     marketQ.data.forEach(t => {
-      priceMap[t.symbol.toUpperCase()] = { price: t.current_price };
+      const sym = t.symbol.toUpperCase();
+      priceMap[sym] = { price: t.current_price };
+      perpPriceMap[sym] = t.current_price;
     });
     checkLimitOrders(priceMap);
+    checkPerpLiquidations(perpPriceMap);
+    accruePerpFunding();
   }, [marketQ.data]);
 
   return (
@@ -374,6 +387,12 @@ export default function TradePage() {
           ⚡ {t('trade.realSwap')}
           <span className="text-[.55rem] bg-up/15 text-up rounded px-1.5 py-0.5 font-bold uppercase">{t('trade.live')}</span>
         </button>
+        <button onClick={() => { setMarket('perpetuals'); setSelectedId(''); }}
+          className={`px-4 py-2 rounded-lg text-[.75rem] font-headline cursor-pointer border transition-all flex items-center gap-1.5
+            ${market === 'perpetuals' ? 'bg-[rgba(255,165,0,.1)] border-[#FFA500]/35 text-[#FFA500]' : 'bg-transparent border-border text-muted hover:text-txt'}`}>
+          📈 Perpetuals
+          <span className="text-[.55rem] bg-[#FFA500]/15 text-[#FFA500] rounded px-1.5 py-0.5 font-bold uppercase">Paper</span>
+        </button>
       </div>
 
       {/* Jupiter Real Swap View */}
@@ -424,8 +443,347 @@ export default function TradePage() {
         </div>
       )}
 
+      {/* ── Perpetuals View ──────────────────────────────── */}
+      {market === 'perpetuals' && (() => {
+        const perpTokens = (marketQ.data || []).filter(t =>
+          ['SOL', 'BONK', 'JUP', 'RAY', 'RENDER', 'HNT', 'ONDO'].includes(t.symbol.toUpperCase())
+        );
+        const selToken = perpTokens.find(t => t.symbol.toUpperCase() === perpSelectedToken);
+        const markPrice = selToken?.current_price;
+        const collateralNum = parseFloat(perpCollateral) || 0;
+        const notionalSize = collateralNum * perpLeverage;
+        const maintenanceMargin = 0.05;
+        const openFee = notionalSize * 0.001;
+
+        const liqPricePreview = markPrice && collateralNum > 0
+          ? (perpSide === 'long'
+              ? markPrice * (1 - (1 / perpLeverage) + maintenanceMargin)
+              : markPrice * (1 + (1 / perpLeverage) - maintenanceMargin))
+          : null;
+
+        const openPositions = perpPositions.filter(p => p.status === 'open');
+        const closedPositions = perpPositions.filter(p => p.status !== 'open').slice(0, 10);
+
+        const handleOpenPerp = () => {
+          if (!markPrice || collateralNum <= 0) { flash('error', 'Enter valid collateral amount'); return; }
+          if (collateralNum > balanceUSD) { flash('error', 'Insufficient USD balance'); return; }
+          setPerpConfirm({ side: perpSide, symbol: perpSelectedToken, leverage: perpLeverage, collateral: collateralNum, price: markPrice, size: notionalSize, fee: openFee });
+        };
+
+        const handleConfirmPerp = () => {
+          if (!perpConfirm) return;
+          const result = openPerpPosition(perpConfirm.symbol, perpConfirm.side, perpConfirm.leverage, perpConfirm.collateral, perpConfirm.price);
+          setPerpConfirm(null);
+          if (result.error) flash('error', result.error);
+          else { flash('success', `Opened ${perpConfirm.leverage}x ${perpConfirm.side.toUpperCase()} ${perpConfirm.symbol}`); setPerpCollateral(''); }
+        };
+
+        return (
+          <div>
+            {/* Perp Confirmation Modal */}
+            {perpConfirm && (
+              <div role="dialog" aria-modal="true" className="fixed inset-0 z-[500] flex items-center justify-center p-4"
+                style={{ background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(4px)' }}
+                onClick={e => { if (e.target === e.currentTarget) setPerpConfirm(null); }}>
+                <div className="rounded-xl border border-border max-w-sm w-full p-6 flex flex-col gap-4" style={{ background: 'var(--color-night-2)' }}>
+                  <div className="font-body font-black text-[1rem] text-txt text-center">
+                    {perpConfirm.side === 'long' ? '🟢 Confirm Long' : '🔴 Confirm Short'}
+                  </div>
+                  <div className="rounded-xl border border-border p-4 text-[.78rem] flex flex-col gap-2" style={{ background: 'var(--color-card)' }}>
+                    <div className="flex justify-between"><span className="text-muted">Asset</span><span className="text-txt font-bold">{perpConfirm.symbol}</span></div>
+                    <div className="flex justify-between"><span className="text-muted">Direction</span><span className={perpConfirm.side === 'long' ? 'text-up font-bold' : 'text-down font-bold'}>{perpConfirm.side.toUpperCase()}</span></div>
+                    <div className="flex justify-between"><span className="text-muted">Leverage</span><span className="text-[#FFA500] font-bold">{perpConfirm.leverage}x</span></div>
+                    <div className="flex justify-between"><span className="text-muted">Collateral</span><span className="text-txt">{fmtUSD(perpConfirm.collateral)}</span></div>
+                    <div className="flex justify-between"><span className="text-muted">Position Size</span><span className="text-txt font-bold">{fmtUSD(perpConfirm.size)}</span></div>
+                    <div className="flex justify-between"><span className="text-muted">Entry Price</span><span className="text-txt">{fmtUSD(perpConfirm.price)}</span></div>
+                    <div className="flex justify-between"><span className="text-muted">Fee (0.1%)</span><span className="text-muted">{fmtUSD(perpConfirm.fee)}</span></div>
+                    <div className="flex justify-between border-t border-border pt-2 mt-1">
+                      <span className="text-down text-[.72rem]">Liquidation Price</span>
+                      <span className="text-down font-bold">{liqPricePreview ? fmtUSD(liqPricePreview) : '—'}</span>
+                    </div>
+                  </div>
+                  <div className="text-[.65rem] text-muted text-center">⚠️ Paper perpetuals — no real funds at risk</div>
+                  <div className="flex gap-3">
+                    <button onClick={() => setPerpConfirm(null)} className="flex-1 py-2.5 rounded-xl border border-border bg-transparent text-muted text-[.78rem] font-headline cursor-pointer hover:text-txt transition-all">Cancel</button>
+                    <button onClick={handleConfirmPerp}
+                      className={`flex-1 py-2.5 rounded-xl border-none text-[.82rem] font-body font-bold cursor-pointer transition-all hover:brightness-90
+                        ${perpConfirm.side === 'long' ? 'bg-up text-night' : 'bg-down text-white'}`}>
+                      Open {perpConfirm.side === 'long' ? 'Long' : 'Short'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5">
+              {/* Left: Open Positions + History */}
+              <div>
+                {/* Perp Stats Banner */}
+                <div className="grid grid-cols-3 gap-3 mb-5">
+                  <div className="rounded-xl border border-[#FFA500]/20 p-4 text-center" style={{ background: 'rgba(255,165,0,.04)' }}>
+                    <div className="text-[.65rem] text-muted uppercase tracking-widest mb-1">Open Positions</div>
+                    <div className="font-headline text-[1.4rem] font-black text-[#FFA500]">{openPositions.length}</div>
+                  </div>
+                  <div className="rounded-xl border border-border p-4 text-center" style={{ background: 'var(--color-card)' }}>
+                    <div className="text-[.65rem] text-muted uppercase tracking-widest mb-1">Total Trades</div>
+                    <div className="font-headline text-[1.4rem] font-black text-txt">{perpTradeCount}</div>
+                  </div>
+                  <div className="rounded-xl border border-border p-4 text-center" style={{ background: 'var(--color-card)' }}>
+                    <div className="text-[.65rem] text-muted uppercase tracking-widest mb-1">Realized P&L</div>
+                    <div className={`font-headline text-[1.4rem] font-black ${perpTotalPnl >= 0 ? 'text-up' : 'text-down'}`}>
+                      {perpTotalPnl >= 0 ? '+' : ''}{fmtUSD(perpTotalPnl)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Open Positions Table */}
+                <h3 className="font-headline text-[.88rem] font-bold uppercase tracking-widest mb-3 text-txt">📈 Open Positions</h3>
+                {openPositions.length === 0 ? (
+                  <div className="text-muted text-sm py-8 text-center border border-border rounded-xl mb-5" style={{ background: 'var(--color-card)' }}>
+                    No open positions. Open your first perpetual trade!
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2 mb-5">
+                    {openPositions.map(pos => {
+                      const curPrice = perpTokens.find(t => t.symbol.toUpperCase() === pos.symbol)?.current_price || pos.entryPrice;
+                      const direction = pos.side === 'long' ? 1 : -1;
+                      const priceDelta = (curPrice - pos.entryPrice) * direction;
+                      const pnl = (priceDelta / pos.entryPrice) * pos.size - pos.accumulatedFunding;
+                      const pnlPct = (pnl / pos.collateral) * 100;
+                      const marginRatio = ((pos.collateral + pnl) / pos.size) * 100;
+
+                      return (
+                        <div key={pos.id} className="rounded-xl border border-border p-4" style={{ background: 'var(--color-card)' }}>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-0.5 rounded text-[.65rem] font-bold uppercase
+                                ${pos.side === 'long' ? 'bg-up/12 text-up' : 'bg-down/12 text-down'}`}>
+                                {pos.side}
+                              </span>
+                              <span className="font-body font-bold text-[.92rem] text-txt">{pos.symbol}</span>
+                              <span className="text-[#FFA500] font-mono text-[.72rem] font-bold">{pos.leverage}x</span>
+                            </div>
+                            <button onClick={() => {
+                              const result = closePerpPosition(pos.id, curPrice);
+                              if (result.error) flash('error', result.error);
+                              else flash('success', `Closed ${pos.symbol} — P&L: ${result.pnl >= 0 ? '+' : ''}$${result.pnl.toFixed(2)}`);
+                            }}
+                              className="px-3 py-1.5 rounded-lg border border-border text-[.72rem] font-headline cursor-pointer bg-transparent text-muted hover:text-down hover:border-down/40 transition-all">
+                              Close
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[.72rem]">
+                            <div>
+                              <div className="text-muted text-[.62rem] uppercase tracking-wider mb-0.5">Size</div>
+                              <div className="text-txt font-bold">{fmtUSD(pos.size)}</div>
+                            </div>
+                            <div>
+                              <div className="text-muted text-[.62rem] uppercase tracking-wider mb-0.5">Entry</div>
+                              <div className="text-txt">{fmtUSD(pos.entryPrice)}</div>
+                            </div>
+                            <div>
+                              <div className="text-muted text-[.62rem] uppercase tracking-wider mb-0.5">Mark</div>
+                              <div className="text-txt">{fmtUSD(curPrice)}</div>
+                            </div>
+                            <div>
+                              <div className="text-muted text-[.62rem] uppercase tracking-wider mb-0.5">Unrealized P&L</div>
+                              <div className={`font-bold ${pnl >= 0 ? 'text-up' : 'text-down'}`}>
+                                {pnl >= 0 ? '+' : ''}{fmtUSD(pnl)} <span className="text-[.62rem]">({pnlPct >= 0 ? '+' : ''}{pnlPct.toFixed(1)}%)</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4 mt-3 pt-2 border-t border-border text-[.65rem]">
+                            <span className="text-muted">Collateral: <span className="text-txt">{fmtUSD(pos.collateral)}</span></span>
+                            <span className="text-muted">Liq: <span className="text-down font-bold">{fmtUSD(pos.liquidationPrice)}</span></span>
+                            <span className="text-muted">Margin: <span className={marginRatio > 10 ? 'text-up' : marginRatio > 5 ? 'text-sun' : 'text-down'}>{marginRatio.toFixed(1)}%</span></span>
+                            {pos.accumulatedFunding > 0 && (
+                              <span className="text-muted">Funding: <span className="text-down">-{fmtUSD(pos.accumulatedFunding)}</span></span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Recent Perp Trades */}
+                {closedPositions.length > 0 && (
+                  <div>
+                    <h3 className="font-headline text-[.88rem] font-bold uppercase tracking-widest mb-3 text-txt">Recent Perp History</h3>
+                    <div className="flex flex-col gap-1">
+                      {closedPositions.map(pos => (
+                        <div key={pos.id} className="flex items-center gap-3 rounded-xl px-4 py-2.5 border border-border text-[.74rem]"
+                          style={{ background: 'var(--color-card)' }}>
+                          <span className={`px-1.5 py-0.5 rounded text-[.62rem] font-semibold uppercase
+                            ${pos.status === 'liquidated' ? 'bg-down/20 text-down' : pos.unrealizedPnl >= 0 ? 'bg-up/12 text-up' : 'bg-down/12 text-down'}`}>
+                            {pos.status === 'liquidated' ? '💀 LIQ' : pos.unrealizedPnl >= 0 ? 'WIN' : 'LOSS'}
+                          </span>
+                          <span className={`px-1.5 py-0.5 rounded text-[.6rem] font-bold uppercase
+                            ${pos.side === 'long' ? 'bg-up/8 text-up' : 'bg-down/8 text-down'}`}>{pos.side}</span>
+                          <span className="font-body font-bold">{pos.symbol}</span>
+                          <span className="text-[#FFA500] font-mono text-[.68rem]">{pos.leverage}x</span>
+                          <span className="flex-1" />
+                          <span className={`font-bold ${(pos.unrealizedPnl || 0) >= 0 ? 'text-up' : 'text-down'}`}>
+                            {(pos.unrealizedPnl || 0) >= 0 ? '+' : ''}{fmtUSD(pos.unrealizedPnl || 0)}
+                          </span>
+                          <span className="text-muted text-[.62rem]">{pos.closedAt ? new Date(pos.closedAt).toLocaleDateString() : ''}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Education card */}
+                <div className="rounded-xl border border-[#FFA500]/20 p-5 mt-5" style={{ background: 'rgba(255,165,0,.03)' }}>
+                  <h3 className="font-headline text-[.82rem] font-bold text-txt mb-3">📚 How Perpetual Futures Work</h3>
+                  <div className="flex flex-col gap-2.5 text-[.74rem] text-txt-2">
+                    <div className="flex items-start gap-2"><span className="text-[#FFA500] mt-0.5 font-bold">1.</span><span><strong>Leverage</strong> — Multiply your exposure (2x-20x). $100 at 10x = $1,000 position size.</span></div>
+                    <div className="flex items-start gap-2"><span className="text-[#FFA500] mt-0.5 font-bold">2.</span><span><strong>Long vs Short</strong> — Long profits when price goes up. Short profits when price goes down.</span></div>
+                    <div className="flex items-start gap-2"><span className="text-[#FFA500] mt-0.5 font-bold">3.</span><span><strong>Liquidation</strong> — If losses exceed your collateral (5% maintenance margin), the position is forcefully closed.</span></div>
+                    <div className="flex items-start gap-2"><span className="text-[#FFA500] mt-0.5 font-bold">4.</span><span><strong>Funding Rate</strong> — A small periodic fee (0.01%) to keep perp prices aligned with spot.</span></div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-white/5 text-[.62rem] text-muted">
+                    ⚠️ This is paper trading — practice leverage risk before using real capital.
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Order Panel */}
+              <GlowCard className="rounded-xl p-5 flex flex-col gap-3.5 border h-fit sticky top-20" proximity={120} spread={30}
+                style={{ background: 'var(--color-card)', borderColor: 'rgba(255,165,0,.22)' }}>
+                <h3 className="font-headline text-[.88rem] font-bold uppercase tracking-widest text-txt">
+                  📈 Perpetual Order
+                </h3>
+
+                {/* Long / Short */}
+                <div className="flex rounded-lg overflow-hidden border border-border">
+                  <button onClick={() => setPerpSide('long')}
+                    className={`flex-1 py-2.5 text-[.78rem] font-headline cursor-pointer border-none transition-all font-bold
+                      ${perpSide === 'long' ? 'bg-up/15 text-up' : 'bg-transparent text-muted'}`}>
+                    🟢 Long
+                  </button>
+                  <button onClick={() => setPerpSide('short')}
+                    className={`flex-1 py-2.5 text-[.78rem] font-headline cursor-pointer border-none transition-all font-bold
+                      ${perpSide === 'short' ? 'bg-down/15 text-down' : 'bg-transparent text-muted'}`}>
+                    🔴 Short
+                  </button>
+                </div>
+
+                {/* Token select */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[.65rem] text-muted uppercase tracking-wider">Asset</label>
+                  <select value={perpSelectedToken} onChange={e => setPerpSelectedToken(e.target.value)}
+                    className="bg-black/30 border border-border text-txt rounded-lg px-3 py-2 font-mono text-[.78rem] outline-none">
+                    {perpTokens.map(t => (
+                      <option key={t.symbol} value={t.symbol.toUpperCase()}>
+                        {t.symbol.toUpperCase()} — {fmtUSD(t.current_price)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Leverage Slider */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[.65rem] text-muted uppercase tracking-wider flex items-center justify-between">
+                    <span>Leverage</span>
+                    <span className={`font-mono font-bold text-[.82rem] ${
+                      perpLeverage <= 3 ? 'text-up' : perpLeverage <= 10 ? 'text-[#FFA500]' : 'text-down'
+                    }`}>{perpLeverage}x</span>
+                  </label>
+                  <input type="range" min="1" max="20" step="1" value={perpLeverage}
+                    onChange={e => setPerpLeverage(Number(e.target.value))}
+                    className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                    style={{ background: `linear-gradient(to right, #00ffa3 0%, #FFA500 50%, #FF4D6D 100%)` }} />
+                  <div className="flex justify-between text-[.58rem] text-muted">
+                    <span>1x Safe</span>
+                    <span>10x Medium</span>
+                    <span>20x Degen</span>
+                  </div>
+                  {/* Risk indicator */}
+                  <div className={`text-[.65rem] text-center py-1 rounded-lg ${
+                    perpLeverage <= 3 ? 'bg-up/8 text-up' :
+                    perpLeverage <= 10 ? 'bg-[#FFA500]/8 text-[#FFA500]' :
+                    'bg-down/8 text-down'
+                  }`}>
+                    {perpLeverage <= 3 ? '✅ Low Risk' : perpLeverage <= 10 ? '⚡ Medium Risk' : '🔥 High Risk — Easy to Liquidate'}
+                  </div>
+                </div>
+
+                {/* Collateral Input */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[.65rem] text-muted uppercase tracking-wider">Collateral (USD)</label>
+                  <input type="number" value={perpCollateral} onChange={e => setPerpCollateral(e.target.value)}
+                    placeholder="100.00" min="1" max={balanceUSD} step="any"
+                    className="bg-black/30 border border-border text-txt rounded-lg px-3 py-2 font-mono text-[.78rem] outline-none focus:border-[#FFA500]" />
+                  <div className="flex gap-1.5 mt-1">
+                    {[100, 500, 1000, 5000].map(v => (
+                      <button key={v} onClick={() => setPerpCollateral(String(Math.min(v, balanceUSD)))}
+                        className="flex-1 py-1 rounded text-[.6rem] font-mono cursor-pointer border border-border bg-transparent text-muted hover:text-txt hover:border-[#FFA500]/40 transition-all">
+                        ${v >= 1000 ? `${v/1000}K` : v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Preview */}
+                <div className="rounded-lg p-3 text-[.74rem] border border-[#FFA500]/20" style={{ background: 'rgba(255,165,0,.04)' }}>
+                  <PRow label="Mark Price" value={fmtUSD(markPrice)} />
+                  <PRow label="Collateral" value={fmtUSD(collateralNum || 0)} />
+                  <PRow label="Position Size" value={fmtUSD(notionalSize)} />
+                  <PRow label="Fee (0.1%)" value={fmtUSD(openFee)} />
+                  <div className="flex justify-between border-t border-border pt-1.5 mt-1">
+                    <span className="text-down text-[.72rem]">Liquidation Price</span>
+                    <span className="text-down font-bold">{liqPricePreview ? fmtUSD(Math.max(0, liqPricePreview)) : '—'}</span>
+                  </div>
+                </div>
+
+                {/* Balance reminder */}
+                <div className="text-[.65rem] text-muted text-center">
+                  Available: {fmtUSD(balanceUSD)} USD
+                </div>
+
+                <div className="flex justify-center">
+                  <LiquidMetalButton
+                    label={`${perpSide === 'long' ? '🟢 Long' : '🔴 Short'} ${perpSelectedToken} ${perpLeverage}x`}
+                    onClick={handleOpenPerp}
+                    disabled={!markPrice || !perpCollateral || collateralNum <= 0}
+                    width={260}
+                    height={48}
+                  />
+                </div>
+
+                {message && (
+                  <div className={`text-[.78rem] p-2.5 rounded-lg text-center ${message.type === 'success' ? 'text-up bg-up/8 border border-up/25' : 'text-down bg-down/8 border border-down/25'}`}>
+                    {message.text}
+                  </div>
+                )}
+
+                <div className="text-[.62rem] text-muted text-center leading-relaxed">
+                  ⚠️ Paper perpetuals — practice leverage trading risk-free with live market data.
+                </div>
+
+                {/* Funding rate info */}
+                <div className="border-t border-border pt-3">
+                  <div className="text-[.6rem] text-muted uppercase tracking-widest mb-2">Funding Info</div>
+                  <div className="grid grid-cols-2 gap-2 text-[.68rem]">
+                    <div className="bg-black/20 rounded-lg p-2 text-center">
+                      <div className="text-muted text-[.58rem]">Rate</div>
+                      <div className="text-[#FFA500] font-mono font-bold">0.01%</div>
+                    </div>
+                    <div className="bg-black/20 rounded-lg p-2 text-center">
+                      <div className="text-muted text-[.58rem]">Interval</div>
+                      <div className="text-txt font-mono font-bold">8h</div>
+                    </div>
+                  </div>
+                </div>
+              </GlowCard>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Paper Trading Views (Solana + TTSE) */}
-      {market !== 'jupiter' ? (
+      {market !== 'jupiter' && market !== 'perpetuals' ? (
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5">
         {/* Left: Order Book + Holdings */}
         <div>

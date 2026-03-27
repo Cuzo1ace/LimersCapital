@@ -37,6 +37,10 @@ export const LP_ACTIONS = [
   { action: 'Open simulated LP position', lp: 30, multiplied: true, icon: '🏊' },
   { action: 'Use Agent Squeeze', lp: 10, multiplied: true, icon: '🤖' },
   { action: 'Visit LP Army Academy', lp: 15, multiplied: false, icon: '⚔️', note: 'One-time' },
+  { action: 'Open perp position', lp: 10, multiplied: true, icon: '📈', note: 'First: 20 LP' },
+  { action: 'Close perp in profit', lp: 15, multiplied: true, icon: '💰' },
+  { action: 'Get liquidated (lesson!)', lp: 5, multiplied: false, icon: '💀' },
+  { action: '10 perp trades milestone', lp: 50, multiplied: true, icon: '🏆', note: 'One-time' },
 ];
 
 // Simulated leaderboard — deterministic fake users
