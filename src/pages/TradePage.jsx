@@ -533,25 +533,34 @@ export default function TradePage() {
 
             {jupiterTab === 'info' && (
               <div className="p-5 max-w-2xl">
-                <h4 className="font-body font-bold text-[.82rem] text-txt mb-3">How Jupiter Swap Works</h4>
-                <div className="flex flex-col gap-2 text-[.74rem] text-txt-2">
-                  <div className="flex items-start gap-2"><span className="text-[#C46CFF] font-bold shrink-0">1.</span><span><strong>Select tokens</strong> — Choose input and output tokens from popular Solana tokens.</span></div>
-                  <div className="flex items-start gap-2"><span className="text-[#C46CFF] font-bold shrink-0">2.</span><span><strong>Get quote</strong> — Jupiter finds the best route across all DEXs (Raydium, Orca, Meteora).</span></div>
-                  <div className="flex items-start gap-2"><span className="text-[#C46CFF] font-bold shrink-0">3.</span><span><strong>Review & swap</strong> — Check price impact, route, and slippage before confirming.</span></div>
-                  <div className="flex items-start gap-2"><span className="text-[#C46CFF] font-bold shrink-0">4.</span><span><strong>Sign transaction</strong> — Your wallet signs the transaction. Funds settle on-chain in seconds.</span></div>
+                <h4 className="font-body font-bold text-[.82rem] text-txt mb-3">How Solflare Swap & Stake Works</h4>
+                <div className="flex flex-col gap-2 text-[.74rem] text-txt-2 mb-4">
+                  <div className="text-[.62rem] text-muted uppercase tracking-widest">Swap</div>
+                  <div className="flex items-start gap-2"><span className="text-[#E8AC41] font-bold shrink-0">1.</span><span><strong>Connect Solflare</strong> — Link your Solflare wallet to access on-chain swaps with best-price routing.</span></div>
+                  <div className="flex items-start gap-2"><span className="text-[#E8AC41] font-bold shrink-0">2.</span><span><strong>Select tokens</strong> — Choose any Solana SPL token pair. Solflare routes across all major DEXs for the best price.</span></div>
+                  <div className="flex items-start gap-2"><span className="text-[#E8AC41] font-bold shrink-0">3.</span><span><strong>Review & confirm</strong> — Check price impact, route, and slippage. One-tap approval in your Solflare wallet.</span></div>
+                  <div className="flex items-start gap-2"><span className="text-[#E8AC41] font-bold shrink-0">4.</span><span><strong>Instant settlement</strong> — Tokens arrive in your wallet in under 1 second. Transaction proof on Solscan.</span></div>
+                </div>
+                <div className="flex flex-col gap-2 text-[.74rem] text-txt-2 mb-4">
+                  <div className="text-[.62rem] text-muted uppercase tracking-widest">Stake SOL</div>
+                  <div className="flex items-start gap-2"><span className="text-[#E8AC41] font-bold shrink-0">1.</span><span><strong>Choose amount</strong> — Select how much SOL to stake directly from your Solflare wallet.</span></div>
+                  <div className="flex items-start gap-2"><span className="text-[#E8AC41] font-bold shrink-0">2.</span><span><strong>Pick a validator</strong> — Solflare recommends top-performing validators or you can choose your own.</span></div>
+                  <div className="flex items-start gap-2"><span className="text-[#E8AC41] font-bold shrink-0">3.</span><span><strong>Earn yield</strong> — Earn staking rewards (~7% APY) while keeping your SOL secure and liquid.</span></div>
                 </div>
                 <div className="rounded border border-border p-3 text-[.68rem] mt-4" style={{ background: 'var(--color-card)' }}>
                   <div className="text-[.6rem] text-muted uppercase tracking-widest mb-2">Details</div>
                   <div className="grid grid-cols-2 gap-x-6 gap-y-1">
-                    <div className="flex justify-between"><span className="text-muted">API</span><span className="text-txt">Jupiter V6</span></div>
+                    <div className="flex justify-between"><span className="text-muted">Wallet</span><span className="text-txt">Solflare</span></div>
                     <div className="flex justify-between"><span className="text-muted">Network</span><span className="text-txt">Solana Mainnet</span></div>
-                    <div className="flex justify-between"><span className="text-muted">Default Slippage</span><span className="text-txt">0.5%</span></div>
-                    <div className="flex justify-between"><span className="text-muted">Fee</span><span className="text-txt">~$0.00025</span></div>
+                    <div className="flex justify-between"><span className="text-muted">Staking APY</span><span className="text-up">~7%</span></div>
+                    <div className="flex justify-between"><span className="text-muted">Tx Fee</span><span className="text-txt">~$0.00025</span></div>
                   </div>
                 </div>
-                <div className="mt-3 text-[.6rem] text-muted">
-                  <a href="https://jup.ag" target="_blank" rel="noopener noreferrer" className="text-[#C46CFF] hover:underline no-underline">Powered by Jupiter Aggregator ↗</a>
-                </div>
+                <a href="https://www.solflare.com/?af_qr=true&shortlink=carribean&c=Carribean&pid=Solana%20Carribean&af_xp=qr&source_caller=ui"
+                  target="_blank" rel="noopener noreferrer"
+                  className="mt-3 flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-[#E8AC41]/40 bg-[#E8AC41]/10 text-[#E8AC41] text-[.76rem] font-bold no-underline hover:bg-[#E8AC41]/20 transition-all cursor-pointer">
+                  <span>☀️</span> Get Solflare Wallet
+                </a>
               </div>
             )}
           </div>

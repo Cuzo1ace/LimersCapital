@@ -359,14 +359,13 @@ export default function JupiterSwap({ variant } = {}) {
         </div>
       )}
 
-      {/* Footer — hidden in unified */}
+      {/* Solflare Stake SOL CTA */}
       {!unified && (
-        <div className="mt-4 flex items-center justify-between text-[.58rem] text-muted">
-          <span>Powered by Jupiter Aggregator</span>
-          <a href="https://jup.ag" target="_blank" rel="noopener noreferrer" className="text-sea hover:underline no-underline">
-            jup.ag ↗
-          </a>
-        </div>
+        <a href="https://www.solflare.com/?af_qr=true&shortlink=carribean&c=Carribean&pid=Solana%20Carribean&af_xp=qr&source_caller=ui"
+          target="_blank" rel="noopener noreferrer"
+          className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-[#E8AC41]/40 bg-[#E8AC41]/10 text-[#E8AC41] text-[.76rem] font-bold no-underline hover:bg-[#E8AC41]/20 transition-all cursor-pointer">
+          <span>☀️</span> Stake SOL with Solflare
+        </a>
       )}
     </div>
   );

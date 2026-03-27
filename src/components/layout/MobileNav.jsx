@@ -11,7 +11,6 @@ const WAM_LINK = 'https://wam.money/';
 const SOLFLARE_LINK = 'https://www.solflare.com/?af_qr=true&shortlink=carribean&c=Carribean&pid=Solana%20Carribean&af_xp=qr&source_caller=ui';
 
 const MAIN_TABS = [
-  { id: 'dashboard',  label: 'Home',       icon: '🏠' },
   { id: 'regulation', label: 'Regulation', icon: '🗺️' },
   { id: 'learn',      label: 'Learn',      icon: '📚' },
   { id: 'ttse',       label: 'TTSE',       icon: '🇹🇹', ttse: true },
@@ -22,6 +21,7 @@ const MAIN_TABS = [
 ];
 
 const LIMER_TABS = [
+  { id: 'about',      label: 'About',      icon: '📖' },
   { id: 'points',     label: 'Points',     icon: '🍋' },
   { id: 'tokenomics', label: 'Tokenomics', icon: '📊' },
   { id: 'revenue',    label: 'Revenue',    icon: '💰' },

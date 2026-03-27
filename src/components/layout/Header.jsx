@@ -20,7 +20,6 @@ const LANGS = [
 ];
 
 const TABS = [
-  { id: 'dashboard',  labelKey: 'nav.dashboard', icon: '🏠' },
   { id: 'regulation', labelKey: 'nav.regulation', icon: '\u{1F5FA}\uFE0F' },
   { id: 'learn',      labelKey: 'nav.learn',      icon: '\u{1F4DA}' },
   { id: 'ttse',       labelKey: 'nav.ttse',       icon: '\u{1F1F9}\u{1F1F9}', ttse: true },
@@ -53,6 +52,7 @@ export default function Header() {
   const { cluster, setCluster, label: clusterLabel } = useCluster();
 
   const LIME_TABS = [
+    { id: 'about', label: 'About', icon: '📖' },
     { id: 'points', label: 'Points', icon: '🍋' },
     { id: 'tokenomics', label: 'Tokenomics', icon: '📊' },
     { id: 'revenue', label: 'Revenue', icon: '💰' },
@@ -103,8 +103,9 @@ export default function Header() {
         style={{ background: 'rgba(13,14,16,.93)' }}>
         <div className="max-w-[1440px] mx-auto px-4 md:px-7 h-14 md:h-16 flex items-center gap-3 md:gap-4">
 
-          {/* Logo */}
-          <div className="font-headline text-[1.2rem] md:text-[1.45rem] font-black italic tracking-tight whitespace-nowrap text-txt select-none">
+          {/* Logo — click to go to Dashboard */}
+          <div onClick={() => setActiveTab('dashboard')}
+            className="font-headline text-[1.2rem] md:text-[1.45rem] font-black italic tracking-tight whitespace-nowrap text-txt select-none cursor-pointer hover:opacity-80 transition-opacity">
             Limer's&nbsp;<span className="text-sun">Capital</span>
           </div>
 

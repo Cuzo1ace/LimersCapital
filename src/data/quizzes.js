@@ -80,4 +80,15 @@ export const QUIZZES = {
       { q: 'What does the Solana LP flywheel describe?', opts: ['A new token launch mechanism', 'A self-reinforcing cycle where more LPs create deeper liquidity, attracting more volume and fees', 'A hardware wallet feature', 'A type of rug pull'] },
     ],
   },
+  'quiz-8': {
+    id: 'quiz-8', moduleId: 'module-8', title: 'Universal Basic Ownership Quiz',
+    passingScore: 0.7,
+    questions: [
+      { q: 'What is Universal Basic Ownership (UBO)?', opts: ['A government welfare program', 'Every platform user should own a share of the platform they use', 'A type of cryptocurrency mining', 'A stock market strategy'] },
+      { q: 'Why does Limer\'s Capital distribute revenue in USDC and SOL instead of $LIMER?', opts: ['$LIMER is too expensive', 'To avoid sell pressure and provide real purchasing power', 'Because $LIMER doesn\'t exist yet', 'Regulations require it'] },
+      { q: 'What is a dynamic NFT (dNFT) in the Limer\'s model?', opts: ['A collectible artwork', 'A yield-bearing NFT with on-chain metadata that tracks revenue and vesting', 'A social media profile picture', 'A gaming item'] },
+      { q: 'What do Premium tier holders gain access to?', opts: ['Only fee discounts', 'Wam integration, ViFi yield, pro analytics, and growing ecosystem benefits', 'Free tokens forever', 'Nothing special'] },
+      { q: 'Why is UBO especially powerful for the Caribbean?', opts: ['Caribbean weather is better for mining', 'Traditional equity markets are limited — DeFi protocols serve anyone with a phone', 'Caribbean banks already offer this', 'It only works in tropical regions'] },
+    ],
+  },
 };

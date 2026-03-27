@@ -1,6 +1,6 @@
 export const LEVELS = {
   basics:       { id: 'basics',       label: 'Basics',       icon: '\u{1F331}', color: 'var(--color-sea)',  modules: ['module-1', 'module-2'], description: 'Foundations of blockchain and Caribbean markets' },
-  intermediate: { id: 'intermediate', label: 'Intermediate', icon: '\u26A1',     color: 'var(--color-sun)',  modules: ['module-3', 'module-4'], description: 'Solana ecosystem mastery and security' },
+  intermediate: { id: 'intermediate', label: 'Intermediate', icon: '\u26A1',     color: 'var(--color-sun)',  modules: ['module-3', 'module-4', 'module-8'], description: 'Solana ecosystem mastery, security, and ownership economics' },
   advanced:     { id: 'advanced',     label: 'Advanced',     icon: '\u{1F3C6}', color: 'var(--color-coral)', modules: ['module-5', 'module-6', 'module-7'], description: 'Liquidity provision strategies and Meteora mastery' },
 };
 export const LEVEL_ORDER = ['basics', 'intermediate', 'advanced'];
@@ -92,5 +92,17 @@ export const MODULES = [
     unlocks: ['agent_squeeze_pro', 'lp_dashboard'],
     unlockLabel: 'Agent Squeeze Pro + LP Dashboard',
     prereq: 'module-6',
+  },
+  {
+    id: 'module-8',
+    title: 'Universal Basic Ownership',
+    description: 'Why owning the infrastructure you use is the future of economics',
+    icon: '🌍',
+    tag: 'UBO Economics',
+    tagCls: 'bg-[rgba(0,255,163,.1)] text-sea',
+    lessons: ['8-1', '8-2', '8-3', '8-4'],
+    quizId: 'quiz-8',
+    unlocks: ['premium_preview'],
+    unlockLabel: 'Premium Tier Preview',
   },
 ];
