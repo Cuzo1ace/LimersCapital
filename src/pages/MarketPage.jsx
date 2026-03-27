@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchSolanaMarketData, fetchSolPrice, fetchSolanaTVL } from '../api/prices';
+import { fetchSolanaMarketData, fetchSolPrice, fetchSolanaTVL, fetchFMPCryptoList, fmtSupply } from '../api/prices';
 import { SkeletonRows } from '../components/ui/Skeleton';
 import GlowCard from '../components/ui/GlowCard';
 import GradientDots from '../components/ui/GradientDots';
@@ -56,6 +56,15 @@ export default function MarketPage() {
   const solQ = useQuery({ queryKey: ['sol-price'], queryFn: fetchSolPrice, refetchInterval: 30000 });
   const marketQ = useQuery({ queryKey: ['sol-market'], queryFn: fetchSolanaMarketData, refetchInterval: 60000 });
   const tvlQ = useQuery({ queryKey: ['sol-tvl'], queryFn: fetchSolanaTVL, staleTime: 300000 });
+  const fmpQ = useQuery({ queryKey: ['fmp-crypto'], queryFn: fetchFMPCryptoList, staleTime: 300000, retry: 1 });
+  const fmp = fmpQ.data || {};
+
+  // Helper: get FMP data for a token row
+  const getFmp = (token) => {
+    const meta = TOKEN_META[token.id];
+    const sym = meta?.sym || token.symbol?.toUpperCase();
+    return fmp[sym] || null;
+  };
 
   return (
     <div>
@@ -249,6 +258,46 @@ export default function MarketPage() {
                   {token.total_volume ? fmtCurrency(token.total_volume) : '—'}
                 </span>
               ),
+            },
+            {
+              key: 'supply',
+              label: 'Circ. Supply',
+              width: '1.1fr',
+              hideOnMobile: true,
+              render: (token) => {
+                const f = getFmp(token);
+                if (!f?.circulatingSupply) return <span className="text-[.78rem] text-muted font-mono">—</span>;
+                const pct = f.totalSupply ? ((f.circulatingSupply / f.totalSupply) * 100).toFixed(0) : null;
+                return (
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[.78rem] text-txt-2 font-mono">{fmtSupply(f.circulatingSupply)}</span>
+                    {pct && (
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-12 h-1 rounded-full bg-border overflow-hidden">
+                          <div className="h-full rounded-full bg-sea" style={{ width: `${Math.min(pct, 100)}%` }} />
+                        </div>
+                        <span className="text-[.55rem] text-muted">{pct}%</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              },
+            },
+            {
+              key: 'icoDate',
+              label: 'ICO Date',
+              width: '.9fr',
+              hideOnMobile: true,
+              render: (token) => {
+                const f = getFmp(token);
+                if (!f?.icoDate) return <span className="text-[.78rem] text-muted font-mono">—</span>;
+                const d = new Date(f.icoDate);
+                return (
+                  <span className="text-[.72rem] text-txt-2 font-mono">
+                    {d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </span>
+                );
+              },
             },
             {
               key: 'category',

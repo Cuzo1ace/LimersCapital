@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchSolanaTVL } from '../api/prices';
+import { fetchSolanaTVL, fetchFMPCryptoList, fmtSupply, TOKEN_INFO } from '../api/prices';
 import {
   fetchSolanaProtocols, fetchCryptoMarket, fetchRWATokens, fetchL1Tokens,
   fetchDeFiMarket, fetchTrending, fetchGlobalMarket,
@@ -67,6 +67,7 @@ export default function InsightsPage() {
   const gdpQ      = useQuery({ queryKey: ['carib-gdp'],   queryFn: fetchCaribbeanGDP,    staleTime: 600000 });
   const newsQ     = useQuery({ queryKey: ['crypto-news'], queryFn: fetchCryptoNews,      staleTime: 300000 });
   const briefQ    = useQuery({ queryKey: ['ai-brief'],   queryFn: fetchMarketBrief,    staleTime: 3600000, retry: 1 });
+  const fmpQ      = useQuery({ queryKey: ['fmp-crypto'], queryFn: fetchFMPCryptoList, staleTime: 300000, retry: 1 });
 
   const [jupIn, setJupIn] = useState('So11111111111111111111111111111111111111112');
   const [jupOut, setJupOut] = useState('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
@@ -331,6 +332,72 @@ export default function InsightsPage() {
         <RemittanceCalculator />
       </div>
 
+      {/* ── Row 5b: Token Supply Metrics (FMP) ─────────────────── */}
+      <div className="mb-4">
+        <Card title="📊 Token Supply Metrics" color="var(--color-coral)" source="Financial Modeling Prep">
+          {fmpQ.isLoading && <SkeletonRows count={8} cols={4} />}
+          {fmpQ.isError && <Err msg="Supply data unavailable" retry={fmpQ.refetch} />}
+          {fmpQ.data && (() => {
+            // Build rows for our tracked tokens
+            const rows = Object.entries(TOKEN_INFO)
+              .map(([sym, info]) => {
+                const f = fmpQ.data[sym];
+                if (!f?.circulatingSupply) return null;
+                const pct = f.totalSupply ? (f.circulatingSupply / f.totalSupply * 100) : null;
+                return { sym, name: info.name, cat: info.cat, col: info.col, ...f, pct };
+              })
+              .filter(Boolean)
+              .sort((a, b) => (b.circulatingSupply || 0) - (a.circulatingSupply || 0));
+
+            return (
+              <div>
+                {/* Header */}
+                <div className="grid items-center gap-2 px-2 py-1.5 text-[.58rem] text-muted uppercase tracking-widest border-b border-white/8 mb-1"
+                  style={{ gridTemplateColumns: '1.2fr 1fr 1fr 1.2fr .8fr' }}>
+                  <span>Token</span>
+                  <span>Circulating</span>
+                  <span>Total Supply</span>
+                  <span className="hidden md:block">% Circulating</span>
+                  <span className="hidden md:block">ICO Date</span>
+                </div>
+                {rows.map(r => (
+                  <div key={r.sym}
+                    className="grid items-center gap-2 px-2 py-2 border-b border-white/4 last:border-b-0 text-[.74rem]"
+                    style={{ gridTemplateColumns: '1.2fr 1fr 1fr 1.2fr .8fr' }}>
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-[.5rem] font-bold text-white"
+                        style={{ background: r.col || '#555' }}>{r.sym.slice(0, 2)}</div>
+                      <div className="min-w-0">
+                        <span className="font-body font-bold text-txt">{r.sym}</span>
+                        <span className="text-muted text-[.58rem] ml-1 hidden sm:inline">{r.name}</span>
+                      </div>
+                    </div>
+                    <span className="font-mono text-txt-2">{fmtSupply(r.circulatingSupply)}</span>
+                    <span className="font-mono text-muted">{fmtSupply(r.totalSupply)}</span>
+                    <div className="hidden md:flex items-center gap-2">
+                      {r.pct != null ? (
+                        <>
+                          <div className="w-16 h-1.5 rounded-full bg-border overflow-hidden">
+                            <div className="h-full rounded-full bg-sea" style={{ width: `${Math.min(r.pct, 100)}%` }} />
+                          </div>
+                          <span className="text-[.65rem] text-sea font-mono">{r.pct.toFixed(0)}%</span>
+                        </>
+                      ) : <span className="text-muted">—</span>}
+                    </div>
+                    <span className="text-[.65rem] text-muted font-mono hidden md:block">
+                      {r.icoDate ? new Date(r.icoDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : '—'}
+                    </span>
+                  </div>
+                ))}
+                <div className="text-[.6rem] text-muted mt-2 text-right">
+                  {rows.length} tokens with supply data · Updates every 5 min
+                </div>
+              </div>
+            );
+          })()}
+        </Card>
+      </div>
+
       {/* ── Row 6: Crypto News Feed ────────────────────────────── */}
       <div className="mb-4">
         <Card title="📰 Crypto News" color="var(--color-sea)" source="CoinGecko · latest">
@@ -353,7 +420,7 @@ export default function InsightsPage() {
       {/* API Attribution */}
       <div className="rounded-xl p-4 border border-white/6 flex flex-wrap gap-3 items-center" style={{ background: 'rgba(0,0,0,.2)' }}>
         <span className="text-[.65rem] text-muted">Powered by:</span>
-        {['CoinGecko', 'DeFiLlama', 'Jupiter', 'ExchangeRate-API', 'World Bank'].map(s => (
+        {['CoinGecko', 'DeFiLlama', 'Jupiter', 'ExchangeRate-API', 'World Bank', 'FMP'].map(s => (
           <span key={s} className="text-[.65rem] text-txt-2 bg-white/4 border border-white/7 rounded px-2 py-0.5">{s}</span>
         ))}
         <span className="text-[.63rem] text-muted ml-auto">All free-tier · No API keys required</span>

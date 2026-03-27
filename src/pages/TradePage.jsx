@@ -19,7 +19,7 @@ function TokenLogo({ src, symbol, col }) {
   );
 }
 import { useQuery } from '@tanstack/react-query';
-import { fetchTradePrices, fetchHeliusTokenLogos, HELIUS_LOGO_MINTS, SOL_TOKENS, fetchCandleData } from '../api/prices';
+import { fetchTradePrices, fetchHeliusTokenLogos, HELIUS_LOGO_MINTS, SOL_TOKENS, fetchCandleData, fetchFMPCryptoList, fmtSupply } from '../api/prices';
 import { TTSE_FALLBACK } from '../api/ttse';
 import { fetchTTSEData } from '../api/ttse';
 import StockChart from '../components/StockChart';
@@ -130,6 +130,10 @@ export default function TradePage() {
     retry: 0,
   });
   const realCandles = candleQ.data || null;
+
+  // FMP supply + ICO metadata (shared query key with MarketPage)
+  const fmpQ = useQuery({ queryKey: ['fmp-crypto'], queryFn: fetchFMPCryptoList, staleTime: 300000, retry: 1 });
+  const fmpData = fmpQ.data || {};
 
   const isTTSE = market === 'ttse';
   const currency = isTTSE ? 'TTD' : 'USD';
@@ -921,6 +925,43 @@ export default function TradePage() {
                       : '—'}
                   </span>
                 </div>
+
+                {/* FMP Supply Info Strip */}
+                {!isTTSE && (() => {
+                  const sym = selected.symbol?.toUpperCase();
+                  const f = fmpData[sym];
+                  if (!f) return null;
+                  const pct = f.totalSupply ? ((f.circulatingSupply / f.totalSupply) * 100).toFixed(0) : null;
+                  return (
+                    <div className="mt-3 pt-3 border-t border-border flex flex-wrap gap-x-6 gap-y-1.5 text-[.68rem]">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[.58rem] text-muted uppercase tracking-widest">Circulating</span>
+                        <span className="text-txt-2 font-mono font-bold">{fmtSupply(f.circulatingSupply)}</span>
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[.58rem] text-muted uppercase tracking-widest">Total Supply</span>
+                        <span className="text-txt-2 font-mono font-bold">{fmtSupply(f.totalSupply)}</span>
+                      </div>
+                      {pct && (
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[.58rem] text-muted uppercase tracking-widest">% Circulating</span>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-14 h-1.5 rounded-full bg-border overflow-hidden">
+                              <div className="h-full rounded-full bg-sea" style={{ width: `${Math.min(pct, 100)}%` }} />
+                            </div>
+                            <span className="text-sea font-mono font-bold">{pct}%</span>
+                          </div>
+                        </div>
+                      )}
+                      {f.icoDate && (
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[.58rem] text-muted uppercase tracking-widest">ICO Date</span>
+                          <span className="text-txt-2 font-mono">{new Date(f.icoDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             )}
 

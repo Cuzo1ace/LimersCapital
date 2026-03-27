@@ -15,6 +15,10 @@ const HERMES_BASE = 'https://hermes.pyth.network/v2/updates/price/latest';
 // DexScreener — all Solana tokens by mint, price + 24h change + volume
 const DEXSCREENER_BASE = 'https://api.dexscreener.com/tokens/v1/solana';
 
+// Financial Modeling Prep — cryptocurrency supply + ICO metadata
+const FMP_BASE = 'https://financialmodelingprep.com/stable';
+const FMP_KEY  = 'NsWZ81GaptVqV9LkQijHMxKSAZgVI5Gy';
+
 // Helius — dedicated RPC + DAS API for on-chain token metadata / logos
 // API key is stored server-side in the Cloudflare Worker (limer-api-proxy).
 // The frontend NEVER sees the Helius key — all requests route through the proxy.
@@ -393,6 +397,36 @@ export async function fetchSolPrice() {
   if (!res.ok) throw new Error(`CoinGecko API error: ${res.status}`);
   const json = await res.json();
   return validateCGSimplePrice(json, 'solana');
+}
+
+// ─── Financial Modeling Prep — supply + ICO metadata ───────────────────
+// Returns { SOL: { circulatingSupply, totalSupply, icoDate }, ... }
+export async function fetchFMPCryptoList() {
+  const res = await fetch(`${FMP_BASE}/cryptocurrency-list?apikey=${FMP_KEY}`);
+  if (!res.ok) throw new Error(`FMP error: ${res.status}`);
+  const data = await res.json();
+  const map = {};
+  for (const coin of data) {
+    const sym = coin.symbol?.replace(/USD$/, '');
+    if (sym) {
+      map[sym] = {
+        circulatingSupply: coin.circulatingSupply ?? null,
+        totalSupply:       coin.totalSupply ?? null,
+        icoDate:           coin.icoDate ?? null,
+      };
+    }
+  }
+  return map;
+}
+
+// Format large numbers for display (e.g. 430232640 → "430.2M")
+export function fmtSupply(n) {
+  if (n == null) return '—';
+  if (n >= 1e12) return (n / 1e12).toFixed(1) + 'T';
+  if (n >= 1e9)  return (n / 1e9).toFixed(1)  + 'B';
+  if (n >= 1e6)  return (n / 1e6).toFixed(1)  + 'M';
+  if (n >= 1e3)  return (n / 1e3).toFixed(1)  + 'K';
+  return n.toLocaleString();
 }
 
 // DeFiLlama — TVL for Solana chain
