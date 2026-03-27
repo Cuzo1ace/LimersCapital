@@ -108,6 +108,23 @@ export default function TradePage() {
   const [perpConfirm, setPerpConfirm] = useState(null);
   const [limitPrice, setLimitPrice] = useState('');
 
+  // Candle data for perpetuals chart
+  const perpCandleQ = useQuery({
+    queryKey: ['perp-candles', perpSelectedToken],
+    queryFn: async () => {
+      const periods = ['1M', '3M', '6M', '1Y', '5Y'];
+      const results = await Promise.allSettled(periods.map(p => fetchCandleData(perpSelectedToken, p)));
+      const map = {};
+      periods.forEach((p, i) => {
+        if (results[i].status === 'fulfilled' && results[i].value?.length) map[p] = results[i].value;
+      });
+      return Object.keys(map).length ? map : null;
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: market === 'perpetuals' && !!perpSelectedToken,
+    retry: 0,
+  });
+
   const hasLimitOrders = unlockedFeatures.includes('limit_orders');
 
   // Real candle data from DexScreener — all 5 periods fetched together when a token is selected
@@ -535,6 +552,20 @@ export default function TradePage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Live Price Chart */}
+                {selToken && (
+                  <div className="mb-5">
+                    <StockChart
+                      symbol={perpSelectedToken}
+                      name={selToken.name || perpSelectedToken}
+                      price={markPrice}
+                      currency="USD"
+                      isTTSE={false}
+                      realCandles={perpCandleQ.data || null}
+                    />
+                  </div>
+                )}
 
                 {/* Open Positions Table */}
                 <h3 className="font-headline text-[.88rem] font-bold uppercase tracking-widest mb-3 text-txt">📈 Open Positions</h3>
