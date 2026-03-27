@@ -560,9 +560,7 @@ export default function TradePage() {
 
       {/* ── Perpetuals View — DEX-Style ──────────────────── */}
       {market === 'perpetuals' && (() => {
-        const perpTokens = (marketQ.data || []).filter(t =>
-          ['SOL', 'BONK', 'JUP', 'RAY', 'RENDER', 'HNT', 'ONDO'].includes(t.symbol.toUpperCase())
-        );
+        const perpTokens = (marketQ.data || []);
         const selToken = perpTokens.find(t => t.symbol.toUpperCase() === perpSelectedToken);
         const markPrice = selToken?.current_price;
         const pct24h = selToken?.price_change_percentage_24h;
