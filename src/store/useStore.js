@@ -191,6 +191,24 @@ const useStore = create(
         if (passed) {
           get().awardXP(perfect ? XP_VALUES.quizPerfect : XP_VALUES.quizPass, perfect ? 'Perfect quiz score!' : 'Quiz passed!');
           get().awardLP(perfect ? 25 : 15, perfect ? 'Perfect quiz!' : 'Quiz passed', 'quiz');
+
+          // Auto-mark all lessons in this module as read.
+          // If you passed the quiz, you've demonstrated mastery — lessons should count.
+          const mod = MODULES.find(m => m.quizId === quizId);
+          if (mod) {
+            const currentRead = get().lessonsRead;
+            const newRead = { ...currentRead };
+            let newlyRead = 0;
+            mod.lessons.forEach(lessonId => {
+              if (!newRead[lessonId]) {
+                newRead[lessonId] = true;
+                newlyRead++;
+              }
+            });
+            if (newlyRead > 0) {
+              set({ lessonsRead: newRead });
+            }
+          }
         }
 
         if (newStreak >= 3 && !state.unlockedFeatures.includes('quiz_streak_bonus')) {
@@ -365,6 +383,31 @@ const useStore = create(
 
         set({ lpReferrals: [...state.lpReferrals, { code, timestamp: new Date().toISOString() }] });
         get().awardLP(200, 'Referral bonus', 'referral');
+      },
+
+      // One-time sync: backfill lessonsRead for users who passed quizzes
+      // without clicking "Mark as Complete" on individual lessons.
+      _syncLessonsFromQuizzes: () => {
+        const state = get();
+        if (state._lessonsSynced) return;
+        const currentRead = { ...state.lessonsRead };
+        let changed = false;
+        MODULES.forEach(mod => {
+          const quizPassed = state.quizResults[mod.quizId]?.passed;
+          if (quizPassed) {
+            mod.lessons.forEach(lessonId => {
+              if (!currentRead[lessonId]) {
+                currentRead[lessonId] = true;
+                changed = true;
+              }
+            });
+          }
+        });
+        set({ _lessonsSynced: true });
+        if (changed) {
+          set({ lessonsRead: currentRead });
+          get()._checkModuleComplete();
+        }
       },
 
       _migrateToLP: () => {

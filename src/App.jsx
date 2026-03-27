@@ -68,11 +68,13 @@ function TabContent() {
 function StreakCheck() {
   const checkDailyStreak = useStore(s => s.checkDailyStreak);
   const migrateToLP      = useStore(s => s._migrateToLP);
+  const syncLessons      = useStore(s => s._syncLessonsFromQuizzes);
   const incrementSession = useStore(s => s.incrementSession);
   useEffect(() => {
     initAnalytics();                         // PostHog CDN load if VITE_POSTHOG_KEY set
     try { checkDailyStreak(); } catch {}
     try { migrateToLP(); } catch {}
+    try { syncLessons(); } catch {}
     try { incrementSession(); } catch {}
   }, []);
   return null;
