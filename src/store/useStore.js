@@ -618,6 +618,19 @@ const useStore = create(
       perpTradeCount: 0,
       perpTotalPnl: 0,
 
+      // ── Competition-grade liquidation price calculator ──
+      // Accounts for: opening fee, accumulated funding, maintenance margin
+      _calcLiqPrice: (side, entryPrice, leverage, collateral, accFunding = 0) => {
+        const mm = 0.05; // 5% maintenance margin
+        const openingFee = collateral * leverage * 0.001; // 0.1% of notional
+        const effectiveCollateral = collateral - openingFee - accFunding;
+        if (effectiveCollateral <= 0) return side === 'long' ? entryPrice : 0; // already bust
+        const effectiveLeverage = (collateral * leverage) / effectiveCollateral;
+        return side === 'long'
+          ? Math.max(0, entryPrice * (1 - (1 / effectiveLeverage) + mm))
+          : Math.max(0, entryPrice * (1 + (1 / effectiveLeverage) - mm));
+      },
+
       openPerpPosition: (symbol, side, leverage, collateral, entryPrice, { stopLoss, takeProfit, trailingStop } = {}) => {
         if (!symbol || !side || !leverage || !collateral || !entryPrice) return { error: 'Missing parameters' };
         if (collateral <= 0 || leverage < 1 || leverage > 20) return { error: 'Invalid leverage or collateral' };
@@ -630,10 +643,8 @@ const useStore = create(
         const maintenanceMargin = 0.05; // 5%
         const direction = side === 'long' ? 1 : -1;
 
-        // Liquidation price calculation
-        const liqPrice = side === 'long'
-          ? entryPrice * (1 - (1 / leverage) + maintenanceMargin)
-          : entryPrice * (1 + (1 / leverage) - maintenanceMargin);
+        // Competition-grade liquidation price (accounts for opening fee)
+        const liqPrice = get()._calcLiqPrice(side, entryPrice, leverage, collateral, 0);
 
         const position = {
           id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
@@ -727,15 +738,21 @@ const useStore = create(
             perpTotalPnl: state.perpTotalPnl + pnl,
           });
         } else {
-          // Partial close — reduce position
+          // Partial close — reduce position + recalculate liq price
+          const remainCollateral = pos.collateral * (1 - frac);
+          const remainSize = pos.size * (1 - frac);
+          const remainFunding = pos.accumulatedFunding * (1 - frac);
+          const remainLeverage = remainSize / remainCollateral;
+          const remainLiqPrice = get()._calcLiqPrice(pos.side, pos.entryPrice, remainLeverage, remainCollateral, remainFunding);
           set({
             balanceUSD: state.balanceUSD + returnAmount,
             perpPositions: state.perpPositions.map(p =>
               p.id === positionId ? {
                 ...p,
-                collateral: p.collateral * (1 - frac),
-                size: p.size * (1 - frac),
-                accumulatedFunding: p.accumulatedFunding * (1 - frac),
+                collateral: remainCollateral,
+                size: remainSize,
+                accumulatedFunding: remainFunding,
+                liquidationPrice: remainLiqPrice,
               } : p
             ),
             perpTotalPnl: state.perpTotalPnl + pnl,
@@ -844,7 +861,10 @@ const useStore = create(
           perpPositions: state.perpPositions.map(p => {
             if (p.status !== 'open') return p;
             const funding = p.size * fundingRate;
-            return { ...p, accumulatedFunding: p.accumulatedFunding + funding };
+            const newAccFunding = p.accumulatedFunding + funding;
+            // Recalculate liq price — funding erodes effective collateral over time
+            const newLiqPrice = get()._calcLiqPrice(p.side, p.entryPrice, p.leverage, p.collateral, newAccFunding);
+            return { ...p, accumulatedFunding: newAccFunding, liquidationPrice: newLiqPrice };
           }),
         });
       },
@@ -922,12 +942,9 @@ const useStore = create(
         const newCollateral = pos.collateral + amount;
         if (newCollateral < 1) return { error: 'Minimum collateral is $1' };
 
-        // Recalculate liquidation price with new collateral
+        // Recalculate liquidation price with new collateral (accounts for accumulated funding)
         const newLeverage = pos.size / newCollateral;
-        const mm = 0.05;
-        const liqPrice = pos.side === 'long'
-          ? pos.entryPrice * (1 - (1 / newLeverage) + mm)
-          : pos.entryPrice * (1 + (1 / newLeverage) - mm);
+        const liqPrice = get()._calcLiqPrice(pos.side, pos.entryPrice, newLeverage, newCollateral, pos.accumulatedFunding);
 
         set({
           balanceUSD: state.balanceUSD - amount,
