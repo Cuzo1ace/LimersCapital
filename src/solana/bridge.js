@@ -52,7 +52,7 @@ export function useLimerBridge() {
 
   // On-chain state (null if wallet disconnected or profile not initialized)
   const address = selectedAccount?.address || null;
-  const { data: onChainProfile } = useUserProfile(address);
+  const { data: onChainProfile, isFetched: profileFetched } = useUserProfile(address);
   const { data: onChainTradeLog } = useTradeLog(address);
 
   // Local state slices we watch
@@ -68,6 +68,7 @@ export function useLimerBridge() {
     modules: new Set(),     // module IDs we've sent recordModule for this session
     tradeCount: null,       // last trade count we sent recordTrade for
     checkedInDate: null,    // last date we sent checkInDaily for
+    profileInitAttempted: false, // prevent repeated init attempts
   });
 
   // Reset session tracking when wallet changes
@@ -77,8 +78,23 @@ export function useLimerBridge() {
       modules: new Set(),
       tradeCount: null,
       checkedInDate: null,
+      profileInitAttempted: false,
     };
   }, [address]);
+
+  // ── Auto-initialize profile on first connect ─────────────────
+  // If wallet connected, RPC returned no profile, and we haven't tried yet → init
+  useEffect(() => {
+    if (!wallet || !address || !profileFetched) return;
+    if (onChainProfile || queued.current.profileInitAttempted) return;
+
+    queued.current.profileInitAttempted = true;
+    console.info('[Bridge] No on-chain profile found — initializing for', address.slice(0, 8) + '…');
+    mutations.initializeUser.mutateAsync().catch((e) => {
+      queued.current.profileInitAttempted = false; // allow retry
+      console.warn('[Bridge] initializeUser failed:', e?.message);
+    });
+  }, [wallet, address, profileFetched, onChainProfile]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Badge sync ────────────────────────────────────────────────
   // When a new badge is earned locally, record it on-chain if not already in bitmap.

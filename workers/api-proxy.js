@@ -146,6 +146,16 @@ const QUIZ_ANSWERS = {
       'The flywheel: More LPs → deeper liquidity → less slippage → more traders → more volume/fees → attracts more LPs. Self-reinforcing growth.',
     ],
   },
+  'quiz-8': {
+    answers: [1, 1, 1, 1, 1],
+    explanations: [
+      'UBO means every user who learns, trades, or contributes becomes an owner of the platform — not just a customer. Ownership is earned through participation.',
+      'Distributing revenue in stablecoins (USDC) and SOL gives holders real purchasing power without creating sell pressure on the native $LIMER token.',
+      'Dynamic NFTs in Limer\'s model are yield-bearing — their on-chain metadata tracks accrued revenue, vesting schedules, and governance weight. They\'re financial instruments, not art.',
+      'Premium tier unlocks Wam integration, ViFi yield streams, pro analytics, boosted LP rewards, early access to features, and benefits that grow as the platform scales.',
+      'Caribbean populations have limited access to traditional equity markets and brokerages. DeFi protocols on Solana serve anyone with a phone — no minimums, no foreign brokerage, no barriers.',
+    ],
+  },
 };
 
 // ── Quiz attempt rate limiting (in-memory, per isolate) ──
