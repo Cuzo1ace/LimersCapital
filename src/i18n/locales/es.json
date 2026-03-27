@@ -156,5 +156,22 @@
     "experienced": "Con Experiencia",
     "startLearning": "Comenzar a Aprender",
     "skipToDashboard": "Ir al Panel"
+  },
+  "finnhub": {
+    "economicCalendar": "Calendario Económico",
+    "economicTip": "Los eventos económicos importantes (tasas de la Fed, IPC, PIB, empleo) impulsan la volatilidad del mercado.",
+    "earningsCalendar": "Calendario de Ganancias",
+    "earningsTip": "Las empresas reportan ganancias trimestrales. Cuando el EPS supera las estimaciones, la acción suele subir.",
+    "congressionalTrading": "Operaciones del Congreso",
+    "congressTip": "Bajo la Ley STOCK, los políticos de EE.UU. deben divulgar sus operaciones bursátiles.",
+    "marketNews": "Noticias del Mercado",
+    "highImpact": "Alto Impacto",
+    "medImpact": "Impacto Medio",
+    "purchase": "Compra",
+    "sale": "Venta",
+    "beat": "Superó",
+    "miss": "Falló",
+    "bmo": "Antes de Apertura",
+    "amc": "Después del Cierre"
   }
 }

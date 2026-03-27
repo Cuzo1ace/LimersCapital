@@ -15,6 +15,7 @@
  * Environment variables (set via wrangler secret):
  *   HELIUS_API_KEY     — Helius RPC + DAS API key
  *   ANTHROPIC_API_KEY  — Claude API key for AI market briefs
+ *   FINNHUB_API_KEY    — Finnhub financial data API key
  *
  * Deploy:
  *   cd workers
@@ -567,6 +568,74 @@ const ROUTES = {
     method: 'GET',
     buildUrl: () => 'https://dlmm.datapi.meteora.ag/stats/protocol_metrics',
     cacheTtl: 300,
+  },
+
+  // ── Finnhub Financial Data (API key injected server-side) ──
+  '/finnhub/economic-calendar': {
+    method: 'GET',
+    buildUrl: (env) => `https://finnhub.io/api/v1/calendar/economic?token=${env.FINNHUB_API_KEY}`,
+    cacheTtl: 600,
+    passQuery: true,
+  },
+  '/finnhub/earnings': {
+    method: 'GET',
+    buildUrl: (env) => `https://finnhub.io/api/v1/calendar/earnings?token=${env.FINNHUB_API_KEY}`,
+    cacheTtl: 600,
+    passQuery: true,
+  },
+  '/finnhub/news': {
+    method: 'GET',
+    buildUrl: (env) => `https://finnhub.io/api/v1/news?token=${env.FINNHUB_API_KEY}`,
+    cacheTtl: 300,
+    passQuery: true,
+  },
+  '/finnhub/company-news': {
+    method: 'GET',
+    buildUrl: (env) => `https://finnhub.io/api/v1/company-news?token=${env.FINNHUB_API_KEY}`,
+    cacheTtl: 300,
+    passQuery: true,
+  },
+  '/finnhub/congressional-trading': {
+    method: 'GET',
+    buildUrl: (env) => `https://finnhub.io/api/v1/stock/congressional-trading?token=${env.FINNHUB_API_KEY}`,
+    cacheTtl: 600,
+    passQuery: true,
+  },
+  '/finnhub/insider-transactions': {
+    method: 'GET',
+    buildUrl: (env) => `https://finnhub.io/api/v1/stock/insider-transactions?token=${env.FINNHUB_API_KEY}`,
+    cacheTtl: 600,
+    passQuery: true,
+  },
+  '/finnhub/news-sentiment': {
+    method: 'GET',
+    buildUrl: (env) => `https://finnhub.io/api/v1/news-sentiment?token=${env.FINNHUB_API_KEY}`,
+    cacheTtl: 300,
+    passQuery: true,
+  },
+  '/finnhub/recommendation': {
+    method: 'GET',
+    buildUrl: (env) => `https://finnhub.io/api/v1/stock/recommendation?token=${env.FINNHUB_API_KEY}`,
+    cacheTtl: 600,
+    passQuery: true,
+  },
+  '/finnhub/price-target': {
+    method: 'GET',
+    buildUrl: (env) => `https://finnhub.io/api/v1/stock/price-target?token=${env.FINNHUB_API_KEY}`,
+    cacheTtl: 600,
+    passQuery: true,
+  },
+  '/finnhub/profile': {
+    method: 'GET',
+    buildUrl: (env) => `https://finnhub.io/api/v1/stock/profile2?token=${env.FINNHUB_API_KEY}`,
+    cacheTtl: 86400,
+    passQuery: true,
+  },
+  '/finnhub/metric': {
+    method: 'GET',
+    buildUrl: (env) => `https://finnhub.io/api/v1/stock/metric?token=${env.FINNHUB_API_KEY}`,
+    cacheTtl: 3600,
+    passQuery: true,
   },
 };
 

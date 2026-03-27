@@ -156,5 +156,22 @@
     "experienced": "Experienced",
     "startLearning": "Start Learning",
     "skipToDashboard": "Skip to Dashboard"
+  },
+  "finnhub": {
+    "economicCalendar": "Economic Calendar",
+    "economicTip": "Major economic events (Fed rates, CPI, GDP, jobs data) drive market-wide volatility. Watch high-impact events closely.",
+    "earningsCalendar": "Earnings Calendar",
+    "earningsTip": "Companies report quarterly earnings. When EPS beats estimates, stock often rises; a miss often drops it.",
+    "congressionalTrading": "Congressional Trading",
+    "congressTip": "Under the STOCK Act, US politicians must disclose stock trades. Tracking 'smart money' reveals information asymmetry.",
+    "marketNews": "Market News",
+    "highImpact": "High Impact",
+    "medImpact": "Medium Impact",
+    "purchase": "Purchase",
+    "sale": "Sale",
+    "beat": "Beat",
+    "miss": "Miss",
+    "bmo": "Before Market Open",
+    "amc": "After Market Close"
   }
 }

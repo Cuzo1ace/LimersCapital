@@ -156,5 +156,22 @@
     "experienced": "Expérimenté",
     "startLearning": "Commencer à Apprendre",
     "skipToDashboard": "Aller au Tableau de Bord"
+  },
+  "finnhub": {
+    "economicCalendar": "Calendrier Économique",
+    "economicTip": "Les événements économiques majeurs (taux de la Fed, IPC, PIB, emploi) entraînent une volatilité sur les marchés.",
+    "earningsCalendar": "Calendrier des Résultats",
+    "earningsTip": "Les entreprises publient leurs résultats trimestriels. Un BPA supérieur aux estimations est haussier.",
+    "congressionalTrading": "Transactions du Congrès",
+    "congressTip": "En vertu de la loi STOCK, les politiciens américains doivent divulguer leurs transactions boursières.",
+    "marketNews": "Actualités du Marché",
+    "highImpact": "Impact Élevé",
+    "medImpact": "Impact Moyen",
+    "purchase": "Achat",
+    "sale": "Vente",
+    "beat": "Dépassé",
+    "miss": "Manqué",
+    "bmo": "Avant Ouverture",
+    "amc": "Après Clôture"
   }
 }

@@ -9,6 +9,10 @@ import {
 } from '../api/insights';
 import { SkeletonRows, SkeletonCard } from '../components/ui/Skeleton';
 import RemittanceCalculator from '../components/RemittanceCalculator';
+import {
+  fetchEconomicCalendar, fetchEarningsCalendar,
+  fetchMarketNews, fetchCongressionalTrading,
+} from '../api/finnhub';
 
 function fmt(n, dec = 2) {
   if (n == null) return '—';
@@ -17,6 +21,21 @@ function fmt(n, dec = 2) {
   if (n >= 1e6) return '$' + (n / 1e6).toFixed(dec) + 'M';
   if (n >= 1e3) return '$' + (n / 1e3).toFixed(dec) + 'K';
   return '$' + n.toFixed(dec);
+}
+
+function fmtAmt(n) {
+  if (n == null) return '?';
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K';
+  return n.toLocaleString();
+}
+
+function fmtRelTime(unix) {
+  const s = Math.floor(Date.now() / 1000) - unix;
+  if (s < 60) return 'just now';
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
 }
 
 function Chg({ value }) {
@@ -68,6 +87,12 @@ export default function InsightsPage() {
   const newsQ     = useQuery({ queryKey: ['crypto-news'], queryFn: fetchCryptoNews,      staleTime: 300000 });
   const briefQ    = useQuery({ queryKey: ['ai-brief'],   queryFn: fetchMarketBrief,    staleTime: 3600000, retry: 1 });
   const fmpQ      = useQuery({ queryKey: ['fmp-crypto'], queryFn: fetchFMPCryptoList, staleTime: 300000, retry: 1 });
+
+  // Finnhub financial intelligence
+  const econCalQ   = useQuery({ queryKey: ['fh-econ-cal'],  queryFn: fetchEconomicCalendar,            staleTime: 600000, retry: 1 });
+  const earningsQ  = useQuery({ queryKey: ['fh-earnings'],  queryFn: fetchEarningsCalendar,            staleTime: 600000, retry: 1 });
+  const fhNewsQ    = useQuery({ queryKey: ['fh-news'],      queryFn: () => fetchMarketNews('general'), staleTime: 300000, retry: 1 });
+  const congressQ  = useQuery({ queryKey: ['fh-congress'],  queryFn: () => fetchCongressionalTrading(), staleTime: 600000, retry: 1 });
 
   const [jupIn, setJupIn] = useState('So11111111111111111111111111111111111111112');
   const [jupOut, setJupOut] = useState('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
@@ -202,6 +227,135 @@ export default function InsightsPage() {
           </Card>
         </div>
       )}
+
+      {/* ── Finnhub: Economic Calendar + Earnings ──────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <Card title="📅 Economic Calendar" color="#FF6B6B" source="Finnhub · next 7 days">
+          <div className="text-[.62rem] text-muted mb-3 leading-relaxed italic border-l-2 border-[#FF6B6B]/30 pl-2">
+            Major economic events (Fed rates, CPI, GDP, jobs data) drive market-wide volatility. Watch high-impact events closely.
+          </div>
+          {econCalQ.isLoading && <SkeletonRows count={6} cols={3} />}
+          {econCalQ.isError && <Err msg="Economic calendar unavailable" retry={econCalQ.refetch} />}
+          {econCalQ.data && econCalQ.data.length === 0 && (
+            <div className="text-[.76rem] text-muted text-center py-4">No upcoming high-impact events</div>
+          )}
+          {econCalQ.data?.map((e, i) => (
+            <div key={i} className="flex items-start gap-2 py-2 border-b border-white/5 last:border-b-0 text-[.74rem]">
+              <span className={`flex-shrink-0 mt-0.5 px-1.5 py-0.5 rounded text-[.55rem] font-bold uppercase
+                ${e.impact === 'high' ? 'bg-down/15 text-down' : 'bg-sun/15 text-sun'}`}>
+                {e.impact === 'high' ? '🔴 High' : '🟡 Med'}
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="font-body font-bold text-txt truncate">{e.event}</div>
+                <div className="flex gap-3 text-[.65rem] text-muted mt-0.5">
+                  <span>{e.country}</span>
+                  {e.time && <span>{e.time}</span>}
+                  {e.estimate != null && <span>Est: <span className="text-txt-2">{e.estimate}{e.unit}</span></span>}
+                  {e.prev != null && <span>Prev: <span className="text-txt-2">{e.prev}{e.unit}</span></span>}
+                  {e.actual != null && <span>Actual: <span className="text-up font-bold">{e.actual}{e.unit}</span></span>}
+                </div>
+              </div>
+            </div>
+          ))}
+        </Card>
+
+        <Card title="💰 Earnings Calendar" color="#00D4FF" source="Finnhub · next 14 days">
+          <div className="text-[.62rem] text-muted mb-3 leading-relaxed italic border-l-2 border-[#00D4FF]/30 pl-2">
+            Companies report quarterly earnings. When EPS beats estimates, stock often rises; a miss often drops it. BMO = before market, AMC = after close.
+          </div>
+          {earningsQ.isLoading && <SkeletonRows count={6} cols={3} />}
+          {earningsQ.isError && <Err msg="Earnings calendar unavailable" retry={earningsQ.refetch} />}
+          {earningsQ.data && earningsQ.data.length === 0 && (
+            <div className="text-[.76rem] text-muted text-center py-4">No upcoming earnings reports</div>
+          )}
+          {earningsQ.data?.map((e, i) => {
+            const beat = e.epsActual != null && e.epsEstimate != null ? e.epsActual > e.epsEstimate : null;
+            return (
+              <div key={i} className="flex items-center gap-2 py-2 border-b border-white/5 last:border-b-0 text-[.74rem]">
+                <span className="font-body font-bold text-txt w-16 flex-shrink-0">{e.symbol}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[.65rem] text-muted">{e.date}</div>
+                </div>
+                {e.hour && (
+                  <span className="text-[.55rem] px-1.5 py-0.5 rounded bg-white/5 text-muted uppercase font-mono">
+                    {e.hour === 'bmo' ? 'BMO' : e.hour === 'amc' ? 'AMC' : e.hour}
+                  </span>
+                )}
+                <div className="text-right flex-shrink-0">
+                  {e.epsEstimate != null && (
+                    <div className="text-[.65rem] text-muted">Est: <span className="text-txt-2">${e.epsEstimate.toFixed(2)}</span></div>
+                  )}
+                  {e.epsActual != null && (
+                    <div className="text-[.65rem]">
+                      Actual: <span className={beat ? 'text-up font-bold' : 'text-down font-bold'}>${e.epsActual.toFixed(2)}</span>
+                      {beat != null && <span className="ml-1">{beat ? '✅' : '❌'}</span>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </Card>
+      </div>
+
+      {/* ── Finnhub: Congressional Trading + Market News ───────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <Card title="🏛️ Congressional Trading" color="#B088F9" source="Finnhub · STOCK Act">
+          <div className="text-[.62rem] text-muted mb-3 leading-relaxed italic border-l-2 border-[#B088F9]/30 pl-2">
+            Under the STOCK Act, US politicians must disclose stock trades. Tracking "smart money" reveals information asymmetry in markets.
+          </div>
+          {congressQ.isLoading && <SkeletonRows count={6} cols={3} />}
+          {congressQ.isError && <Err msg="Congressional data unavailable" retry={congressQ.refetch} />}
+          {congressQ.data && congressQ.data.length === 0 && (
+            <div className="text-[.76rem] text-muted text-center py-4">No recent congressional trades</div>
+          )}
+          {congressQ.data?.map((t, i) => {
+            const isBuy = /purchase/i.test(t.transactionType);
+            return (
+              <div key={i} className="flex items-start gap-2 py-2 border-b border-white/5 last:border-b-0 text-[.74rem]">
+                <span className={`flex-shrink-0 mt-0.5 px-1.5 py-0.5 rounded text-[.55rem] font-bold uppercase
+                  ${isBuy ? 'bg-up/15 text-up' : 'bg-down/15 text-down'}`}>
+                  {isBuy ? 'Buy' : 'Sell'}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-body font-bold text-txt truncate">{t.name}</div>
+                  <div className="flex gap-2 text-[.65rem] text-muted mt-0.5">
+                    <span className="font-mono text-sea">{t.symbol}</span>
+                    <span>{t.transactionDate}</span>
+                    {t.amountFrom != null && t.amountTo != null && (
+                      <span className="text-txt-2">${fmtAmt(t.amountFrom)}–${fmtAmt(t.amountTo)}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </Card>
+
+        <Card title="📰 Market News" color="var(--color-sea)" source="Finnhub · latest">
+          {fhNewsQ.isLoading && <SkeletonRows count={6} cols={2} />}
+          {fhNewsQ.isError && <Err msg="Market news unavailable" retry={fhNewsQ.refetch} />}
+          {fhNewsQ.data?.map(n => {
+            const ago = fmtRelTime(n.datetime);
+            return (
+              <a key={n.id} href={n.url} target="_blank" rel="noopener noreferrer"
+                className="flex items-start gap-2.5 py-2 border-b border-white/5 last:border-b-0 no-underline hover:bg-sea/5 transition-all rounded px-1 -mx-1">
+                {n.image && (
+                  <img src={n.image} alt="" loading="lazy"
+                    className="w-12 h-12 rounded-lg object-cover flex-shrink-0 opacity-80" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="text-[.74rem] text-txt leading-snug line-clamp-2 font-body">{n.headline}</div>
+                  <div className="flex gap-2 mt-1 text-[.6rem]">
+                    <span className="text-sea bg-sea/10 rounded px-1.5 py-0.5 font-mono font-bold truncate max-w-[80px]">{n.source}</span>
+                    <span className="text-muted">{ago}</span>
+                  </div>
+                </div>
+              </a>
+            );
+          })}
+        </Card>
+      </div>
 
       {/* ── Row 1: RWA Tokens + L1 Chains ────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -420,7 +574,7 @@ export default function InsightsPage() {
       {/* API Attribution */}
       <div className="rounded-xl p-4 border border-white/6 flex flex-wrap gap-3 items-center" style={{ background: 'rgba(0,0,0,.2)' }}>
         <span className="text-[.65rem] text-muted">Powered by:</span>
-        {['CoinGecko', 'DeFiLlama', 'Jupiter', 'ExchangeRate-API', 'World Bank', 'FMP'].map(s => (
+        {['CoinGecko', 'DeFiLlama', 'Jupiter', 'ExchangeRate-API', 'World Bank', 'FMP', 'Finnhub'].map(s => (
           <span key={s} className="text-[.65rem] text-txt-2 bg-white/4 border border-white/7 rounded px-2 py-0.5">{s}</span>
         ))}
         <span className="text-[.63rem] text-muted ml-auto">All free-tier · No API keys required</span>
