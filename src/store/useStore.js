@@ -618,7 +618,7 @@ const useStore = create(
       perpTradeCount: 0,
       perpTotalPnl: 0,
 
-      openPerpPosition: (symbol, side, leverage, collateral, entryPrice) => {
+      openPerpPosition: (symbol, side, leverage, collateral, entryPrice, { stopLoss, takeProfit, trailingStop } = {}) => {
         if (!symbol || !side || !leverage || !collateral || !entryPrice) return { error: 'Missing parameters' };
         if (collateral <= 0 || leverage < 1 || leverage > 20) return { error: 'Invalid leverage or collateral' };
         if (!Number.isFinite(collateral) || !Number.isFinite(entryPrice)) return { error: 'Invalid numbers' };
@@ -646,6 +646,10 @@ const useStore = create(
           liquidationPrice: Math.max(0, liqPrice),
           unrealizedPnl: 0,
           accumulatedFunding: 0,
+          stopLoss: stopLoss && Number.isFinite(stopLoss) ? stopLoss : null,
+          takeProfit: takeProfit && Number.isFinite(takeProfit) ? takeProfit : null,
+          trailingStop: trailingStop && Number.isFinite(trailingStop) ? trailingStop : null,
+          _trailingPeak: null,
           status: 'open',
           openedAt: new Date().toISOString(),
           closedAt: null,
@@ -693,36 +697,57 @@ const useStore = create(
         });
 
         get()._checkBadges();
+        get().logPerpEvent('open', { symbol, side, leverage, size, price: entryPrice, collateral, stopLoss: position.stopLoss, takeProfit: position.takeProfit, trailingStop: position.trailingStop });
         track('perp_position_opened', { symbol, side, leverage, size: Math.round(size) });
         return { success: true, position };
       },
 
-      closePerpPosition: (positionId, markPrice) => {
+      closePerpPosition: (positionId, markPrice, fraction = 1) => {
         const state = get();
         const pos = state.perpPositions.find(p => p.id === positionId && p.status === 'open');
         if (!pos) return { error: 'Position not found' };
+        const frac = Math.min(1, Math.max(0.01, fraction));
 
         const direction = pos.side === 'long' ? 1 : -1;
         const priceDelta = (markPrice - pos.entryPrice) * direction;
-        const pnl = (priceDelta / pos.entryPrice) * pos.size - pos.accumulatedFunding;
+        const fullPnl = (priceDelta / pos.entryPrice) * pos.size - pos.accumulatedFunding;
+        const pnl = fullPnl * frac;
+        const closedCollateral = pos.collateral * frac;
 
         // Return collateral + PnL to balance (min 0 — can't go negative from balance)
-        const returnAmount = Math.max(0, pos.collateral + pnl);
+        const returnAmount = Math.max(0, closedCollateral + pnl);
 
-        set({
-          balanceUSD: state.balanceUSD + returnAmount,
-          perpPositions: state.perpPositions.map(p =>
-            p.id === positionId ? { ...p, status: 'closed', closedAt: new Date().toISOString(), unrealizedPnl: pnl } : p
-          ),
-          perpTotalPnl: state.perpTotalPnl + pnl,
-        });
+        if (frac >= 0.99) {
+          // Full close
+          set({
+            balanceUSD: state.balanceUSD + returnAmount,
+            perpPositions: state.perpPositions.map(p =>
+              p.id === positionId ? { ...p, status: 'closed', closedAt: new Date().toISOString(), unrealizedPnl: pnl } : p
+            ),
+            perpTotalPnl: state.perpTotalPnl + pnl,
+          });
+        } else {
+          // Partial close — reduce position
+          set({
+            balanceUSD: state.balanceUSD + returnAmount,
+            perpPositions: state.perpPositions.map(p =>
+              p.id === positionId ? {
+                ...p,
+                collateral: p.collateral * (1 - frac),
+                size: p.size * (1 - frac),
+                accumulatedFunding: p.accumulatedFunding * (1 - frac),
+              } : p
+            ),
+            perpTotalPnl: state.perpTotalPnl + pnl,
+          });
+        }
 
         // Record close trade
         const trade = {
           id: Date.now().toString(36), side: `close_${pos.side}`, symbol: pos.symbol,
-          qty: pos.size / markPrice, price: markPrice, total: pos.size,
+          qty: (pos.size * frac) / markPrice, price: markPrice, total: pos.size * frac,
           currency: 'USD', market: 'perpetuals', timestamp: new Date().toISOString(),
-          leverage: pos.leverage, pnl,
+          leverage: pos.leverage, pnl, partial: frac < 0.99 ? `${Math.round(frac * 100)}%` : null,
         };
         set({ trades: [trade, ...get().trades].slice(0, 100) });
 
@@ -735,7 +760,8 @@ const useStore = create(
         }
 
         get()._checkBadges();
-        track('perp_position_closed', { symbol: pos.symbol, pnl: Math.round(pnl), leverage: pos.leverage });
+        get().logPerpEvent(frac < 0.99 ? 'partial_close' : 'close', { symbol: pos.symbol, side: pos.side, leverage: pos.leverage, pnl, price: markPrice, fraction: frac < 0.99 ? `${Math.round(frac * 100)}%` : null });
+        track('perp_position_closed', { symbol: pos.symbol, pnl: Math.round(pnl), leverage: pos.leverage, fraction: frac });
         return { success: true, pnl };
       },
 
@@ -794,6 +820,7 @@ const useStore = create(
               message: `${pos.side.toUpperCase()} ${pos.symbol} ${pos.leverage}x — lost $${pos.collateral.toFixed(0)} collateral`,
             }]}));
 
+            get().logPerpEvent('liquidation', { symbol: pos.symbol, side: pos.side, leverage: pos.leverage, price: markPrice, loss: -pos.collateral });
             track('perp_liquidated', { symbol: pos.symbol, leverage: pos.leverage, collateral: Math.round(pos.collateral) });
           }
         });
@@ -820,6 +847,142 @@ const useStore = create(
             return { ...p, accumulatedFunding: p.accumulatedFunding + funding };
           }),
         });
+      },
+
+      updatePerpSLTP: (positionId, { stopLoss, takeProfit }) => {
+        const state = get();
+        const pos = state.perpPositions.find(p => p.id === positionId && p.status === 'open');
+        if (!pos) return { error: 'Position not found' };
+        set({
+          perpPositions: state.perpPositions.map(p =>
+            p.id === positionId ? {
+              ...p,
+              stopLoss: stopLoss !== undefined ? (stopLoss && Number.isFinite(stopLoss) ? stopLoss : null) : p.stopLoss,
+              takeProfit: takeProfit !== undefined ? (takeProfit && Number.isFinite(takeProfit) ? takeProfit : null) : p.takeProfit,
+            } : p
+          ),
+        });
+        track('perp_sltp_updated', { symbol: pos.symbol, stopLoss, takeProfit });
+        return { success: true };
+      },
+
+      checkPerpSLTP: (currentPrices) => {
+        const state = get();
+        const open = state.perpPositions.filter(p => p.status === 'open');
+        if (!open.length) return;
+
+        open.forEach(pos => {
+          const markPrice = currentPrices[pos.symbol];
+          if (!markPrice) return;
+
+          // Check Take Profit
+          if (pos.takeProfit) {
+            const tpHit = pos.side === 'long'
+              ? markPrice >= pos.takeProfit
+              : markPrice <= pos.takeProfit;
+            if (tpHit) {
+              get().logPerpEvent('tp_triggered', { symbol: pos.symbol, side: pos.side, leverage: pos.leverage, price: markPrice, target: pos.takeProfit });
+              get().closePerpPosition(pos.id, markPrice);
+              set(s => ({ pendingToasts: [...s.pendingToasts, {
+                id: 'tp:' + pos.id,
+                type: 'badge',
+                title: 'Take Profit Hit',
+                message: `${pos.side.toUpperCase()} ${pos.symbol} ${pos.leverage}x — TP at ${markPrice.toFixed(2)}`,
+              }]}));
+              return; // position already closed
+            }
+          }
+
+          // Check Stop Loss
+          if (pos.stopLoss) {
+            const slHit = pos.side === 'long'
+              ? markPrice <= pos.stopLoss
+              : markPrice >= pos.stopLoss;
+            if (slHit) {
+              get().logPerpEvent('sl_triggered', { symbol: pos.symbol, side: pos.side, leverage: pos.leverage, price: markPrice, trigger: pos.stopLoss });
+              get().closePerpPosition(pos.id, markPrice);
+              set(s => ({ pendingToasts: [...s.pendingToasts, {
+                id: 'sl:' + pos.id,
+                type: 'badge',
+                title: 'Stop Loss Triggered',
+                message: `${pos.side.toUpperCase()} ${pos.symbol} ${pos.leverage}x — SL at ${markPrice.toFixed(2)}`,
+              }]}));
+            }
+          }
+        });
+      },
+
+      // ─── Adjust Margin (add/remove collateral on open position) ───
+      adjustPerpMargin: (positionId, amount) => {
+        const state = get();
+        const pos = state.perpPositions.find(p => p.id === positionId && p.status === 'open');
+        if (!pos) return { error: 'Position not found' };
+        if (!amount || !Number.isFinite(amount)) return { error: 'Invalid amount' };
+        if (amount > 0 && amount > state.balanceUSD) return { error: 'Insufficient balance' };
+        const newCollateral = pos.collateral + amount;
+        if (newCollateral < 1) return { error: 'Minimum collateral is $1' };
+
+        // Recalculate liquidation price with new collateral
+        const newLeverage = pos.size / newCollateral;
+        const mm = 0.05;
+        const liqPrice = pos.side === 'long'
+          ? pos.entryPrice * (1 - (1 / newLeverage) + mm)
+          : pos.entryPrice * (1 + (1 / newLeverage) - mm);
+
+        set({
+          balanceUSD: state.balanceUSD - amount,
+          perpPositions: state.perpPositions.map(p =>
+            p.id === positionId ? { ...p, collateral: newCollateral, liquidationPrice: Math.max(0, liqPrice) } : p
+          ),
+        });
+        track('perp_margin_adjusted', { symbol: pos.symbol, amount, newCollateral });
+        return { success: true, newCollateral, newLeverage: newLeverage.toFixed(1) };
+      },
+
+      // ─── Trailing Stop Logic ────────────────────────────────────
+      checkTrailingStops: (currentPrices) => {
+        const state = get();
+        const open = state.perpPositions.filter(p => p.status === 'open' && p.trailingStop);
+        if (!open.length) return;
+
+        const updates = [];
+        open.forEach(pos => {
+          const markPrice = currentPrices[pos.symbol];
+          if (!markPrice) return;
+          const trail = pos.trailingStop; // percentage, e.g. 0.03 = 3%
+
+          if (pos.side === 'long') {
+            // Track highest price, trail SL below it
+            const peak = Math.max(pos._trailingPeak || pos.entryPrice, markPrice);
+            const newSL = peak * (1 - trail);
+            if (peak !== pos._trailingPeak || newSL !== pos.stopLoss) {
+              updates.push({ id: pos.id, _trailingPeak: peak, stopLoss: newSL });
+            }
+          } else {
+            // Track lowest price, trail SL above it
+            const trough = Math.min(pos._trailingPeak || pos.entryPrice, markPrice);
+            const newSL = trough * (1 + trail);
+            if (trough !== pos._trailingPeak || newSL !== pos.stopLoss) {
+              updates.push({ id: pos.id, _trailingPeak: trough, stopLoss: newSL });
+            }
+          }
+        });
+
+        if (updates.length) {
+          set({
+            perpPositions: state.perpPositions.map(p => {
+              const u = updates.find(x => x.id === p.id);
+              return u ? { ...p, ...u } : p;
+            }),
+          });
+        }
+      },
+
+      // ─── Event Log (order history feed) ─────────────────────────
+      perpEventLog: [],
+      logPerpEvent: (type, details) => {
+        const event = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 4), type, ...details, timestamp: new Date().toISOString() };
+        set(s => ({ perpEventLog: [event, ...s.perpEventLog].slice(0, 50) }));
       },
 
       markFlywheelViewed: () => {
