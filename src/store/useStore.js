@@ -86,6 +86,13 @@ const useStore = create(
         }
 
         get()._checkBadges();
+        // Competition: record trade (buy = no PnL yet, sell = realize gain/loss)
+        if (side === 'sell') {
+          const holding = state.holdings.find(h => `${h.market}:${h.symbol}` === holdKey);
+          const avgCost = holding ? holding.avgPrice : price;
+          const tradePnl = (price - avgCost) * qty;
+          get()._recordCompetitionTrade(tradePnl);
+        }
         track('trade_executed', { side, symbol, market, total: Math.round(total) });
         return { success: true };
       },
@@ -777,6 +784,7 @@ const useStore = create(
         }
 
         get()._checkBadges();
+        get()._recordCompetitionTrade(pnl);
         get().logPerpEvent(frac < 0.99 ? 'partial_close' : 'close', { symbol: pos.symbol, side: pos.side, leverage: pos.leverage, pnl, price: markPrice, fraction: frac < 0.99 ? `${Math.round(frac * 100)}%` : null });
         track('perp_position_closed', { symbol: pos.symbol, pnl: Math.round(pnl), leverage: pos.leverage, fraction: frac });
         return { success: true, pnl };
@@ -830,6 +838,7 @@ const useStore = create(
 
             get().awardLP(5, 'Liquidated — lesson learned!', 'perp_liquidation');
             get().awardXP(20, 'Experienced liquidation');
+            get()._recordCompetitionTrade(-pos.collateral);
             set(s => ({ pendingToasts: [...s.pendingToasts, {
               id: 'liq:' + pos.id,
               type: 'badge',
@@ -1019,6 +1028,82 @@ const useStore = create(
         set({ listingApplications: [...get().listingApplications, app] });
         get().awardLP(100, 'Listing application submitted', 'listing');
       },
+
+      // ── Trading Competition ─────────────────────────────────
+      competitionRegistered: false,
+      competitionStats: {
+        pnlPct: 0,
+        trades: 0,
+        wins: 0,
+        maxDrawdown: 0,
+        dailyReturns: [],
+        peakBalance: INITIAL_USD,
+        _lastDayLogged: null,
+        _dayStartBalance: INITIAL_USD,
+      },
+
+      registerForCompetition: () => {
+        if (get().competitionRegistered) return;
+        const bal = get().balanceUSD;
+        set({
+          competitionRegistered: true,
+          competitionStats: {
+            pnlPct: 0,
+            trades: 0,
+            wins: 0,
+            maxDrawdown: 0,
+            dailyReturns: [],
+            peakBalance: bal,
+            _lastDayLogged: new Date().toISOString().slice(0, 10),
+            _dayStartBalance: bal,
+          },
+        });
+        get().awardXP(50, 'Joined Season 1 Competition!');
+        get().awardLP(25, 'Competition registration', 'competition');
+        set(s => ({
+          pendingToasts: [...s.pendingToasts, {
+            id: 'comp-register',
+            type: 'badge',
+            title: '🏆 Competition Registered!',
+            message: 'Season 1 — Caribbean Trading Cup. Good luck!',
+          }],
+        }));
+        track('competition_registered');
+      },
+
+      /**
+       * Record a competition trade outcome.
+       * Called after executeTrade or closePerpPosition when competition is active.
+       */
+      _recordCompetitionTrade: (pnlAmount) => {
+        if (!get().competitionRegistered) return;
+        const cs = { ...get().competitionStats };
+        const bal = get().balanceUSD;
+        const totalValue = bal + get().perpPositions.filter(p => p.status === 'open').reduce((s, p) => s + p.collateral, 0);
+
+        cs.trades += 1;
+        if (pnlAmount > 0) cs.wins += 1;
+        cs.pnlPct = ((totalValue - INITIAL_USD) / INITIAL_USD) * 100;
+
+        // Track peak and drawdown
+        if (totalValue > cs.peakBalance) cs.peakBalance = totalValue;
+        const drawdown = cs.peakBalance > 0 ? ((cs.peakBalance - totalValue) / cs.peakBalance) * 100 : 0;
+        if (drawdown > cs.maxDrawdown) cs.maxDrawdown = drawdown;
+
+        // Daily return tracking
+        const today = new Date().toISOString().slice(0, 10);
+        if (cs._lastDayLogged !== today) {
+          // Log yesterday's return
+          const dayReturn = cs._dayStartBalance > 0
+            ? ((totalValue - cs._dayStartBalance) / cs._dayStartBalance) * 100
+            : 0;
+          cs.dailyReturns = [...cs.dailyReturns, dayReturn].slice(-30); // Keep 30 days
+          cs._lastDayLogged = today;
+          cs._dayStartBalance = totalValue;
+        }
+
+        set({ competitionStats: cs });
+      },
     }),
     {
       name: 'caribcrypto-storage',
@@ -1054,6 +1139,9 @@ const useStore = create(
         perpPositions: state.perpPositions,
         perpTradeCount: state.perpTradeCount,
         perpTotalPnl: state.perpTotalPnl,
+        // Trading Competition
+        competitionRegistered: state.competitionRegistered,
+        competitionStats: state.competitionStats,
         watchlist: state.watchlist,
         priceAlerts: state.priceAlerts,
         hasSeenOnboarding: state.hasSeenOnboarding,

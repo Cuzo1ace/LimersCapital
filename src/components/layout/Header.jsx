@@ -53,6 +53,7 @@ export default function Header() {
 
   const LIME_TABS = [
     { id: 'about', label: 'About', icon: '📖' },
+    { id: 'competition', label: 'Competition', icon: '🏆' },
     { id: 'points', label: 'Points', icon: '🍋' },
     { id: 'tokenomics', label: 'Tokenomics', icon: '📊' },
     { id: 'revenue', label: 'Revenue', icon: '💰' },

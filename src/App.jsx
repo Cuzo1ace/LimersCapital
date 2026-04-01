@@ -18,6 +18,7 @@ import RevenuePage from './pages/RevenuePage';
 import CommunityPage from './pages/CommunityPage';
 import ListingPage from './pages/ListingPage';
 import AgentSqueezePage from './pages/AgentSqueezePage';
+import CompetitionPage from './pages/CompetitionPage';
 import FlywheelPage from './pages/FlywheelPage';
 import LegalPage from './pages/LegalPage';
 import AboutPage from './pages/AboutPage';
@@ -59,6 +60,7 @@ function TabContent() {
     case 'revenue': return <RevenuePage />;
     case 'community': return <CommunityPage />;
     case 'listing': return <ListingPage />;
+    case 'competition': return <CompetitionPage />;
     case 'squeeze': return <AgentSqueezePage />;
     case 'flywheel': return <FlywheelPage />;
     case 'legal': return <RegulationPage />; // Legal merged into Regulation
