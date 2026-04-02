@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchSolanaMarketData, fetchSolPrice, fetchSolanaTVL, fetchFMPCryptoList, fmtSupply } from '../api/prices';
 import { SkeletonRows } from '../components/ui/Skeleton';
 import GlowCard from '../components/ui/GlowCard';
 import GradientDots from '../components/ui/GradientDots';
 import FinancialTable, { PerfPill, Sparkline, fmtCurrency } from '../components/ui/FinancialTable';
+import { TradingViewScreener } from '../components/charts';
 
 function fmt(n, decimals = 2) {
   if (n == null) return '—';
@@ -317,6 +319,12 @@ export default function MarketPage() {
           ]}
         />
       )}
+
+      {/* TradingView Crypto Screener */}
+      <div className="mt-8">
+        <SectionHead title="Live Crypto Screener" label="Powered by TradingView" />
+        <TradingViewScreener height={500} defaultColumn="overview" />
+      </div>
     </div>
   );
 }

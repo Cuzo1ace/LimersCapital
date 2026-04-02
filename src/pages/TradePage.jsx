@@ -30,6 +30,7 @@ import useStore from '../store/useStore';
 import { RISK_BANNER } from '../data/legal';
 import JupiterSwap from '../components/JupiterSwap';
 import PerpChart from '../components/PerpChart';
+import { TradingViewChart, TradingViewTechnicalAnalysis, TV_SYMBOL_MAP } from '../components/charts';
 
 // Inline SL/TP editor for positions table
 function SLTPEditor({ pos, curPrice, onSave, onCancel }) {
@@ -161,6 +162,8 @@ export default function TradePage() {
   const [limitPrice, setLimitPrice] = useState('');
   const [paperTab, setPaperTab] = useState('holdings');
   const [jupiterTab, setJupiterTab] = useState('info');
+  const [chartSource, setChartSource] = useState('tradingview'); // 'apex' | 'tradingview'
+  const [showTAWidget, setShowTAWidget] = useState(false); // Technical Analysis widget toggle
 
   // (PerpChart accumulates ticks internally — no external query needed)
 
@@ -692,7 +695,41 @@ export default function TradePage() {
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] w-full overflow-hidden">
               {/* Chart Area — order-2 on mobile so order panel shows first */}
               <div className="border-r border-border min-h-[420px] order-2 lg:order-1 min-w-0">
-                <PerpChart symbol={perpSelectedToken} markPrice={markPrice} positions={perpPositions} />
+                {/* Perps Chart Source Toggle */}
+                <div className="flex items-center gap-1 px-3 pt-2">
+                  <div className="flex items-center gap-0 rounded-lg border border-border overflow-hidden">
+                    <button onClick={() => setChartSource('tradingview')}
+                      className={`px-2.5 py-1 text-[.62rem] font-mono cursor-pointer border-none transition-all ${
+                        chartSource === 'tradingview'
+                          ? 'bg-[#FFA500]/15 text-[#FFA500] font-bold'
+                          : 'bg-transparent text-muted hover:text-txt'
+                      }`}>
+                      TradingView
+                    </button>
+                    <button onClick={() => setChartSource('apex')}
+                      className={`px-2.5 py-1 text-[.62rem] font-mono cursor-pointer border-none transition-all ${
+                        chartSource === 'apex'
+                          ? 'bg-[#FFA500]/15 text-[#FFA500] font-bold'
+                          : 'bg-transparent text-muted hover:text-txt'
+                      }`}>
+                      Live Ticks
+                    </button>
+                  </div>
+                  {chartSource === 'apex' && (
+                    <span className="text-[.55rem] text-muted ml-1">Real-time tick accumulation</span>
+                  )}
+                </div>
+                {chartSource === 'tradingview' && TV_SYMBOL_MAP[perpSelectedToken] ? (
+                  <div className="px-3 py-2">
+                    <TradingViewChart
+                      symbol={TV_SYMBOL_MAP[perpSelectedToken]}
+                      interval="5"
+                      height={620}
+                    />
+                  </div>
+                ) : (
+                  <PerpChart symbol={perpSelectedToken} markPrice={markPrice} positions={perpPositions} />
+                )}
               </div>
 
               {/* Order Panel — order-1 on mobile so it shows first */}
@@ -906,7 +943,17 @@ export default function TradePage() {
               {perpTab === 'positions' && (
                 <div className="overflow-x-auto">
                   {openPositions.length === 0 ? (
-                    <div className="text-muted text-[.76rem] py-10 text-center">No open positions</div>
+                    <div className="flex flex-col items-center gap-3 py-10 text-center">
+                      <div className="text-3xl opacity-40">📈</div>
+                      <div className="text-txt text-[.82rem] font-bold">No open positions</div>
+                      <div className="text-muted text-[.72rem] max-w-xs leading-relaxed">
+                        Open a perpetual position using the order panel — choose long or short with up to 20x leverage.
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[.65rem] text-sea/70 mt-1">
+                        <span>💡</span>
+                        <span>Start with low leverage (2-3x) to manage risk while learning</span>
+                      </div>
+                    </div>
                   ) : (
                     <table className="w-full text-[.7rem]">
                       <thead>
@@ -1406,7 +1453,58 @@ export default function TradePage() {
               {/* Price Chart */}
               {selected && (
                 <div className="px-3 pb-3">
-                  <StockChart symbol={selected.symbol} name={selected.name} price={selected.price} currency={currency} isTTSE={isTTSE} realCandles={isTTSE ? null : realCandles} />
+                  {/* Chart Source Toggle */}
+                  {!isTTSE && TV_SYMBOL_MAP[selected.symbol.toUpperCase()] && (
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1 rounded-lg border border-border overflow-hidden">
+                        <button onClick={() => setChartSource('tradingview')}
+                          className={`px-2.5 py-1 text-[.62rem] font-mono cursor-pointer border-none transition-all ${
+                            chartSource === 'tradingview'
+                              ? 'bg-sea/15 text-sea font-bold'
+                              : 'bg-transparent text-muted hover:text-txt'
+                          }`}>
+                          TradingView
+                        </button>
+                        <button onClick={() => setChartSource('apex')}
+                          className={`px-2.5 py-1 text-[.62rem] font-mono cursor-pointer border-none transition-all ${
+                            chartSource === 'apex'
+                              ? 'bg-sea/15 text-sea font-bold'
+                              : 'bg-transparent text-muted hover:text-txt'
+                          }`}>
+                          Basic
+                        </button>
+                      </div>
+                      <button onClick={() => setShowTAWidget(v => !v)}
+                        className={`text-[.6rem] font-mono px-2 py-0.5 rounded border cursor-pointer transition-all ${
+                          showTAWidget
+                            ? 'border-sea/40 text-sea bg-sea/10'
+                            : 'border-border text-muted hover:text-txt bg-transparent'
+                        }`}>
+                        {showTAWidget ? '📊 Signals ON' : '📊 Signals'}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* TradingView Advanced Chart */}
+                  {chartSource === 'tradingview' && !isTTSE && TV_SYMBOL_MAP[selected.symbol.toUpperCase()] ? (
+                    <TradingViewChart
+                      symbol={TV_SYMBOL_MAP[selected.symbol.toUpperCase()]}
+                      interval="D"
+                      height={620}
+                    />
+                  ) : (
+                    <StockChart symbol={selected.symbol} name={selected.name} price={selected.price} currency={currency} isTTSE={isTTSE} realCandles={isTTSE ? null : realCandles} />
+                  )}
+
+                  {/* Technical Analysis Widget */}
+                  {showTAWidget && !isTTSE && TV_SYMBOL_MAP[selected.symbol.toUpperCase()] && (
+                    <div className="mt-3">
+                      <TradingViewTechnicalAnalysis
+                        symbol={TV_SYMBOL_MAP[selected.symbol.toUpperCase()]}
+                        height={380}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1577,7 +1675,19 @@ export default function TradePage() {
             {paperTab === 'holdings' && (
               <div className="overflow-x-auto">
                 {marketHoldings.length === 0 ? (
-                  <div className="text-muted text-[.76rem] py-10 text-center">No {isTTSE ? 'TTSE' : 'Solana'} holdings yet</div>
+                  <div className="flex flex-col items-center gap-3 py-10 text-center">
+                    <div className="text-3xl opacity-40">{isTTSE ? '🇹🇹' : '📊'}</div>
+                    <div className="text-txt text-[.82rem] font-bold">No {isTTSE ? 'TTSE' : 'Solana'} holdings yet</div>
+                    <div className="text-muted text-[.72rem] max-w-xs leading-relaxed">
+                      {isTTSE
+                        ? 'Select a TTSE stock from the market list and place a paper trade to get started.'
+                        : 'Choose a token above, set your quantity, and execute your first paper trade — no real funds at risk.'}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[.65rem] text-sea/70 mt-1">
+                      <span>💡</span>
+                      <span>Paper trading helps you learn without risking real money</span>
+                    </div>
+                  </div>
                 ) : (
                   <table className="w-full text-[.7rem]">
                     <thead>

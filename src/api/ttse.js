@@ -142,7 +142,9 @@ export async function fetchTTSEData() {
     if (html) {
       const parsed = parseTTSE(html);
       if (parsed.stocks.length > 0) {
-        return { stocks: parsed.stocks, indices: parsed.indices, live: true };
+        // Merge fallback indices for any that failed to parse from HTML
+        const mergedIndices = { ...TTSE_INDICES_FALLBACK, ...parsed.indices };
+        return { stocks: parsed.stocks, indices: mergedIndices, live: true };
       }
     }
   } catch {

@@ -41,8 +41,8 @@ export default function DashboardPage() {
 
   // Top 4 movers by abs 24h change
   const topMovers = (pricesQ.data || [])
-    .filter(t => t.change24h != null)
-    .sort((a, b) => Math.abs(b.change24h) - Math.abs(a.change24h))
+    .filter(t => t.price_change_percentage_24h != null)
+    .sort((a, b) => Math.abs(b.price_change_percentage_24h) - Math.abs(a.price_change_percentage_24h))
     .slice(0, 4);
 
   // Three most recently earned badges
@@ -158,8 +158,22 @@ export default function DashboardPage() {
                 <div key={i} className="h-7 rounded-lg animate-pulse" style={{ background: 'rgba(255,255,255,.05)' }} />
               ))}
             </div>
+          ) : pricesQ.isError ? (
+            <div className="flex flex-col items-center gap-2 py-4">
+              <div className="text-down text-[.78rem]">Failed to load market data</div>
+              <button onClick={() => pricesQ.refetch()}
+                className="bg-transparent border border-down/30 text-down text-[.7rem] px-3 py-1 rounded-lg cursor-pointer hover:bg-down/10 transition-colors font-mono">
+                ↻ Retry
+              </button>
+            </div>
           ) : topMovers.length === 0 ? (
-            <div className="text-muted text-[.78rem]">{t('dashboard.noPrice')}</div>
+            <div className="flex flex-col items-center gap-2 py-4">
+              <div className="text-muted text-[.78rem]">{t('dashboard.noPrice')}</div>
+              <button onClick={() => pricesQ.refetch()}
+                className="bg-transparent border border-border text-muted text-[.7rem] px-3 py-1 rounded-lg cursor-pointer hover:text-txt hover:border-sea/40 transition-colors font-mono">
+                ↻ Refresh
+              </button>
+            </div>
           ) : (
             <div>
               {topMovers.map(t => (
@@ -167,10 +181,10 @@ export default function DashboardPage() {
                   className="flex items-center justify-between py-2.5 border-b border-border last:border-0">
                   <span className="font-mono text-[.8rem] text-txt font-bold">{t.symbol}</span>
                   <div className="flex items-center gap-3">
-                    <span className="text-[.78rem] text-txt-2 font-mono">{fmtUSD(t.price)}</span>
+                    <span className="text-[.78rem] text-txt-2 font-mono">{fmtUSD(t.current_price)}</span>
                     <span className={`text-[.72rem] font-mono font-bold px-1.5 py-0.5 rounded
-                      ${t.change24h >= 0 ? 'text-up bg-up/10' : 'text-down bg-down/10'}`}>
-                      {fmtPct(t.change24h)}
+                      ${t.price_change_percentage_24h >= 0 ? 'text-up bg-up/10' : 'text-down bg-down/10'}`}>
+                      {fmtPct(t.price_change_percentage_24h)}
                     </span>
                   </div>
                 </div>

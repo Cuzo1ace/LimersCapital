@@ -208,7 +208,7 @@ export default function AgentSqueeze() {
         <button onClick={runAnalysis} disabled={loading}
           className={`mt-4 w-full md:w-auto px-6 py-3 rounded-lg font-mono text-[.82rem] font-bold cursor-pointer transition-all
             ${loading ? 'bg-sea/20 text-sea/50' : 'bg-sea/15 text-sea hover:bg-sea/25 border border-sea/30'}`}>
-          {loading ? '\u23F3 Analyzing pools...' : '\uD83D\uDD0D Run Squeeze Analysis'}
+          {loading ? '⏳ Analyzing pools...' : '🔍 Run Squeeze Analysis'}
         </button>
       </div>
 
