@@ -1104,6 +1104,28 @@ const useStore = create(
 
         set({ competitionStats: cs });
       },
+
+      // ── Percolator (On-Chain Perpetuals) ──────────────────────
+      percolatorMode: 'paper',          // 'paper' | 'live'
+      percolatorActiveMarket: null,     // slab pubkey string
+      percolatorSlabState: null,        // parsed { header, config, accounts }
+      percolatorUserIdx: null,          // user's account index in slab
+      percolatorPositions: [],          // live on-chain positions
+
+      setPercolatorMode: (mode) => {
+        const xp = get().xp || 0;
+        if (mode === 'live' && xp < 5000) {
+          get().showToast?.(`Need 5,000 XP to unlock live perps (current: ${xp})`, 'warning');
+          return;
+        }
+        set({ percolatorMode: mode });
+      },
+      setPercolatorActiveMarket: (slabPubkey) => {
+        set({ percolatorActiveMarket: slabPubkey, percolatorSlabState: null });
+      },
+      updatePercolatorSlabState: (state) => set({ percolatorSlabState: state }),
+      setPercolatorUserIdx: (idx) => set({ percolatorUserIdx: idx }),
+      updatePercolatorPositions: (positions) => set({ percolatorPositions: positions }),
     }),
     {
       name: 'caribcrypto-storage',
@@ -1142,6 +1164,8 @@ const useStore = create(
         // Trading Competition
         competitionRegistered: state.competitionRegistered,
         competitionStats: state.competitionStats,
+        // Percolator (on-chain perps mode preference)
+        percolatorMode: state.percolatorMode,
         watchlist: state.watchlist,
         priceAlerts: state.priceAlerts,
         hasSeenOnboarding: state.hasSeenOnboarding,

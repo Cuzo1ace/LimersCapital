@@ -115,7 +115,8 @@ export default function TradePage() {
           unlockedFeatures, limitOrders, addLimitOrder, cancelLimitOrder, checkLimitOrders,
           perpPositions, perpTradeCount, perpTotalPnl, openPerpPosition, closePerpPosition,
           checkPerpLiquidations, accruePerpFunding, checkPerpSLTP, updatePerpSLTP,
-          adjustPerpMargin, checkTrailingStops, perpEventLog, logPerpEvent } = useStore();
+          adjustPerpMargin, checkTrailingStops, perpEventLog, logPerpEvent,
+          percolatorMode, setPercolatorMode } = useStore();
   const marketQ = useQuery({
     queryKey: ['trade-prices'],
     queryFn: fetchTradePrices,
@@ -654,7 +655,23 @@ export default function TradePage() {
                   {totalUnrealizedPnl >= 0 ? '+' : ''}{fmtUSD(totalUnrealizedPnl)}
                 </span>
               </div>
-              <span className="ml-auto text-[.58rem] text-muted px-2 py-0.5 border border-border rounded flex-shrink-0">PAPER</span>
+              {/* Paper ↔ Live Toggle */}
+              <div className="ml-auto flex items-center gap-1.5 flex-shrink-0">
+                <button
+                  onClick={() => percolatorMode === 'paper' ? setPercolatorMode('live') : setPercolatorMode('paper')}
+                  className={`text-[.58rem] px-2 py-0.5 border rounded cursor-pointer transition-all ${
+                    percolatorMode === 'live'
+                      ? 'bg-up/15 text-up border-up/40 hover:bg-up/25'
+                      : 'text-muted border-border hover:text-txt hover:border-sea/40'
+                  }`}
+                  title={percolatorMode === 'paper' ? 'Switch to live on-chain perps (requires 5,000 XP)' : 'Switch back to paper trading'}
+                >
+                  {percolatorMode === 'live' ? '⚡ LIVE' : '📄 PAPER'}
+                </button>
+                {percolatorMode === 'live' && (
+                  <span className="text-[.5rem] text-up/60 animate-pulse">ON-CHAIN</span>
+                )}
+              </div>
             </div>
 
             {/* ─── Long / Short Toggle — Full Width ─── */}
