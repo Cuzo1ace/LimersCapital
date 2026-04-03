@@ -13,7 +13,7 @@ export default function FAQPage() {
         style={{ background: 'linear-gradient(135deg, var(--color-night-2) 0%, rgba(0,255,163,.06) 100%)' }}>
         <div className="text-[3rem] mb-3">🆕</div>
         <h1 className="font-headline text-[2rem] font-black text-txt mb-2">
-          New to Crypto?
+          New to Digital Assets?
         </h1>
         <p className="text-[.85rem] text-txt-2 max-w-lg mx-auto leading-relaxed">
           No jargon, no judgment. Here are the most common questions from people just like you who are exploring crypto for the first time.

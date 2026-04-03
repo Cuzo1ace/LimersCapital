@@ -1,5 +1,5 @@
 /**
- * FAQ entries for the "New to Crypto?" page.
+ * FAQ entries for the "New to Digital Assets?" page.
  * Written in plain English with Caribbean context.
  */
 export const FAQ_ITEMS = [

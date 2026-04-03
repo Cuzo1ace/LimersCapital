@@ -12,6 +12,7 @@ const SOLFLARE_LINK = 'https://www.solflare.com/?af_qr=true&shortlink=carribean&
 
 const MAIN_TABS = [
   { id: 'regulation', label: 'Regulation', icon: '🗺️' },
+  { id: 'faq',        label: 'New to Digital Assets?', icon: '🆕' },
   { id: 'learn',      label: 'Learn',      icon: '📚' },
   { id: 'ttse',       label: 'TTSE',       icon: '🇹🇹', ttse: true },
   { id: 'insights',   label: 'Insights',   icon: '🌐' },
@@ -21,7 +22,6 @@ const MAIN_TABS = [
 ];
 
 const LIMER_TABS = [
-  { id: 'faq',        label: 'New to Crypto?', icon: '🆕' },
   { id: 'about',      label: 'About',      icon: '📖' },
   { id: 'competition', label: 'Competition', icon: '🏆' },
   { id: 'points',     label: 'Points',     icon: '🍋' },

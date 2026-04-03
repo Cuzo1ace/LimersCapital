@@ -100,7 +100,7 @@ export default function DashboardPage() {
                   className="px-4 py-2 rounded-xl text-[.78rem] font-bold
                     bg-transparent border border-border text-muted cursor-pointer
                     hover:text-txt hover:border-white/20 transition-colors">
-                  New to crypto? Read the FAQ
+                  New to Digital Assets? Read the FAQ
                 </button>
               </div>
             </div>

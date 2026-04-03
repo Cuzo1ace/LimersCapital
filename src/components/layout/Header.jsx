@@ -21,6 +21,7 @@ const LANGS = [
 
 const TABS = [
   { id: 'regulation', labelKey: 'nav.regulation', icon: '\u{1F5FA}\uFE0F' },
+  { id: 'faq',        label: 'New to Digital Assets?', icon: '\u{1F195}' },
   { id: 'learn',      labelKey: 'nav.learn',      icon: '\u{1F4DA}' },
   { id: 'ttse',       labelKey: 'nav.ttse',       icon: '\u{1F1F9}\u{1F1F9}', ttse: true },
   { id: 'insights',   labelKey: 'nav.insights',   icon: '\u{1F310}' },
@@ -52,7 +53,6 @@ export default function Header() {
   const { cluster, setCluster, label: clusterLabel } = useCluster();
 
   const LIME_TABS = [
-    { id: 'faq', label: 'New to Crypto?', icon: '🆕' },
     { id: 'about', label: 'About', icon: '📖' },
     { id: 'competition', label: 'Competition', icon: '🏆' },
     { id: 'points', label: 'Points', icon: '🍋' },
@@ -126,7 +126,7 @@ export default function Header() {
                   }
                 `}
               >
-                {tab.icon} {t(tab.labelKey)}
+                {tab.icon} {tab.label || t(tab.labelKey)}
               </button>
             ))}
           </nav>
