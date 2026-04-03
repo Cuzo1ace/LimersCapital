@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { BN } from '@coral-xyz/anchor';
+import { BN } from '@anchor-lang/core';
 import { PublicKey } from '@solana/web3.js';
 import { getLimerProgram, getUserProfilePDA, getTradeLogPDA } from './program';
 

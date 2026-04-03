@@ -1,4 +1,4 @@
-import { Program, AnchorProvider } from '@coral-xyz/anchor';
+import { Program, AnchorProvider } from '@anchor-lang/core';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { CLUSTERS, DEFAULT_CLUSTER } from './config';
 
