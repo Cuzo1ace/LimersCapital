@@ -491,13 +491,23 @@ const useStore = create(
       // ── Onboarding ─────────────────────────────────────────
       hasSeenOnboarding: false,
       setHasSeenOnboarding: (v) => set({ hasSeenOnboarding: v }),
+      hasSeenPaperModal: false,
+      setHasSeenPaperModal: (v) => set({ hasSeenPaperModal: v }),
+      showWalletWizard: false,
+      setShowWalletWizard: (v) => set({ showWalletWizard: v }),
+      tradeMode: 'simple', // 'simple' | 'advanced'
+      setTradeMode: (v) => set({ tradeMode: v }),
+      currencyDisplay: 'USD', // 'USD' | 'TTD'
+      setCurrencyDisplay: (v) => set({ currencyDisplay: v }),
       hasSeenLearnHero: false,
       setHasSeenLearnHero: (v) => set({ hasSeenLearnHero: v }),
       experienceLevel: null, // 'beginner' | 'intermediate' | 'advanced'
       eli5Mode: false,
       setExperienceLevel: (level) => {
         set({ experienceLevel: level });
-        if (level === 'beginner') set({ eli5Mode: true });
+        if (level === 'beginner') {
+          set({ eli5Mode: true, theme: 'light', tradeMode: 'simple' });
+        }
       },
       setEli5Mode: (v) => set({ eli5Mode: v }),
       activeLevel: 'basics', // 'basics' | 'intermediate' | 'advanced'
@@ -1169,6 +1179,10 @@ const useStore = create(
         watchlist: state.watchlist,
         priceAlerts: state.priceAlerts,
         hasSeenOnboarding: state.hasSeenOnboarding,
+        hasSeenPaperModal: state.hasSeenPaperModal,
+        showWalletWizard: state.showWalletWizard,
+        tradeMode: state.tradeMode,
+        currencyDisplay: state.currencyDisplay,
         hasSeenLearnHero: state.hasSeenLearnHero,
         experienceLevel: state.experienceLevel,
         eli5Mode: state.eli5Mode,

@@ -31,6 +31,10 @@ import { RISK_BANNER } from '../data/legal';
 import JupiterSwap from '../components/JupiterSwap';
 import PerpChart from '../components/PerpChart';
 import { TradingViewChart, TradingViewTechnicalAnalysis, TV_SYMBOL_MAP } from '../components/charts';
+import PaperTradingModal from '../components/PaperTradingModal';
+import WalletSetupWizard from '../components/WalletSetupWizard';
+import ContextualHelp from '../components/ContextualHelp';
+import Tooltip from '../components/ui/Tooltip';
 
 // Inline SL/TP editor for positions table
 function SLTPEditor({ pos, curPrice, onSave, onCancel }) {
@@ -117,7 +121,8 @@ export default function TradePage() {
           perpPositions, perpTradeCount, perpTotalPnl, openPerpPosition, closePerpPosition,
           checkPerpLiquidations, accruePerpFunding, checkPerpSLTP, updatePerpSLTP,
           adjustPerpMargin, checkTrailingStops, perpEventLog, logPerpEvent,
-          percolatorMode, setPercolatorMode } = useStore();
+          percolatorMode, setPercolatorMode,
+          tradeMode, setTradeMode, showWalletWizard, setShowWalletWizard } = useStore();
   const marketQ = useQuery({
     queryKey: ['trade-prices'],
     queryFn: fetchTradePrices,
@@ -299,11 +304,38 @@ export default function TradePage() {
 
   return (
     <div className="overflow-x-hidden">
+      {/* Paper Trading Explainer Modal — shows once */}
+      {market !== 'jupiter' && <PaperTradingModal />}
+
       {/* ── Risk Disclosure Banner ──────────────────────────── */}
       <div className="flex items-start gap-2.5 rounded-xl px-4 py-3 mb-5 border border-[rgba(251,146,60,.25)] bg-[rgba(251,146,60,.06)] text-[.76rem] text-[#FB923C] font-body">
         <span className="flex-shrink-0 mt-0.5">&#9888;&#65039;</span>
         <span>{RISK_BANNER.trade}</span>
       </div>
+
+      {/* Simple / Advanced Mode Toggle */}
+      {market === 'solana' && (
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-[.68rem] text-muted">Mode:</span>
+            <div className="flex rounded-lg overflow-hidden border border-border">
+              <button onClick={() => setTradeMode('simple')}
+                className={`px-3 py-1.5 text-[.68rem] font-bold cursor-pointer border-none transition-all
+                  ${tradeMode === 'simple' ? 'bg-sea/15 text-sea' : 'bg-transparent text-muted hover:text-txt'}`}>
+                Simple
+              </button>
+              <button onClick={() => setTradeMode('advanced')}
+                className={`px-3 py-1.5 text-[.68rem] font-bold cursor-pointer border-none transition-all
+                  ${tradeMode === 'advanced' ? 'bg-sea/15 text-sea' : 'bg-transparent text-muted hover:text-txt'}`}>
+                Advanced
+              </button>
+            </div>
+          </div>
+          <span className="text-[.6rem] text-muted">
+            {tradeMode === 'simple' ? 'Simplified view — pick, amount, trade' : 'Full order types, charts, and alerts'}
+          </span>
+        </div>
+      )}
 
       {/* ── Trade Confirmation Modal ─────────────────────────── */}
       {confirmPending && (
@@ -376,34 +408,44 @@ export default function TradePage() {
         </div>
       </a>
 
-      {/* Wallet Connection Banner */}
+      {/* Wallet Connection — Wizard or compact banner */}
       {!walletConnected && (
-        <div className="rounded-xl border border-sea/30 p-4 md:p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-5"
-          style={{ background: 'linear-gradient(135deg, rgba(0,255,163,.06), rgba(252,92,62,.04))' }}>
-          <div className="text-3xl">🔗</div>
-          <div className="flex-1">
-            <div className="font-body font-bold text-[.92rem] text-txt mb-1">Connect your Solflare wallet to trade</div>
-            <div className="text-[.75rem] text-txt-2 leading-relaxed">
-              Use Solflare to access your Solana wallet, or top up your TTD account with Wam. Paper trading is available without a wallet.
+        showWalletWizard ? (
+          <WalletSetupWizard onClose={() => setShowWalletWizard(false)} />
+        ) : (
+          <div className="rounded-xl border border-sea/30 p-4 md:p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-5"
+            style={{ background: 'linear-gradient(135deg, rgba(0,255,163,.06), rgba(252,92,62,.04))' }}>
+            <div className="text-3xl">🔗</div>
+            <div className="flex-1">
+              <div className="font-body font-bold text-[.92rem] text-txt mb-1">Connect your Solflare wallet to trade</div>
+              <div className="text-[.75rem] text-txt-2 leading-relaxed">
+                Use Solflare to access your Solana wallet, or top up your TTD account with Wam. Paper trading is available without a wallet.
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0 w-full sm:w-auto">
+              <button onClick={() => setShowWalletWizard(true)}
+                className="flex items-center justify-center gap-1.5 bg-sea/8 border border-sea/25
+                  rounded-lg px-4 py-2.5 text-[.75rem] font-body font-bold text-sea cursor-pointer
+                  transition-all hover:bg-sea/15">
+                What is a wallet?
+              </button>
+              <a href={WAM_LINK} target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 bg-[rgba(255,215,0,.08)] border border-[rgba(255,215,0,.28)]
+                  rounded-lg px-4 py-2.5 text-[.75rem] font-body font-bold text-[#FFD700] no-underline
+                  transition-all hover:bg-[rgba(255,215,0,.14)]">
+                <span className="w-4 h-4 rounded bg-[#FFD700] flex items-center justify-center text-[.5rem] font-black text-night">W</span>
+                Top up with Wam
+              </a>
+              <a href={SOLFLARE_LINK} target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 border-none no-underline
+                  text-white px-4 py-2.5 rounded-lg text-[.75rem] font-body font-extrabold cursor-pointer
+                  transition-all hover:-translate-y-0.5"
+                style={{ background: `linear-gradient(135deg, ${SOLFLARE_ORANGE}, #FF8C42)`, boxShadow: '0 0 20px rgba(252,86,2,.35)' }}>
+                ☀ Get Solflare
+              </a>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0 w-full sm:w-auto">
-            <a href={WAM_LINK} target="_blank" rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 bg-[rgba(255,215,0,.08)] border border-[rgba(255,215,0,.28)]
-                rounded-lg px-4 py-2.5 text-[.75rem] font-body font-bold text-[#FFD700] no-underline
-                transition-all hover:bg-[rgba(255,215,0,.14)]">
-              <span className="w-4 h-4 rounded bg-[#FFD700] flex items-center justify-center text-[.5rem] font-black text-night">W</span>
-              Top up with Wam
-            </a>
-            <a href={SOLFLARE_LINK} target="_blank" rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 border-none no-underline
-                text-white px-4 py-2.5 rounded-lg text-[.75rem] font-body font-extrabold cursor-pointer
-                transition-all hover:-translate-y-0.5"
-              style={{ background: `linear-gradient(135deg, ${SOLFLARE_ORANGE}, #FF8C42)`, boxShadow: '0 0 20px rgba(252,86,2,.35)' }}>
-              ☀ Get Solflare
-            </a>
-          </div>
-        </div>
+        )
       )}
 
       {/* Dual Balance Bar */}
@@ -1532,26 +1574,28 @@ export default function TradePage() {
                 </button>
               </div>
 
-              {/* Order Type Tabs */}
-              <div className="flex gap-1">
-                {['market', 'limit'].map(ot => {
-                  if (ot === 'limit' && !hasLimitOrders) {
+              {/* Order Type Tabs — hidden in simple mode */}
+              {tradeMode === 'advanced' && (
+                <div className="flex gap-1">
+                  {['market', 'limit'].map(ot => {
+                    if (ot === 'limit' && !hasLimitOrders) {
+                      return (
+                        <button key={ot} onClick={() => flash('error', 'Complete Module 3 in Learn to unlock Limit Orders')}
+                          className="flex-1 py-1.5 rounded text-[.68rem] font-bold uppercase cursor-pointer border border-transparent bg-transparent text-muted/50 flex items-center justify-center gap-1">
+                          🔒 Limit
+                        </button>
+                      );
+                    }
                     return (
-                      <button key={ot} onClick={() => flash('error', 'Complete Module 3 in Learn to unlock Limit Orders')}
-                        className="flex-1 py-1.5 rounded text-[.68rem] font-bold uppercase cursor-pointer border border-transparent bg-transparent text-muted/50 flex items-center justify-center gap-1">
-                        🔒 Limit
+                      <button key={ot} onClick={() => setOrderType(ot)}
+                        className={`flex-1 py-1.5 rounded text-[.68rem] font-bold uppercase cursor-pointer border transition-all
+                          ${orderType === ot ? 'border-border bg-white/5 text-txt' : 'border-transparent bg-transparent text-muted hover:text-txt'}`}>
+                        {ot}
                       </button>
                     );
-                  }
-                  return (
-                    <button key={ot} onClick={() => setOrderType(ot)}
-                      className={`flex-1 py-1.5 rounded text-[.68rem] font-bold uppercase cursor-pointer border transition-all
-                        ${orderType === ot ? 'border-border bg-white/5 text-txt' : 'border-transparent bg-transparent text-muted hover:text-txt'}`}>
-                      {ot}
-                    </button>
-                  );
-                })}
-              </div>
+                  })}
+                </div>
+              )}
 
               {/* Asset Select */}
               <div className="flex flex-col gap-1">
@@ -1574,18 +1618,20 @@ export default function TradePage() {
                 <input type="number" value={qty} onChange={e => setQty(e.target.value)}
                   placeholder={isTTSE ? 'Shares' : '0.00'} min="0" step="any"
                   className="bg-black/30 border border-border text-txt rounded px-2.5 py-1.5 font-mono text-[.76rem] outline-none focus:border-sea/60" />
-                <div className="flex gap-1">
-                  {[10, 25, 50, 100].map(pct => (
-                    <button key={pct} onClick={() => {
-                      if (!price || price <= 0) return;
-                      const maxQty = (balance * pct / 100) / price;
-                      setQty(String(maxQty.toFixed(isTTSE ? 0 : 6)));
-                    }}
-                      className="flex-1 py-1 rounded text-[.6rem] font-mono cursor-pointer border border-border bg-transparent text-muted hover:text-txt hover:border-white/20 transition-all">
-                      {pct}%
-                    </button>
-                  ))}
-                </div>
+                {tradeMode === 'advanced' && (
+                  <div className="flex gap-1">
+                    {[10, 25, 50, 100].map(pct => (
+                      <button key={pct} onClick={() => {
+                        if (!price || price <= 0) return;
+                        const maxQty = (balance * pct / 100) / price;
+                        setQty(String(maxQty.toFixed(isTTSE ? 0 : 6)));
+                      }}
+                        className="flex-1 py-1 rounded text-[.6rem] font-mono cursor-pointer border border-border bg-transparent text-muted hover:text-txt hover:border-white/20 transition-all">
+                        {pct}%
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Limit Price */}
@@ -1839,6 +1885,17 @@ export default function TradePage() {
         </div>
         );
       })() : null}
+
+      {/* Contextual Help Panel */}
+      <ContextualHelp pageTitle="Trading" items={[
+        { title: 'What is paper trading?', content: 'Paper trading lets you practice buying and selling with virtual money ($100K). No real money is involved — it\'s a risk-free way to learn how markets work.' },
+        { title: 'What are tokens?', content: 'Tokens are digital assets on a blockchain. SOL is the main token of Solana. Others like USDC (digital dollar), JUP, and BONK each serve different purposes — similar to stocks.' },
+        { title: 'Buy vs Sell', content: 'Buy means you\'re purchasing a token — you think its price will go up. Sell means you\'re selling tokens you already own — you want to lock in profits or cut losses.' },
+        { title: 'What is a Market Order?', content: 'A market order buys or sells immediately at the current price. It\'s the simplest type — just pick a token, enter an amount, and click Buy or Sell.' },
+        { title: 'What is a Limit Order?', content: 'A limit order lets you set a specific price. Your order only executes when the market reaches that price. Useful for buying dips or selling at a target.' },
+        { title: 'What are Perpetuals?', content: 'Perpetual futures (perps) let you bet on price movements with leverage — meaning you can control a bigger position with less money. Higher risk, higher potential reward.' },
+        { title: 'What does Fee (0.3%) mean?', content: 'Each trade has a small 0.3% fee. On a $100 trade, the fee is $0.30. In paper trading this is simulated. On real swaps via Jupiter, fees are typically 0.25-0.5%.' },
+      ]} />
     </div>
   );
 }

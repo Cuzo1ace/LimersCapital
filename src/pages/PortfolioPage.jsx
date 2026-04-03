@@ -13,6 +13,8 @@ import { getAccountExplorerUrl } from '../solana/config';
 import { getTier } from '../data/gamification';
 import { RISK_BANNER } from '../data/legal';
 import { useLimerActions } from '../solana/bridge';
+import Tooltip from '../components/ui/Tooltip';
+import ContextualHelp from '../components/ContextualHelp';
 
 const fmtUSD = n => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtTTD = n => n == null ? '—' : 'TT$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -222,12 +224,28 @@ export default function PortfolioPage() {
         <DashCard label="TTD Cash" value={fmtTTD(balanceTTD)} sub="TTSE balance" color="text-[#FF4D6D]" />
         <DashCard label="Holdings (USD)" value={fmtUSD(solValue + ttseValue / TTD_RATE)} sub={`${solHoldings.length + ttseHoldings.length} positions`} />
         <DashCard
-          label="Total P&L"
+          label={<span className="flex items-center gap-1.5">Total P&L <Tooltip term="P&L" def="Profit & Loss — shows how much your investments have grown or shrunk since you bought them. Green (+) means profit, red (-) means loss." inline={false} /></span>}
           value={`${totalPnl >= 0 ? '+' : ''}${fmtUSD(totalPnl)}`}
           sub={`${totalPnlPct >= 0 ? '+' : ''}${totalPnlPct.toFixed(2)}%`}
           color={totalPnl >= 0 ? 'text-up' : 'text-down'}
         />
       </div>
+
+      {/* P&L Explainer for new users */}
+      {trades.length === 0 && (
+        <div className="rounded-xl border border-border p-4 mb-6 flex items-start gap-3"
+          style={{ background: 'var(--color-card)' }}>
+          <span className="text-xl flex-shrink-0">💡</span>
+          <div>
+            <div className="font-body font-bold text-[.82rem] text-txt mb-1">Understanding Your Portfolio</div>
+            <div className="text-[.72rem] text-txt-2 leading-relaxed">
+              <strong>P&L</strong> stands for Profit & Loss — it shows whether your investments went up or down.
+              Green numbers mean you&apos;re in profit, red means a loss. Your <strong>Holdings</strong> show
+              which tokens you own. Start by making a paper trade to see your portfolio come alive!
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Portfolio Value Chart */}
       <div className="mb-6">
@@ -369,6 +387,13 @@ export default function PortfolioPage() {
           ))}
         </div>
       )}
+      {/* Contextual Help */}
+      <ContextualHelp pageTitle="Portfolio" items={[
+        { title: 'What is P&L?', content: 'Profit & Loss (P&L) shows how much money you\'ve made or lost on your trades. If you bought SOL at $70 and it\'s now $80, your P&L is +$10 per token (profit). If it dropped to $60, your P&L is -$10 (loss).' },
+        { title: 'What are Holdings?', content: 'Holdings are the tokens or stocks you currently own. When you buy something, it appears in your holdings. When you sell it all, it disappears. Your holdings value changes as market prices move.' },
+        { title: 'USD vs TTD', content: 'USD (US Dollar) is used for Solana token trading. TTD (Trinidad & Tobago Dollar) is used for TTSE stock trading. You have separate balances for each — they don\'t mix.' },
+        { title: 'What is a paper trade?', content: 'A paper trade is a simulated trade using virtual money. It works exactly like real trading but with no risk. Your $100K USD and TT$679K TTD are virtual starting balances.' },
+      ]} />
     </div>
   );
 }

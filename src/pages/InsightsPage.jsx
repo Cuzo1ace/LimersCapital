@@ -9,6 +9,8 @@ import {
 } from '../api/insights';
 import { SkeletonRows, SkeletonCard } from '../components/ui/Skeleton';
 import RemittanceCalculator from '../components/RemittanceCalculator';
+import Tooltip from '../components/ui/Tooltip';
+import ContextualHelp from '../components/ContextualHelp';
 import {
   fetchEconomicCalendar, fetchEarningsCalendar,
   fetchMarketNews, fetchCongressionalTrading,
@@ -136,10 +138,14 @@ export default function InsightsPage() {
           </p>
         </div>
         <div className="grid grid-cols-2 gap-3.5">
-          <HeroStat label="Total Mkt Cap" value={g ? fmt(g.totalMarketCap) : '—'} sub={g && <Chg value={g.marketCapChange24h} />} />
-          <HeroStat label="BTC Dominance" value={g ? `${g.btcDominance.toFixed(1)}%` : '—'} sub={g ? `ETH ${g.ethDominance.toFixed(1)}%` : ''} />
-          <HeroStat label="Solana TVL" value={tvlQ.data ? fmt(tvlQ.data) : '—'} sub="DeFiLlama" />
-          <HeroStat label="24h Volume" value={g ? fmt(g.totalVolume) : '—'} sub={g ? `${g.activeCryptos.toLocaleString()} assets` : ''} />
+          <HeroStat label="Total Mkt Cap" value={g ? fmt(g.totalMarketCap) : '—'} sub={g && <Chg value={g.marketCapChange24h} />}
+            info="Market Cap = Price x Supply. This is the total value of ALL cryptocurrencies combined — like measuring the size of the entire crypto market." />
+          <HeroStat label="BTC Dominance" value={g ? `${g.btcDominance.toFixed(1)}%` : '—'} sub={g ? `ETH ${g.ethDominance.toFixed(1)}%` : ''}
+            info="What percentage of the total crypto market is Bitcoin. When BTC dominance is high, money is concentrated in Bitcoin. When low, money is flowing into smaller coins." />
+          <HeroStat label="Solana TVL" value={tvlQ.data ? fmt(tvlQ.data) : '—'} sub="DeFiLlama"
+            info="Total Value Locked — the total amount of money deposited in Solana's DeFi apps. Higher TVL means more people trust and use Solana's financial tools." />
+          <HeroStat label="24h Volume" value={g ? fmt(g.totalVolume) : '—'} sub={g ? `${g.activeCryptos.toLocaleString()} assets` : ''}
+            info="How much crypto was traded in the last 24 hours across all exchanges. High volume means lots of buying and selling activity." />
         </div>
       </div>
 
@@ -148,6 +154,43 @@ export default function InsightsPage() {
           className="bg-transparent border border-border text-sea cursor-pointer rounded-lg px-5 py-2 text-[.75rem] font-mono transition-all hover:bg-sea/10">
           ↻ Refresh All
         </button>
+      </div>
+
+      {/* ── Tokens.xyz — Solana Token Discovery ─────────────────── */}
+      <div className="rounded-[14px] p-5 mb-4 border border-[rgba(139,92,246,.2)] relative overflow-hidden"
+        style={{ background: 'linear-gradient(135deg, rgba(139,92,246,.06) 0%, var(--color-card) 100%)' }}>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-[rgba(139,92,246,.08)] rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-9 h-9 rounded-full bg-[rgba(139,92,246,.15)] flex items-center justify-center text-lg">🪙</div>
+          <div className="flex-1">
+            <div className="text-[.78rem] font-body font-bold text-txt">Solana Token Discovery</div>
+            <div className="text-[.62rem] text-muted">Real-world assets & crypto on Solana — powered by tokens.xyz</div>
+          </div>
+          <a href="https://www.tokens.xyz/" target="_blank" rel="noopener noreferrer"
+            className="text-[.7rem] font-body font-bold px-3 py-1.5 rounded-lg bg-[rgba(139,92,246,.12)] border border-[rgba(139,92,246,.3)] text-[#8B5CF6] no-underline hover:bg-[rgba(139,92,246,.2)] transition-all">
+            Explore →
+          </a>
+        </div>
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          {[
+            { label: 'Stocks',      count: 219, icon: '📈', path: 'AAPL' },
+            { label: 'ETFs',        count: 24,  icon: '🏦', path: 'SPY' },
+            { label: 'Treasuries',  count: 15,  icon: '🏛️', path: 'TBILL' },
+            { label: 'Currencies',  count: 14,  icon: '💱', path: 'EUR' },
+            { label: 'Crypto',      count: 13,  icon: '₿',  path: 'SOL' },
+            { label: 'Metals',      count: 4,   icon: '🥇', path: 'XAU' },
+          ].map(cat => (
+            <a key={cat.label} href={`https://www.tokens.xyz/${cat.path}`} target="_blank" rel="noopener noreferrer"
+              className="rounded-xl border border-border bg-white/[.03] hover:bg-white/[.07] p-3 text-center no-underline transition-all cursor-pointer group">
+              <div className="text-lg mb-1">{cat.icon}</div>
+              <div className="text-[.92rem] font-headline font-black text-txt group-hover:text-[#8B5CF6] transition-colors">{cat.count}</div>
+              <div className="text-[.58rem] text-muted uppercase tracking-wider">{cat.label}</div>
+            </a>
+          ))}
+        </div>
+        <div className="mt-3 text-[.6rem] text-muted">
+          Trade tokenised real-world assets on Solana — stocks, ETFs, treasuries & more. No API integration yet — visit tokens.xyz directly.
+        </div>
       </div>
 
       {/* ── AI Market Intelligence ──────────────────────────────── */}
@@ -579,14 +622,27 @@ export default function InsightsPage() {
         ))}
         <span className="text-[.63rem] text-muted ml-auto">All free-tier · No API keys required</span>
       </div>
+
+      {/* Contextual Help */}
+      <ContextualHelp pageTitle="Market Insights" items={[
+        { title: 'What is Market Cap?', content: 'Market capitalization (Market Cap) = Price x Circulating Supply. It measures how much a crypto project is worth in total. A higher market cap generally means a more established project.' },
+        { title: 'What is TVL?', content: 'Total Value Locked (TVL) is the amount of money deposited in DeFi protocols. Think of it like total deposits at a bank — more deposits usually means more trust and activity.' },
+        { title: 'What are RWA tokens?', content: 'Real-World Assets (RWAs) are blockchain tokens that represent physical assets — like bonds, real estate, or gold. They let you invest in traditional assets using crypto technology.' },
+        { title: 'What is DeFi?', content: 'Decentralized Finance (DeFi) refers to financial services built on blockchain — lending, borrowing, trading — without traditional banks. Smart contracts handle everything automatically.' },
+        { title: 'What is BTC Dominance?', content: 'BTC Dominance shows what percentage of the total crypto market is Bitcoin. When it goes up, money is flowing into Bitcoin. When it drops, money is moving into alternative coins (altcoins).' },
+        { title: 'Caribbean FX Rates', content: 'These show how local Caribbean currencies (TTD, JMD, BBD, etc.) compare to the US Dollar. Important for understanding the real cost of crypto in your local currency.' },
+      ]} />
     </div>
   );
 }
 
-function HeroStat({ label, value, sub }) {
+function HeroStat({ label, value, sub, info }) {
   return (
     <div className="bg-sea/6 border border-border rounded-xl p-4">
-      <div className="text-[.68rem] text-muted uppercase tracking-widest mb-1.5">{label}</div>
+      <div className="text-[.68rem] text-muted uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+        {label}
+        {info && <Tooltip term={label} def={info} inline={false} />}
+      </div>
       <div className="font-body text-[1.45rem] font-extrabold text-txt">{value}</div>
       {sub && <div className="text-[.72rem] mt-1">{sub}</div>}
     </div>

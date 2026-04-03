@@ -9,6 +9,8 @@ import GlowCard from '../components/ui/GlowCard';
 import AchievementBadge from '../components/gamification/AchievementBadge';
 import LiquidMetalButton from '../components/ui/LiquidMetalButton';
 import GradientDots from '../components/ui/GradientDots';
+import CommunityFeed from '../components/CommunityFeed';
+import Tooltip from '../components/ui/Tooltip';
 
 export default function DashboardPage() {
   const { t } = useTranslation();
@@ -74,6 +76,57 @@ export default function DashboardPage() {
 
   return (
     <div>
+      {/* Start Here banner — guides new users to their first action */}
+      {trades.length === 0 && modulesCompleted.length === 0 && (
+        <div className="rounded-xl border border-sea/25 p-6 mb-6"
+          style={{ background: 'linear-gradient(135deg, rgba(0,255,163,.08) 0%, rgba(0,255,163,.02) 100%)' }}>
+          <div className="flex items-start gap-5 flex-wrap">
+            <div className="text-[2.5rem]">🎯</div>
+            <div className="flex-1 min-w-[200px]">
+              <h2 className="font-headline text-[1.2rem] font-black text-txt mb-1">Welcome! Start Here</h2>
+              <p className="text-[.8rem] text-txt-2 leading-relaxed mb-4">
+                Complete the <strong>Foundations</strong> course (3 short lessons, ~10 minutes) to understand
+                the basics and earn your first 150 <Tooltip term="XP" def="Experience Points — earned by learning and trading. XP unlocks new tiers and features." inline>XP</Tooltip>.
+                Then try a risk-free paper trade with your virtual $100K.
+              </p>
+              <div className="flex gap-3 flex-wrap">
+                <LiquidMetalButton
+                  label="Start Foundations Course"
+                  icon="📚"
+                  onClick={() => setActiveTab('learn')}
+                  width={260}
+                />
+                <button onClick={() => setActiveTab('faq')}
+                  className="px-4 py-2 rounded-xl text-[.78rem] font-bold
+                    bg-transparent border border-border text-muted cursor-pointer
+                    hover:text-txt hover:border-white/20 transition-colors">
+                  New to crypto? Read the FAQ
+                </button>
+              </div>
+            </div>
+            <div className="hidden md:flex flex-col gap-1 text-[.68rem] text-muted">
+              <div className="flex items-center gap-2">
+                <span className={`w-5 h-5 rounded-full text-[.55rem] flex items-center justify-center
+                  ${modulesCompleted.length > 0 ? 'bg-up/20 text-up' : 'bg-white/8 text-muted'}`}>
+                  {modulesCompleted.length > 0 ? '✓' : '1'}
+                </span> Learn basics
+              </div>
+              <div className="w-px h-3 bg-white/10 ml-2.5" />
+              <div className="flex items-center gap-2">
+                <span className={`w-5 h-5 rounded-full text-[.55rem] flex items-center justify-center
+                  ${trades.length > 0 ? 'bg-up/20 text-up' : 'bg-white/8 text-muted'}`}>
+                  {trades.length > 0 ? '✓' : '2'}
+                </span> Paper trade
+              </div>
+              <div className="w-px h-3 bg-white/10 ml-2.5" />
+              <div className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full text-[.55rem] flex items-center justify-center bg-white/8 text-muted">3</span> Earn badges
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Welcome Header ── */}
       <div className="rounded-xl p-6 md:p-8 mb-6 border border-border relative overflow-hidden"
         style={{ background: 'linear-gradient(135deg, var(--color-night-2) 0%, rgba(0,255,163,.06) 100%)' }}>
@@ -107,7 +160,9 @@ export default function DashboardPage() {
           <div className="text-right flex-shrink-0">
             <div className="font-headline text-[1.9rem] font-black" style={{ color: '#2D9B56' }}>
               {fmtNum(limerPoints)}
-              <span className="text-[.88rem] ml-1 font-body font-bold text-muted">LP</span>
+              <Tooltip term="LP" def="Limer Points — loyalty points earned from learning, trading, and daily activity. LP will convert to $LIMER tokens during the airdrop." inline>
+                <span className="text-[.88rem] ml-1 font-body font-bold text-muted">LP</span>
+              </Tooltip>
             </div>
             <div className="text-[.7rem] text-muted">+{fmtNum(lpThisWeek)} this week</div>
             {lpMultiplier > 1 && (
@@ -298,7 +353,7 @@ export default function DashboardPage() {
           <div className="text-[3rem] mb-3">🌴</div>
           <div className="font-body font-bold text-[1rem] text-txt mb-2">{t('onboarding.welcome')}</div>
           <div className="text-[.78rem] text-txt-2 mb-5 max-w-sm mx-auto leading-relaxed">
-            The Caribbean's Solana-native investment platform. Learn, paper trade, earn LP points, and get
+            The Caribbean's Solana-native investment platform. Learn, paper trade, earn <Tooltip term="LP" def="Limer Points — loyalty points earned from all platform activity. LP will convert to $LIMER tokens during the airdrop." inline>LP</Tooltip> points, and get
             ready for the $LIMER token airdrop.
           </div>
           <div className="flex gap-4 justify-center flex-wrap">
@@ -317,6 +372,11 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Community Activity Feed */}
+      <div className="mt-6">
+        <CommunityFeed limit={5} />
+      </div>
     </div>
   );
 }

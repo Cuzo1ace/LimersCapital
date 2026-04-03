@@ -21,6 +21,7 @@ const MAIN_TABS = [
 ];
 
 const LIMER_TABS = [
+  { id: 'faq',        label: 'New to Crypto?', icon: '🆕' },
   { id: 'about',      label: 'About',      icon: '📖' },
   { id: 'competition', label: 'Competition', icon: '🏆' },
   { id: 'points',     label: 'Points',     icon: '🍋' },

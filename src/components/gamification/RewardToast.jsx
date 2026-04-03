@@ -10,6 +10,24 @@ const TYPE_STYLES = {
   unlock: { border: 'var(--color-coral)', bg: 'rgba(255,92,77,.08)', icon: '🔓', color: '#FF5C4D' },
 };
 
+function getContextHint(toast) {
+  if (!toast) return null;
+  switch (toast.type) {
+    case 'xp':
+      return 'XP unlocks new tiers and features. Keep learning to level up!';
+    case 'lp':
+      return 'LP converts to $LIMER tokens at airdrop. More activity = bigger allocation.';
+    case 'level':
+      return 'New tier unlocked! Higher tiers grant access to advanced trading tools.';
+    case 'badge':
+      return 'Badges mark your milestones. Collect all 25 to maximize your airdrop bonus.';
+    case 'unlock':
+      return 'New feature unlocked! Check it out on the relevant page.';
+    default:
+      return null;
+  }
+}
+
 export default function RewardToast() {
   const toasts = useStore(s => s.pendingToasts);
   const dismiss = useStore(s => s.dismissToast);
@@ -29,6 +47,9 @@ export default function RewardToast() {
   const style = TYPE_STYLES[toast.type] || TYPE_STYLES.xp;
   const canShare = toast.type === 'badge' || toast.type === 'level';
 
+  // Contextual "why this matters" hint
+  const contextHint = getContextHint(toast);
+
   return (
     <>
       {sharing && (
@@ -40,7 +61,7 @@ export default function RewardToast() {
           onClose={() => setSharing(false)}
         />
       )}
-      <div className="fixed bottom-5 right-5 z-[999] animate-[slideUp_0.3s_ease] max-w-[320px]"
+      <div className="fixed bottom-5 right-5 z-[999] animate-[slideUp_0.3s_ease] max-w-[340px]"
         style={{
           background: 'var(--color-night-2)',
           border: `1px solid ${style.border}`,
@@ -55,6 +76,11 @@ export default function RewardToast() {
           <div className="flex-1 min-w-0">
             <div className="font-body font-bold text-[.82rem] text-txt">{toast.title}</div>
             <div className="text-[.72rem] text-txt-2">{toast.message}</div>
+            {contextHint && (
+              <div className="text-[.64rem] mt-1 leading-relaxed" style={{ color: style.color + 'cc' }}>
+                {contextHint}
+              </div>
+            )}
           </div>
           {canShare && (
             <button

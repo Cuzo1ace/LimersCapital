@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import CaribbeanCryptoMap from '../CaribbeanCryptoMap';
 import { TERMS_OF_SERVICE, PRIVACY_POLICY, RISK_DISCLOSURE, LEGAL_LAST_UPDATED } from '../data/legal';
+import { COUNTRIES, STATUS } from '../data/regulations';
 
 const LEGAL_TABS = [
   { id: 'terms', label: 'Terms of Service', icon: '📜', data: TERMS_OF_SERVICE },
@@ -11,7 +12,10 @@ const LEGAL_TABS = [
 export default function RegulationPage() {
   const [view, setView] = useState('map'); // 'map' | 'legal'
   const [legalTab, setLegalTab] = useState('terms');
+  const [selectedCountry, setSelectedCountry] = useState('');
   const currentLegal = LEGAL_TABS.find(t => t.id === legalTab);
+  const countryInfo = COUNTRIES.find(c => c.id === selectedCountry);
+  const countryStatus = countryInfo ? STATUS[countryInfo.status] : null;
 
   return (
     <div>
@@ -46,6 +50,53 @@ export default function RegulationPage() {
       {/* Regulation Map View */}
       {view === 'map' && (
         <>
+          {/* "Is crypto legal where I live?" Quick Checker */}
+          <div className="rounded-xl border border-sea/20 p-5 mb-6"
+            style={{ background: 'linear-gradient(135deg, rgba(0,255,163,.06) 0%, var(--color-card) 100%)' }}>
+            <h2 className="font-headline text-[1.1rem] font-black text-txt mb-3">
+              🔍 Is crypto legal where I live?
+            </h2>
+            <div className="flex items-center gap-3 flex-wrap">
+              <select
+                value={selectedCountry}
+                onChange={e => setSelectedCountry(e.target.value)}
+                className="bg-black/30 border border-border text-txt rounded-lg px-3 py-2 font-body text-[.8rem] outline-none
+                  cursor-pointer min-w-[200px] focus:border-sea/50"
+              >
+                <option value="">Select your country...</option>
+                {COUNTRIES.map(c => (
+                  <option key={c.id} value={c.id}>{c.flag} {c.name}</option>
+                ))}
+              </select>
+              {countryInfo && countryStatus && (
+                <span className="px-3 py-1.5 rounded-lg text-[.72rem] font-bold border"
+                  style={{ color: countryStatus.color, borderColor: countryStatus.border, background: countryStatus.bg }}>
+                  {countryStatus.label}
+                </span>
+              )}
+            </div>
+
+            {countryInfo && countryStatus && (
+              <div className="mt-4 rounded-lg border border-border p-4" style={{ background: 'var(--color-card)' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">{countryInfo.flag}</span>
+                  <h3 className="font-body font-bold text-[.92rem] text-txt">{countryInfo.name}</h3>
+                </div>
+                <p className="text-[.78rem] text-txt-2 leading-relaxed mb-3">{countryInfo.details}</p>
+                {countryInfo.law && (
+                  <div className="text-[.7rem] text-muted">
+                    <strong>Key legislation:</strong> {countryInfo.law}
+                  </div>
+                )}
+                {countryInfo.sources && (
+                  <div className="text-[.6rem] text-muted mt-2">
+                    Sources: {countryInfo.sources.join(', ')}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <CaribbeanCryptoMap />
 
           {/* Legal CTA banner */}
