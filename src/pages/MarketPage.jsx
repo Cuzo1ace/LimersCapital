@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchSolanaMarketData, fetchSolPrice, fetchSolanaTVL, fetchFMPCryptoList, fmtSupply } from '../api/prices';
+import { fetchSolanaProtocols, fetchSolanaDexVolume, fetchSolanaStablecoins, fetchSolanaYields } from '../api/insights';
 import { SkeletonRows } from '../components/ui/Skeleton';
 import GlowCard from '../components/ui/GlowCard';
 import GradientDots from '../components/ui/GradientDots';
@@ -60,6 +61,18 @@ export default function MarketPage() {
   const tvlQ = useQuery({ queryKey: ['sol-tvl'], queryFn: fetchSolanaTVL, staleTime: 300000 });
   const fmpQ = useQuery({ queryKey: ['fmp-crypto'], queryFn: fetchFMPCryptoList, staleTime: 300000, retry: 1 });
   const fmp = fmpQ.data || {};
+  const protocolsQ = useQuery({ queryKey: ['sol-protocols'], queryFn: fetchSolanaProtocols, staleTime: 300000 });
+  const dexQ = useQuery({ queryKey: ['sol-dex-vol'], queryFn: fetchSolanaDexVolume, staleTime: 300000 });
+  const stableQ = useQuery({ queryKey: ['sol-stables'], queryFn: fetchSolanaStablecoins, staleTime: 300000 });
+  const yieldsQ = useQuery({ queryKey: ['sol-yields'], queryFn: fetchSolanaYields, staleTime: 300000 });
+  const [birdeyeToken, setBirdeyeToken] = useState('So11111111111111111111111111111111111111112');
+
+  const BIRDEYE_TOKENS = [
+    { addr: 'So11111111111111111111111111111111111111112', sym: 'SOL' },
+    { addr: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', sym: 'USDC' },
+    { addr: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN', sym: 'JUP' },
+    { addr: '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R', sym: 'RAY' },
+  ];
 
   // Helper: get FMP data for a token row
   const getFmp = (token) => {
@@ -105,53 +118,186 @@ export default function MarketPage() {
         </div>
       </div>
 
-      {/* DeFiLlama Solana Dashboard */}
-      <div className="mb-7">
-        <SectionHead title="Solana DeFi Dashboard" label="DeFiLlama · Live" />
-        <div className="rounded-xl border border-border overflow-hidden" style={{ background: 'var(--color-card)' }}>
-          <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+      {/* ── Solana DeFi Analytics (native cards) ─────────────────────── */}
+      <SectionHead title="Solana DeFi Analytics" label="DeFiLlama · Live" />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-7">
+
+        {/* Protocol Leaderboard */}
+        <div className="rounded-xl border border-border p-5" style={{ background: 'var(--color-card)' }}>
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="font-body font-bold text-[.88rem] text-txt">Solana Chain Overview</div>
-              <div className="text-[.65rem] text-muted">TVL, protocols, and chain metrics</div>
+              <div className="font-body font-bold text-[.88rem] text-txt">🏛️ Top Protocols by TVL</div>
+              <div className="text-[.6rem] text-muted">Where the money is locked on Solana</div>
             </div>
             <a href="https://defillama.com/chain/solana" target="_blank" rel="noopener"
-              className="text-[.65rem] text-sea no-underline hover:underline">
-              defillama.com/chain/solana ↗
-            </a>
+              className="text-[.58rem] text-sea no-underline hover:underline">DeFiLlama ↗</a>
           </div>
-          <div className="relative w-full h-[280px] md:h-[500px]">
-            <iframe
-              src="https://defillama.com/chain/solana"
-              loading="lazy"
-              className="absolute inset-0 w-full h-full border-none"
-              title="DeFiLlama Solana Dashboard"
-              sandbox="allow-scripts"
-            />
+          {protocolsQ.isLoading ? (
+            <div className="flex flex-col gap-2">{[1,2,3,4].map(i => <div key={i} className="h-8 rounded-lg animate-pulse" style={{ background: 'rgba(255,255,255,.04)' }} />)}</div>
+          ) : protocolsQ.isError ? (
+            <div className="text-down text-[.75rem] text-center py-4">Failed to load <button onClick={() => protocolsQ.refetch()} className="text-sea underline bg-transparent border-none cursor-pointer">Retry</button></div>
+          ) : (
+            <div>
+              {(protocolsQ.data || []).map((p, i) => (
+                <div key={p.name} className="flex items-center justify-between py-2.5 border-b border-border last:border-0">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-[.62rem] text-muted w-4 text-right font-mono">{i + 1}</span>
+                    <span className="font-body font-bold text-[.82rem] text-txt">{p.name}</span>
+                    <span className="text-[.58rem] text-muted border border-border rounded-full px-1.5 py-0.5">{p.category}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-[.78rem] text-txt-2">{fmt(p.tvl)}</span>
+                    {p.change_1d != null && <ChgPill value={p.change_1d} />}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* DEX Volume */}
+        <div className="rounded-xl border border-border p-5" style={{ background: 'var(--color-card)' }}>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="font-body font-bold text-[.88rem] text-txt">📊 DEX Trading Volume</div>
+              <div className="text-[.6rem] text-muted">24h trading across Solana DEXs</div>
+            </div>
+            {dexQ.data && (
+              <div className="text-right">
+                <div className="font-mono font-bold text-[1.1rem] text-txt">{fmt(dexQ.data.total24h)}</div>
+                {dexQ.data.change24h != null && <ChgPill value={dexQ.data.change24h} />}
+              </div>
+            )}
           </div>
+          {dexQ.isLoading ? (
+            <div className="flex flex-col gap-2">{[1,2,3,4].map(i => <div key={i} className="h-8 rounded-lg animate-pulse" style={{ background: 'rgba(255,255,255,.04)' }} />)}</div>
+          ) : dexQ.isError ? (
+            <div className="text-down text-[.75rem] text-center py-4">Failed to load <button onClick={() => dexQ.refetch()} className="text-sea underline bg-transparent border-none cursor-pointer">Retry</button></div>
+          ) : (
+            <div>
+              {(dexQ.data?.protocols || []).map((p, i) => {
+                const maxVol = dexQ.data.protocols[0]?.volume24h || 1;
+                const pct = ((p.volume24h || 0) / maxVol) * 100;
+                return (
+                  <div key={p.name} className="py-2 border-b border-border last:border-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-body font-bold text-[.78rem] text-txt">{p.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[.75rem] text-txt-2">{fmt(p.volume24h)}</span>
+                        {p.change != null && <ChgPill value={p.change} />}
+                      </div>
+                    </div>
+                    <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bg-sea/40 transition-all" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Stablecoin Tracker */}
+        <div className="rounded-xl border border-border p-5" style={{ background: 'var(--color-card)' }}>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="font-body font-bold text-[.88rem] text-txt">💵 Top Stablecoins</div>
+              <div className="text-[.6rem] text-muted">USD-pegged tokens by market cap — key for remittances & trading</div>
+            </div>
+          </div>
+          {stableQ.isLoading ? (
+            <div className="flex flex-col gap-2">{[1,2,3].map(i => <div key={i} className="h-8 rounded-lg animate-pulse" style={{ background: 'rgba(255,255,255,.04)' }} />)}</div>
+          ) : stableQ.isError ? (
+            <div className="text-down text-[.75rem] text-center py-4">Failed to load <button onClick={() => stableQ.refetch()} className="text-sea underline bg-transparent border-none cursor-pointer">Retry</button></div>
+          ) : (
+            <div>
+              {(stableQ.data || []).map((s, i) => {
+                const maxCirc = stableQ.data[0]?.circulating || 1;
+                const pct = (s.circulating / maxCirc) * 100;
+                return (
+                  <div key={s.symbol} className="py-2.5 border-b border-border last:border-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-body font-bold text-[.82rem] text-txt">{s.symbol}</span>
+                        <span className="text-[.62rem] text-muted">{s.name}</span>
+                      </div>
+                      <span className="font-mono font-bold text-[.8rem] text-txt">{fmt(s.circulating)}</span>
+                    </div>
+                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #2D9B56, #00ffa3)' }} />
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="mt-3 text-[.6rem] text-muted">
+                Top stablecoins total market cap: {fmt((stableQ.data || []).reduce((s, c) => s + c.circulating, 0))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Best Yields */}
+        <div className="rounded-xl border border-border p-5" style={{ background: 'var(--color-card)' }}>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="font-body font-bold text-[.88rem] text-txt">🌾 Top Yield Opportunities</div>
+              <div className="text-[.6rem] text-muted">Highest-TVL pools on Solana with APY</div>
+            </div>
+          </div>
+          {yieldsQ.isLoading ? (
+            <div className="flex flex-col gap-2">{[1,2,3,4].map(i => <div key={i} className="h-8 rounded-lg animate-pulse" style={{ background: 'rgba(255,255,255,.04)' }} />)}</div>
+          ) : yieldsQ.isError ? (
+            <div className="text-down text-[.75rem] text-center py-4">Failed to load <button onClick={() => yieldsQ.refetch()} className="text-sea underline bg-transparent border-none cursor-pointer">Retry</button></div>
+          ) : (
+            <div>
+              {(yieldsQ.data || []).slice(0, 8).map(p => (
+                <div key={p.pool} className="flex items-center justify-between py-2.5 border-b border-border last:border-0">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-body font-bold text-[.78rem] text-txt truncate">{p.symbol}</div>
+                    <div className="text-[.58rem] text-muted capitalize">{p.project}</div>
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <span className="font-mono text-[.72rem] text-txt-2">{fmt(p.tvl)}</span>
+                    <span className="font-mono font-bold text-[.78rem] text-up bg-up/10 px-2 py-0.5 rounded-md">
+                      {p.apy.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              ))}
+              <div className="mt-3 text-[.58rem] text-muted">
+                APY = Annual Percentage Yield. Yields are variable and not guaranteed. DYOR before depositing.
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* DeFiLlama Solana RWA Dashboard */}
+      {/* ── Birdeye Price Chart ─────────────────────────────────────── */}
       <div className="mb-7">
-        <SectionHead title="Solana RWA Dashboard" label="DeFiLlama · Real-World Assets" />
-        <div className="rounded-xl border border-sea/20 overflow-hidden" style={{ background: 'var(--color-card)' }}>
-          <div className="flex items-center justify-between px-5 py-3 border-b border-sea/15">
-            <div>
-              <div className="font-body font-bold text-[.88rem] text-sun">Real-World Assets on Solana</div>
-              <div className="text-[.65rem] text-muted">Tokenized treasuries, bonds, and RWA protocols</div>
-            </div>
-            <a href="https://defillama.com/rwa/chain/solana" target="_blank" rel="noopener"
-              className="text-[.65rem] text-sea no-underline hover:underline">
-              defillama.com/rwa/chain/solana ↗
-            </a>
+        <SectionHead title="Live Price Chart" label="Birdeye · TradingView" />
+        <div className="rounded-xl border border-border overflow-hidden" style={{ background: 'var(--color-card)' }}>
+          <div className="flex items-center gap-2 px-5 py-3 border-b border-border">
+            {BIRDEYE_TOKENS.map(t => (
+              <button key={t.addr} onClick={() => setBirdeyeToken(t.addr)}
+                className={`px-3 py-1.5 rounded-lg text-[.72rem] font-mono font-bold cursor-pointer border transition-all
+                  ${birdeyeToken === t.addr
+                    ? 'text-sea bg-sea/12 border-sea/30'
+                    : 'text-muted bg-transparent border-border hover:text-txt hover:border-white/15'
+                  }`}>
+                {t.sym}
+              </button>
+            ))}
           </div>
-          <div className="relative w-full h-[280px] md:h-[500px]">
+          <div className="relative w-full h-[350px] md:h-[480px]">
             <iframe
-              src="https://defillama.com/rwa/chain/solana"
+              key={birdeyeToken}
+              src={`https://birdeye.so/tv-widget/${birdeyeToken}?chain=solana&viewMode=pair&chartInterval=1D&chartType=CANDLE&chartTimezone=America%2FPort_of_Spain&chartLeftToolbar=show&theme=dark`}
               loading="lazy"
               className="absolute inset-0 w-full h-full border-none"
-              title="DeFiLlama Solana RWA"
-              sandbox="allow-scripts"
+              title="Birdeye Price Chart"
+              sandbox="allow-scripts allow-same-origin"
+              allow="clipboard-read; clipboard-write"
             />
           </div>
         </div>

@@ -99,11 +99,70 @@ export async function fetchSolanaProtocols() {
   const res = await fetch('https://api.llama.fi/protocols');
   if (!res.ok) throw new Error('DeFiLlama error');
   const all = await res.json();
+  const excludeCats = ['CEX', 'Chain'];
   return all
-    .filter(p => p.chains?.includes('Solana'))
-    .sort((a, b) => (b.tvl || 0) - (a.tvl || 0))
+    .filter(p => p.chains?.includes('Solana') && !excludeCats.includes(p.category))
+    .sort((a, b) => (b.chainTvls?.Solana || 0) - (a.chainTvls?.Solana || 0))
+    .slice(0, 10)
+    .map(p => ({ name: p.name, tvl: p.chainTvls?.Solana || p.tvl, change_1d: p.change_1d, category: p.category, logo: p.logo }));
+}
+
+// ─── DeFiLlama: Solana DEX volumes ──────────────────────────────────────────
+export async function fetchSolanaDexVolume() {
+  const res = await fetch('https://api.llama.fi/overview/dexs/Solana?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true');
+  if (!res.ok) throw new Error('DeFiLlama DEX error');
+  const data = await res.json();
+  const protocols = (data.protocols || [])
+    .sort((a, b) => (b.total24h || 0) - (a.total24h || 0))
     .slice(0, 8)
-    .map(p => ({ name: p.name, tvl: p.tvl, change_1d: p.change_1d, category: p.category }));
+    .map(p => ({ name: p.name, volume24h: p.total24h, change: p.change_1d }));
+  return {
+    total24h: data.total24h,
+    change24h: data.change_1d,
+    protocols,
+  };
+}
+
+// ─── CoinGecko: Stablecoins on Solana (by market cap) ───────────────────────
+export async function fetchSolanaStablecoins() {
+  const res = await fetch(
+    `${CG}/coins/markets?vs_currency=usd&category=stablecoins&order=market_cap_desc&per_page=10&page=1&sparkline=false`
+  );
+  if (!res.ok) throw new Error(`CoinGecko stablecoin error: ${res.status}`);
+  const data = await res.json();
+  return data.map(c => ({
+    name: c.name,
+    symbol: c.symbol.toUpperCase(),
+    circulating: c.market_cap || 0,
+    image: c.image,
+  }));
+}
+
+// ─── DeFiLlama: Solana protocol fees/revenue ────────────────────────────────
+export async function fetchSolanaFees() {
+  const res = await fetch('https://api.llama.fi/overview/fees/Solana?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true');
+  if (!res.ok) throw new Error('DeFiLlama fees error');
+  const data = await res.json();
+  return (data.protocols || [])
+    .filter(p => p.total24h > 0)
+    .sort((a, b) => (b.total24h || 0) - (a.total24h || 0))
+    .slice(0, 8)
+    .map(p => ({ name: p.name, fees24h: p.total24h, revenue24h: p.total24h * (p.dailyRevenue ? p.dailyRevenue / p.total24h : 0.3) }));
+}
+
+// ─── DeFiLlama: Best Solana yield pools ─────────────────────────────────────
+export async function fetchSolanaYields() {
+  const res = await fetch('https://yields.llama.fi/pools');
+  if (!res.ok) throw new Error('DeFiLlama yields error');
+  const data = await res.json();
+  return (data.data || [])
+    .filter(p => p.chain === 'Solana' && p.tvlUsd > 500000 && p.apy > 0)
+    .sort((a, b) => b.tvlUsd - a.tvlUsd)
+    .slice(0, 10)
+    .map(p => ({
+      pool: p.pool, project: p.project, symbol: p.symbol,
+      tvl: p.tvlUsd, apy: p.apy, apyBase: p.apyBase, apyReward: p.apyReward,
+    }));
 }
 
 // ─── Jupiter Quote API v6 ────────────────────────────────────────────────────
