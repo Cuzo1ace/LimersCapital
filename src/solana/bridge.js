@@ -30,7 +30,11 @@ import { MODULES } from '../data/modules';
 
 // ── Index maps ─────────────────────────────────────────────────
 // Badge ID string → bitmap bit position (0-31)
-export const BADGE_INDEX = Object.fromEntries(BADGES.map((b, i) => [b.id, i]));
+// On-chain uses a u32 bitmap — only the first 32 badges get bit positions.
+// Newer badges beyond position 31 are tracked locally only.
+export const BADGE_INDEX = Object.fromEntries(
+  BADGES.slice(0, 32).map((b, i) => [b.id, i])
+);
 
 // Module ID string → bitmap bit position (0-7)
 export const MODULE_INDEX = Object.fromEntries(MODULES.map((m, i) => [m.id, i]));

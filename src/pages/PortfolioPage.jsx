@@ -15,6 +15,7 @@ import { RISK_BANNER } from '../data/legal';
 import { useLimerActions } from '../solana/bridge';
 import Tooltip from '../components/ui/Tooltip';
 import ContextualHelp from '../components/ContextualHelp';
+import TradeJournalView from '../components/TradeJournalView';
 
 const fmtUSD = n => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtTTD = n => n == null ? '—' : 'TT$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -387,6 +388,12 @@ export default function PortfolioPage() {
           ))}
         </div>
       )}
+      {/* Trading Journal */}
+      <div className="mt-6 mb-6">
+        <h2 className="font-headline text-[.92rem] font-bold uppercase tracking-widest text-txt mb-4">Trading Journal</h2>
+        <TradeJournalView />
+      </div>
+
       {/* Contextual Help */}
       <ContextualHelp pageTitle="Portfolio" items={[
         { title: 'What is P&L?', content: 'Profit & Loss (P&L) shows how much money you\'ve made or lost on your trades. If you bought SOL at $70 and it\'s now $80, your P&L is +$10 per token (profit). If it dropped to $60, your P&L is -$10 (loss).' },

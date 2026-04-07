@@ -47,9 +47,9 @@ export default function PerpChart({ symbol, markPrice, positions = [] }) {
     const now = Date.now();
     const ticks = ticksRef.current;
 
-    // Deduplicate: don't add if same price within 2s
+    // Deduplicate: don't add if same price within 200ms (sub-second streaming)
     const last = ticks[ticks.length - 1];
-    if (last && now - last.time < 2000 && last.price === markPrice) return;
+    if (last && now - last.time < 200 && last.price === markPrice) return;
 
     ticks.push({ time: now, price: markPrice });
 

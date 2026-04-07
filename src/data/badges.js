@@ -34,4 +34,16 @@ export const BADGES = [
   { id: 'strategy_scholar', title: 'Strategy Scholar', desc: 'Read all 8 Advanced LP Strategy lessons', icon: '📐', cat: 'lp', check: s => ['7-1','7-2','7-3','7-4','7-5','7-6','7-7','7-8'].every(l => s.lessonsRead?.[l]) },
   { id: 'flywheel_believer', title: 'Flywheel Believer', desc: 'Explore the Solana LP Flywheel page', icon: '🔄', cat: 'lp', check: s => s.viewedFlywheel },
   { id: 'squeeze_analyst', title: 'Squeeze Analyst', desc: 'Use Agent Squeeze to analyze LP opportunities 3 times', icon: '🤖', cat: 'lp', check: s => (s.agentSqueezeUses || 0) >= 3 },
+
+  // Embedded Learning
+  { id: 'curious_mind', title: 'Curious Mind', desc: 'View 5 post-trade insights', icon: '💡', cat: 'skill', check: s => (s.teachingMomentsViewed || []).length >= 5 },
+  { id: 'knowledge_seeker', title: 'Knowledge Seeker', desc: 'View 20 daily knowledge drops', icon: '🔍', cat: 'skill', check: s => (s.viewedDailyKnowledge || []).length >= 20 },
+  { id: 'reflective_trader', title: 'Reflective Trader', desc: 'Write 10 journal entries', icon: '📝', cat: 'skill', check: s => Object.keys(s.tradeJournal || {}).length >= 10 },
+  { id: 'trading_philosopher', title: 'Trading Philosopher', desc: 'Write 50 journal entries', icon: '🧘', cat: 'milestone', check: s => Object.keys(s.tradeJournal || {}).length >= 50 },
+  { id: 'micro_scholar', title: 'Micro Scholar', desc: 'View 15 micro-lessons', icon: '🔬', cat: 'skill', check: s => (s.viewedMicroLessons || []).length >= 15 },
+  { id: 'challenge_accepted', title: 'Challenge Accepted', desc: 'Complete 5 practice challenges', icon: '🎯', cat: 'milestone', check: s => (s.completedPracticeChallenges || []).length >= 5 },
+  { id: 'challenge_master', title: 'Challenge Master', desc: 'Complete all practice challenges', icon: '👑', cat: 'special', check: s => (s.completedPracticeChallenges || []).length >= 12 },
+
+  // Perp trading
+  { id: 'perp_trader', title: 'Derivatives Pro', desc: 'Execute 5 perpetual trades', icon: '⚡', cat: 'skill', check: s => (s.perpTradeCount || 0) >= 5 },
 ];

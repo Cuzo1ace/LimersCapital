@@ -11,6 +11,8 @@ import LiquidMetalButton from '../components/ui/LiquidMetalButton';
 import GradientDots from '../components/ui/GradientDots';
 import CommunityFeed from '../components/CommunityFeed';
 import Tooltip from '../components/ui/Tooltip';
+import DailyKnowledgeCard from '../components/DailyKnowledgeCard';
+import SkillMap from '../components/gamification/SkillMap';
 
 export default function DashboardPage() {
   const { t } = useTranslation();
@@ -127,6 +129,9 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Daily Knowledge — show after at least 1 lesson completed */}
+      {modulesCompleted.length > 0 && <DailyKnowledgeCard />}
+
       {/* ── Welcome Header ── */}
       <div className="rounded-xl p-6 md:p-8 mb-6 border border-border relative overflow-hidden"
         style={{ background: 'linear-gradient(135deg, var(--color-night-2) 0%, rgba(0,255,163,.06) 100%)' }}>
@@ -193,7 +198,12 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Quick Stats ── */}
+      {/* ── Skill Map (compact) + Quick Stats ── */}
+      {trades.length >= 3 && (
+        <div className="rounded-xl border border-border p-4 mb-4" style={{ background: 'var(--color-card)' }}>
+          <SkillMap compact />
+        </div>
+      )}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <QuickStat icon="💹" label={t('dashboard.trades')} value={fmtNum(trades.length)} color="#00ffa3" onClick={() => setActiveTab('trade')} />
         <QuickStat icon="🎖️" label={t('dashboard.badges')} value={`${earnedBadges.length}/25`} color="#FFCA3A" onClick={() => setActiveTab('learn')} />

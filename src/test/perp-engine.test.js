@@ -261,6 +261,63 @@ describe('Perpetual Engine — Partial Close', () => {
   });
 });
 
+describe('Perpetual Engine — e6 Format (On-Chain Compatibility)', () => {
+  const PRICE_SCALE = 1_000_000;
+
+  it('e6 price conversion roundtrips correctly', () => {
+    const usdPrice = 150.123456;
+    const e6 = Math.round(usdPrice * PRICE_SCALE);
+    const back = e6 / PRICE_SCALE;
+    expect(back).toBeCloseTo(usdPrice, 5);
+  });
+
+  it('PnL in e6 matches USD PnL', () => {
+    const entryE6 = 100 * PRICE_SCALE;
+    const markE6 = 110 * PRICE_SCALE;
+    const sizeE6 = 10000 * PRICE_SCALE;
+
+    // e6 PnL
+    const pnlE6 = ((markE6 - entryE6) / entryE6) * sizeE6;
+    const pnlUSD = pnlE6 / PRICE_SCALE;
+
+    // USD PnL
+    const pnlDirect = calcPnl('long', 100, 110, 10000);
+
+    expect(pnlUSD).toBeCloseTo(pnlDirect, 2);
+  });
+
+  it('BigInt size preserves precision for large positions', () => {
+    const collateral = 100_000; // $100K
+    const leverage = 20;
+    const notional = collateral * leverage; // $2M
+    const sizeE6 = BigInt(Math.round(notional * PRICE_SCALE));
+
+    expect(Number(sizeE6)).toBe(2_000_000_000_000);
+    expect(Number(sizeE6) / PRICE_SCALE).toBe(2_000_000);
+  });
+
+  it('fractional USD amounts survive e6 conversion', () => {
+    const amounts = [0.01, 0.001, 1.23, 99.99, 12345.678901];
+    amounts.forEach(amt => {
+      const e6 = Math.round(amt * PRICE_SCALE);
+      const back = e6 / PRICE_SCALE;
+      expect(back).toBeCloseTo(amt, 5);
+    });
+  });
+
+  it('liq price in e6 format is consistent with USD', () => {
+    const entryE6 = 150 * PRICE_SCALE;
+    const entryUSD = 150;
+    const leverage = 10;
+    const collateral = 1000;
+
+    const liqUSD = calcLiqPrice('long', entryUSD, leverage, collateral);
+    const liqE6 = Math.round(liqUSD * PRICE_SCALE);
+
+    expect(liqE6 / PRICE_SCALE).toBeCloseTo(liqUSD, 4);
+  });
+});
+
 describe('Perpetual Engine — Edge Cases', () => {
   it('1x leverage behaves like spot (no amplification)', () => {
     const pnl = calcPnl('long', 100, 110, 100); // 1x: $100 collateral, $100 size

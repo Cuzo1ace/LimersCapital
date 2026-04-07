@@ -4,6 +4,8 @@ import { getTier, XP_VALUES } from '../data/gamification';
 import { BADGES } from '../data/badges';
 import { MODULES } from '../data/modules';
 import { getLPMultiplier } from '../data/lp';
+import { pickInsight } from '../data/tradeInsights';
+import { checkChallenges, PRACTICE_CHALLENGES } from '../data/practiceChallenges';
 import { track, identify, analyticsReset } from '../analytics/track';
 
 const INITIAL_USD = 100000;
@@ -87,12 +89,19 @@ const useStore = create(
 
         get()._checkBadges();
         // Competition: record trade (buy = no PnL yet, sell = realize gain/loss)
-        if (side === 'sell') {
-          const holding = state.holdings.find(h => `${h.market}:${h.symbol}` === holdKey);
-          const avgCost = holding ? holding.avgPrice : price;
-          const tradePnl = (price - avgCost) * qty;
-          get()._recordCompetitionTrade(tradePnl);
-        }
+        const tradePnlForInsight = (() => {
+          if (side === 'sell') {
+            const holding = state.holdings.find(h => `${h.market}:${h.symbol}` === holdKey);
+            const avgCost = holding ? holding.avgPrice : price;
+            const pnl = (price - avgCost) * qty;
+            get()._recordCompetitionTrade(pnl);
+            return pnl;
+          }
+          return undefined;
+        })();
+        // Post-trade teaching moment
+        get()._generateTeachingMoment({ side, symbol, qty, price, total, market, pnl: tradePnlForInsight });
+        get()._checkPracticeChallenges();
         track('trade_executed', { side, symbol, market, total: Math.round(total) });
         return { success: true };
       },
@@ -150,6 +159,25 @@ const useStore = create(
       viewedGlossaryTerms: [],
       modulesCompleted: [],
       pendingToasts: [],
+
+      // ── Teaching Moments ───────────────────────────────────
+      pendingTeachingMoment: null,
+      teachingMomentsViewed: [],
+
+      // Daily Knowledge
+      viewedDailyKnowledge: [],
+      lastDailyKnowledgeDate: null,
+
+      // Micro-Lessons
+      viewedMicroLessons: [],
+
+      // Trading Journal
+      tradeJournal: {},
+      journalPromptEnabled: true,
+
+      // Practice Challenges
+      completedPracticeChallenges: [],
+      activePracticeChallenge: null,
 
       awardXP: (amount, reason) => {
         const state = get();
@@ -261,6 +289,85 @@ const useStore = create(
             track('badge_earned', { badgeId: badge.id, badgeTitle: badge.title, category: badge.cat });
           }
         });
+      },
+
+      // ── Teaching Moment Actions ────────────────────────────
+      _generateTeachingMoment: (trade) => {
+        const state = get();
+        const insight = pickInsight(trade, state);
+        if (insight) {
+          set({ pendingTeachingMoment: insight });
+        }
+      },
+
+      viewTeachingMoment: (insightId) => {
+        const state = get();
+        if (state.teachingMomentsViewed.includes(insightId)) return;
+        set({ teachingMomentsViewed: [...state.teachingMomentsViewed, insightId] });
+        get().awardXP(5, 'Trade insight viewed');
+        get().awardLP(2, 'Trade insight', 'learning');
+        get()._checkBadges();
+      },
+
+      dismissTeachingMoment: () => set({ pendingTeachingMoment: null }),
+
+      viewDailyKnowledge: (knowledgeId, dateStr) => {
+        const state = get();
+        if (state.lastDailyKnowledgeDate === dateStr) return;
+        const viewed = state.viewedDailyKnowledge.includes(knowledgeId)
+          ? state.viewedDailyKnowledge
+          : [...state.viewedDailyKnowledge, knowledgeId];
+        set({ viewedDailyKnowledge: viewed, lastDailyKnowledgeDate: dateStr });
+        get().awardXP(5, 'Daily knowledge viewed');
+        get().awardLP(2, 'Daily knowledge', 'learning');
+        get()._checkBadges();
+      },
+
+      viewMicroLesson: (conceptSlug) => {
+        const state = get();
+        if (state.viewedMicroLessons.includes(conceptSlug)) return;
+        set({ viewedMicroLessons: [...state.viewedMicroLessons, conceptSlug] });
+        get().awardXP(5, 'Micro-lesson learned');
+        get().awardLP(1, 'Micro-lesson', 'learning');
+        get()._checkBadges();
+      },
+
+      addJournalEntry: (tradeId, { strategy, emotion, reason }) => {
+        const state = get();
+        const isFirst = Object.keys(state.tradeJournal).length === 0;
+        set({
+          tradeJournal: {
+            ...state.tradeJournal,
+            [tradeId]: { strategy, emotion, reason, timestamp: new Date().toISOString() },
+          },
+        });
+        get().awardXP(isFirst ? 10 : 5, isFirst ? 'First journal entry!' : 'Journal entry');
+        get().awardLP(3, 'Trade journal', 'learning');
+        get()._checkBadges();
+      },
+
+      toggleJournalPrompt: () => set(s => ({ journalPromptEnabled: !s.journalPromptEnabled })),
+
+      setActivePracticeChallenge: (id) => set({ activePracticeChallenge: id }),
+
+      _checkPracticeChallenges: () => {
+        const state = get();
+        const newlyCompleted = checkChallenges(state);
+        if (newlyCompleted.length === 0) return;
+        const updated = [...state.completedPracticeChallenges, ...newlyCompleted];
+        set({ completedPracticeChallenges: updated });
+        for (const id of newlyCompleted) {
+          const ch = PRACTICE_CHALLENGES.find(c => c.id === id);
+          if (ch) {
+            get().awardXP(ch.xpReward, `Challenge: ${ch.title}`);
+            get().awardLP(ch.lpReward, `Challenge: ${ch.title}`, 'challenge');
+          }
+        }
+        // Clear active challenge if it was just completed
+        if (newlyCompleted.includes(state.activePracticeChallenge)) {
+          set({ activePracticeChallenge: null });
+        }
+        get()._checkBadges();
       },
 
       // ── Streak Shields ─────────────────────────────────────
@@ -725,6 +832,8 @@ const useStore = create(
         });
 
         get()._checkBadges();
+        get()._generateTeachingMoment({ side: `perp_${side}`, symbol, qty: size / entryPrice, price: entryPrice, total: size, market: 'perpetuals', leverage, stopLoss: position.stopLoss, trailingStop: position.trailingStop });
+        get()._checkPracticeChallenges();
         get().logPerpEvent('open', { symbol, side, leverage, size, price: entryPrice, collateral, stopLoss: position.stopLoss, takeProfit: position.takeProfit, trailingStop: position.trailingStop });
         track('perp_position_opened', { symbol, side, leverage, size: Math.round(size) });
         return { success: true, position };
@@ -795,6 +904,8 @@ const useStore = create(
 
         get()._checkBadges();
         get()._recordCompetitionTrade(pnl);
+        get()._generateTeachingMoment({ side: `close_${pos.side}`, symbol: pos.symbol, qty: (pos.size * frac) / markPrice, price: markPrice, total: pos.size * frac, market: 'perpetuals', leverage: pos.leverage, pnl });
+        get()._checkPracticeChallenges();
         get().logPerpEvent(frac < 0.99 ? 'partial_close' : 'close', { symbol: pos.symbol, side: pos.side, leverage: pos.leverage, pnl, price: markPrice, fraction: frac < 0.99 ? `${Math.round(frac * 100)}%` : null });
         track('perp_position_closed', { symbol: pos.symbol, pnl: Math.round(pnl), leverage: pos.leverage, fraction: frac });
         return { success: true, pnl };
@@ -1183,6 +1294,15 @@ const useStore = create(
         showWalletWizard: state.showWalletWizard,
         tradeMode: state.tradeMode,
         currencyDisplay: state.currencyDisplay,
+        // Teaching Moments & Daily Knowledge
+        teachingMomentsViewed: state.teachingMomentsViewed,
+        viewedDailyKnowledge: state.viewedDailyKnowledge,
+        lastDailyKnowledgeDate: state.lastDailyKnowledgeDate,
+        viewedMicroLessons: state.viewedMicroLessons,
+        tradeJournal: state.tradeJournal,
+        journalPromptEnabled: state.journalPromptEnabled,
+        completedPracticeChallenges: state.completedPracticeChallenges,
+        activePracticeChallenge: state.activePracticeChallenge,
         hasSeenLearnHero: state.hasSeenLearnHero,
         experienceLevel: state.experienceLevel,
         eli5Mode: state.eli5Mode,

@@ -30,11 +30,22 @@ import useStore from '../store/useStore';
 import { RISK_BANNER } from '../data/legal';
 import JupiterSwap from '../components/JupiterSwap';
 import PerpChart from '../components/PerpChart';
+import { usePercolatorLiveState } from '../solana/percolator-hooks';
+import { usePercolatorMutations, mapPercolatorError } from '../solana/percolator-mutations';
+import { useWalletAddress } from '../solana/hooks';
+import { useSelectedWalletAccount } from '@solana/react';
+import { useWallets } from '@wallet-standard/react';
+import { PERCOLATOR_CONFIG } from '../solana/percolator';
+import { usePythPrice, usePythStreamStatus } from '../api/usePythPrice';
+import PostTradeInsight from '../components/gamification/PostTradeInsight';
+import TradeJournalPrompt from '../components/TradeJournalPrompt';
+import PracticeChallengePanel from '../components/PracticeChallengePanel';
 import { TradingViewChart, TradingViewTechnicalAnalysis, TV_SYMBOL_MAP } from '../components/charts';
 import PaperTradingModal from '../components/PaperTradingModal';
 import WalletSetupWizard from '../components/WalletSetupWizard';
 import ContextualHelp from '../components/ContextualHelp';
 import Tooltip from '../components/ui/Tooltip';
+import MicroLesson from '../components/MicroLesson';
 
 // Inline SL/TP editor for positions table
 function SLTPEditor({ pos, curPrice, onSave, onCancel }) {
@@ -123,6 +134,7 @@ export default function TradePage() {
           adjustPerpMargin, checkTrailingStops, perpEventLog, logPerpEvent,
           percolatorMode, setPercolatorMode,
           tradeMode, setTradeMode, showWalletWizard, setShowWalletWizard } = useStore();
+
   const marketQ = useQuery({
     queryKey: ['trade-prices'],
     queryFn: fetchTradePrices,
@@ -195,6 +207,37 @@ export default function TradePage() {
   // FMP supply + ICO metadata (shared query key with MarketPage)
   const fmpQ = useQuery({ queryKey: ['fmp-crypto'], queryFn: fetchFMPCryptoList, staleTime: 300000, retry: 1 });
   const fmpData = fmpQ.data || {};
+
+  // ── Live Percolator Hooks ────────────────────────────────
+  const walletAddress = useWalletAddress();
+  const [selectedAccount] = useSelectedWalletAccount();
+  const wallets = useWallets();
+  const connectedWallet = wallets.find(w =>
+    w.accounts.some(a => a.address === walletAddress)
+  ) || null;
+
+  const isLiveMode = percolatorMode === 'live';
+  const perpMarketKey = `${perpSelectedToken}-PERP`;
+
+  const liveState = usePercolatorLiveState(
+    isLiveMode ? perpMarketKey : null,
+    isLiveMode ? walletAddress : null
+  );
+  const liveMutations = usePercolatorMutations(
+    isLiveMode ? selectedAccount : null,
+    isLiveMode ? connectedWallet : null,
+    'devnet'
+  );
+
+  // ── Pyth WebSocket Streaming ──────────────────────────────
+  const pythSOL = usePythPrice('SOL');
+  const pythBTC = usePythPrice('BTC');
+  const pythETH = usePythPrice('ETH');
+  const pythGOLD = usePythPrice('GOLD');
+  const pythStreamStatus = usePythStreamStatus();
+
+  // Map perp token to streaming Pyth price (null if no Pyth feed for that token)
+  const pythPriceForPerp = { SOL: pythSOL, BTC: pythBTC, ETH: pythETH, GOLD: pythGOLD }[perpSelectedToken] || null;
 
   const isTTSE = market === 'ttse';
   const currency = isTTSE ? 'TTD' : 'USD';
@@ -304,6 +347,13 @@ export default function TradePage() {
 
   return (
     <div className="overflow-x-hidden">
+      {/* Post-Trade Teaching Moments */}
+      <PostTradeInsight />
+      {/* Trade Journal Prompt — appears after trade execution */}
+      {trades.length > 0 && <TradeJournalPrompt />}
+      {/* Practice Challenges */}
+      <PracticeChallengePanel />
+
       {/* Paper Trading Explainer Modal — shows once */}
       {market !== 'jupiter' && <PaperTradingModal />}
 
@@ -617,7 +667,9 @@ export default function TradePage() {
       {market === 'perpetuals' && (() => {
         const perpTokens = (marketQ.data || []);
         const selToken = perpTokens.find(t => t.symbol.toUpperCase() === perpSelectedToken);
-        const markPrice = selToken?.current_price;
+
+        // ── Unified data: Pyth streaming → live oracle → REST fallback ──
+        const markPrice = pythPriceForPerp?.price || (isLiveMode && liveState?.markPrice ? liveState.markPrice : null) || selToken?.current_price;
         const pct24h = selToken?.price_change_percentage_24h;
         const collateralNum = parseFloat(perpCollateral) || 0;
         const notionalSize = collateralNum * perpLeverage;
@@ -630,13 +682,21 @@ export default function TradePage() {
               : markPrice * (1 + (1 / perpLeverage) - maintenanceMargin))
           : null;
 
-        const openPositions = perpPositions.filter(p => p.status === 'open');
-        const closedPositions = perpPositions.filter(p => p.status !== 'open').slice(0, 20);
+        // ── Unified positions: live on-chain positions vs paper Zustand ──
+        const activePositions = isLiveMode ? (liveState?.positions || []) : perpPositions;
+        const openPositions = activePositions.filter(p => p.status === 'open');
+        const closedPositions = (isLiveMode ? [] : perpPositions.filter(p => p.status !== 'open')).slice(0, 20);
         const totalUnrealizedPnl = openPositions.reduce((sum, pos) => {
-          const cp = perpTokens.find(t => t.symbol.toUpperCase() === pos.symbol)?.current_price || pos.entryPrice;
+          const cp = pos.isLive ? (pos.markPrice || pos.entryPrice)
+            : (perpTokens.find(t => t.symbol.toUpperCase() === pos.symbol)?.current_price || pos.entryPrice);
           const dir = pos.side === 'long' ? 1 : -1;
-          return sum + ((cp - pos.entryPrice) * dir / pos.entryPrice) * pos.size - pos.accumulatedFunding;
+          return sum + ((cp - pos.entryPrice) * dir / pos.entryPrice) * pos.size - (pos.accumulatedFunding || 0);
         }, 0);
+
+        // ── Live mode: balance from on-chain capital instead of paper USD ──
+        const liveCapitalDisplay = isLiveMode && liveState?.capital != null
+          ? `$${liveState.capital.toFixed(2)} on-chain`
+          : null;
 
         const slNum = parseFloat(perpStopLoss) || null;
         const tpNum = parseFloat(perpTakeProfit) || null;
@@ -647,7 +707,14 @@ export default function TradePage() {
 
         const handleOpenPerp = () => {
           if (!markPrice || collateralNum <= 0) { flash('error', 'Enter valid collateral amount'); return; }
-          if (collateralNum > balanceUSD) { flash('error', 'Insufficient USD balance'); return; }
+          // Paper mode: check paper balance. Live mode: check on-chain capital.
+          if (isLiveMode) {
+            if (!walletAddress) { flash('error', 'Connect wallet for live trading'); return; }
+            if (!liveState?.hasAccount) { flash('error', 'Initialize your account first — deposit collateral'); return; }
+            if (liveState?.capital != null && collateralNum > liveState.capital) { flash('error', 'Insufficient on-chain collateral'); return; }
+          } else {
+            if (collateralNum > balanceUSD) { flash('error', 'Insufficient USD balance'); return; }
+          }
           if (!slValid) { flash('error', `Stop Loss must be ${perpSide === 'long' ? 'below' : 'above'} mark price`); return; }
           if (!tpValid) { flash('error', `Take Profit must be ${perpSide === 'long' ? 'above' : 'below'} mark price`); return; }
           const tsNum = parseFloat(perpTrailingStop) || null;
@@ -655,12 +722,39 @@ export default function TradePage() {
           setPerpConfirm({ side: perpSide, symbol: perpSelectedToken, leverage: perpLeverage, collateral: collateralNum, price: markPrice, size: notionalSize, fee: openFee, stopLoss: slNum, takeProfit: tpNum, trailingStop: trailPct });
         };
 
-        const handleConfirmPerp = () => {
+        const handleConfirmPerp = async () => {
           if (!perpConfirm) return;
-          const result = openPerpPosition(perpConfirm.symbol, perpConfirm.side, perpConfirm.leverage, perpConfirm.collateral, perpConfirm.price, { stopLoss: perpConfirm.stopLoss, takeProfit: perpConfirm.takeProfit, trailingStop: perpConfirm.trailingStop });
-          setPerpConfirm(null);
-          if (result.error) flash('error', result.error);
-          else { flash('success', `Opened ${perpConfirm.leverage}x ${perpConfirm.side.toUpperCase()} ${perpConfirm.symbol}`); setPerpCollateral(''); setPerpStopLoss(''); setPerpTakeProfit(''); setPerpTrailingStop(''); }
+
+          if (isLiveMode) {
+            // ── Live mode: send on-chain transaction ──
+            try {
+              const priceScale = PERCOLATOR_CONFIG.PRICE_SCALE;
+              const sizeE6 = Math.round(perpConfirm.size * priceScale);
+              const requestedSize = perpConfirm.side === 'long' ? sizeE6 : -sizeE6;
+
+              await liveMutations.openTrade.mutateAsync({
+                userIdx: liveState?.userIdx,
+                lpIdx: liveState?.lpIdx || 0,
+                requestedSize,
+                maxSlippage: PERCOLATOR_CONFIG.DEFAULT_SLIPPAGE_BPS,
+                slabPubkey: liveState?.slabState ? perpMarketKey : null,
+              });
+
+              setPerpConfirm(null);
+              flash('success', `Opened ${perpConfirm.leverage}x ${perpConfirm.side.toUpperCase()} ${perpConfirm.symbol} (on-chain)`);
+              setPerpCollateral(''); setPerpStopLoss(''); setPerpTakeProfit(''); setPerpTrailingStop('');
+            } catch (e) {
+              setPerpConfirm(null);
+              const msg = mapPercolatorError(e);
+              if (msg) flash('error', msg);
+            }
+          } else {
+            // ── Paper mode: Zustand simulation (unchanged) ──
+            const result = openPerpPosition(perpConfirm.symbol, perpConfirm.side, perpConfirm.leverage, perpConfirm.collateral, perpConfirm.price, { stopLoss: perpConfirm.stopLoss, takeProfit: perpConfirm.takeProfit, trailingStop: perpConfirm.trailingStop });
+            setPerpConfirm(null);
+            if (result.error) flash('error', result.error);
+            else { flash('success', `Opened ${perpConfirm.leverage}x ${perpConfirm.side.toUpperCase()} ${perpConfirm.symbol}`); setPerpCollateral(''); setPerpStopLoss(''); setPerpTakeProfit(''); setPerpTrailingStop(''); }
+          }
         };
 
         return (
@@ -677,8 +771,23 @@ export default function TradePage() {
               </select>
               <div className="h-6 w-px bg-border flex-shrink-0" />
               <div className="flex flex-col flex-shrink-0">
-                <span className="text-[.58rem] text-muted leading-none">Mark Price</span>
-                <span className="text-txt font-mono font-bold text-[.88rem] leading-tight">{fmtUSD(markPrice)}</span>
+                <div className="flex items-center gap-1">
+                  <MicroLesson concept="mark-price"><span className="text-[.58rem] text-muted leading-none">Mark Price</span></MicroLesson>
+                  {pythPriceForPerp?.isStreaming ? (
+                    <span className="flex items-center gap-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                      <span className="text-[.5rem] text-green-400 font-semibold">LIVE</span>
+                    </span>
+                  ) : (
+                    <span className="text-[.5rem] text-muted font-semibold">POLL</span>
+                  )}
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-txt font-mono font-bold text-[.88rem] leading-tight">{fmtUSD(markPrice)}</span>
+                  {pythPriceForPerp?.confidence && (
+                    <span className="text-[.5rem] text-muted font-mono">±{fmtUSD(pythPriceForPerp.confidence)}</span>
+                  )}
+                </div>
               </div>
               <div className="flex flex-col flex-shrink-0">
                 <span className="text-[.58rem] text-muted leading-none">24h Change</span>
@@ -687,7 +796,7 @@ export default function TradePage() {
                 </span>
               </div>
               <div className="flex flex-col flex-shrink-0">
-                <span className="text-[.58rem] text-muted leading-none">Funding Rate</span>
+                <MicroLesson concept="funding-rate"><span className="text-[.58rem] text-muted leading-none">Funding Rate</span></MicroLesson>
                 <span className="text-txt font-mono text-[.82rem] leading-tight">0.01%</span>
               </div>
               <div className="flex flex-col flex-shrink-0">
@@ -714,7 +823,9 @@ export default function TradePage() {
                   {percolatorMode === 'live' ? '⚡ LIVE' : '📄 PAPER'}
                 </button>
                 {percolatorMode === 'live' && (
-                  <span className="text-[.5rem] text-up/60 animate-pulse">ON-CHAIN</span>
+                  <span className="text-[.5rem] text-up/60 animate-pulse">
+                    {liveState?.isLoading ? 'SYNCING...' : liveState?.error ? 'RPC ERROR' : 'ON-CHAIN'}
+                  </span>
                 )}
               </div>
             </div>
@@ -801,7 +912,7 @@ export default function TradePage() {
                 {/* Leverage Quick Buttons */}
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[.6rem] text-muted uppercase tracking-wider">Leverage</span>
+                    <MicroLesson concept="leverage"><span className="text-[.6rem] text-muted uppercase tracking-wider">Leverage</span></MicroLesson>
                     <span className={`font-mono font-bold text-[.78rem] ${
                       perpLeverage <= 3 ? 'text-up' : perpLeverage <= 10 ? 'text-[#FFA500]' : 'text-down'
                     }`}>{perpLeverage}x</span>
@@ -824,19 +935,21 @@ export default function TradePage() {
                 {/* Collateral Input */}
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[.6rem] text-muted uppercase tracking-wider">Collateral (USD)</span>
+                    <MicroLesson concept="collateral"><span className="text-[.6rem] text-muted uppercase tracking-wider">Collateral (USD)</span></MicroLesson>
                     <span className="text-[.58rem] text-muted">{fmtUSD(balanceUSD)} avail</span>
                   </div>
                   <input type="number" value={perpCollateral} onChange={e => setPerpCollateral(e.target.value)}
-                    placeholder="0.00" min="1" max={balanceUSD} step="any"
+                    placeholder="0.00" min="1" max={isLiveMode && liveState?.capital != null ? liveState.capital : balanceUSD} step="any"
                     className="bg-black/30 border border-border text-txt rounded px-2.5 py-1.5 font-mono text-[.76rem] outline-none focus:border-[#FFA500]/60" />
                   <div className="flex gap-1">
-                    {[10, 25, 50, 100].map(pct => (
-                      <button key={pct} onClick={() => setPerpCollateral(String((balanceUSD * pct / 100).toFixed(2)))}
+                    {[10, 25, 50, 100].map(pct => {
+                      const maxBal = isLiveMode && liveState?.capital != null ? liveState.capital : balanceUSD;
+                      return (
+                      <button key={pct} onClick={() => setPerpCollateral(String((maxBal * pct / 100).toFixed(2)))}
                         className="flex-1 py-1 rounded text-[.6rem] font-mono cursor-pointer border border-border bg-transparent text-muted hover:text-txt hover:border-[#FFA500]/40 transition-all">
                         {pct}%
                       </button>
-                    ))}
+                    );})}
                   </div>
                 </div>
 
@@ -845,14 +958,14 @@ export default function TradePage() {
                   <div className="text-[.6rem] text-muted uppercase tracking-wider">Risk Management</div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="flex flex-col gap-0.5">
-                      <label className="text-[.56rem] text-down uppercase tracking-wider">Stop Loss</label>
+                      <label className="text-[.56rem] text-down uppercase tracking-wider"><MicroLesson concept="stop-loss">Stop Loss</MicroLesson></label>
                       <input type="number" value={perpStopLoss} onChange={e => setPerpStopLoss(e.target.value)}
                         placeholder={markPrice ? (perpSide === 'long' ? (markPrice * 0.95).toFixed(2) : (markPrice * 1.05).toFixed(2)) : '—'}
                         className={`bg-black/30 border text-txt rounded px-2 py-1.5 font-mono text-[.72rem] outline-none focus:border-down/60
                           ${slNum && !slValid ? 'border-down/60' : 'border-border'}`} />
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      <label className="text-[.56rem] text-up uppercase tracking-wider">Take Profit</label>
+                      <label className="text-[.56rem] text-up uppercase tracking-wider"><MicroLesson concept="take-profit">Take Profit</MicroLesson></label>
                       <input type="number" value={perpTakeProfit} onChange={e => setPerpTakeProfit(e.target.value)}
                         placeholder={markPrice ? (perpSide === 'long' ? (markPrice * 1.10).toFixed(2) : (markPrice * 0.90).toFixed(2)) : '—'}
                         className={`bg-black/30 border text-txt rounded px-2 py-1.5 font-mono text-[.72rem] outline-none focus:border-up/60
@@ -860,7 +973,7 @@ export default function TradePage() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-0.5">
-                    <label className="text-[.56rem] text-[#FFA500] uppercase tracking-wider">Trailing Stop (%)</label>
+                    <label className="text-[.56rem] text-[#FFA500] uppercase tracking-wider"><MicroLesson concept="trailing-stop">Trailing Stop (%)</MicroLesson></label>
                     <input type="number" value={perpTrailingStop} onChange={e => setPerpTrailingStop(e.target.value)}
                       placeholder="e.g. 3" min="0.5" max="50" step="0.5"
                       className="bg-black/30 border border-border text-txt rounded px-2 py-1.5 font-mono text-[.72rem] outline-none focus:border-[#FFA500]/60" />
@@ -959,7 +1072,13 @@ export default function TradePage() {
                   })()}
                 </div>
 
-                <div className="text-[.56rem] text-muted text-center mt-1">Paper trading — no real funds at risk</div>
+                <div className="text-[.56rem] text-muted text-center mt-1">
+                  {isLiveMode
+                    ? (walletAddress
+                        ? (liveCapitalDisplay || 'Real transactions — test USDC on devnet')
+                        : 'Connect wallet for live trading')
+                    : 'Paper trading — no real funds at risk'}
+                </div>
               </div>
             </div>
 
@@ -1014,10 +1133,14 @@ export default function TradePage() {
                       </thead>
                       <tbody>
                         {openPositions.map(pos => {
-                          const curPrice = perpTokens.find(t => t.symbol.toUpperCase() === pos.symbol)?.current_price || pos.entryPrice;
+                          const curPrice = pos.isLive
+                            ? (pos.markPrice || pos.entryPrice)
+                            : (perpTokens.find(t => t.symbol.toUpperCase() === pos.symbol)?.current_price || pos.entryPrice);
                           const direction = pos.side === 'long' ? 1 : -1;
                           const priceDelta = (curPrice - pos.entryPrice) * direction;
-                          const pnl = (priceDelta / pos.entryPrice) * pos.size - pos.accumulatedFunding;
+                          const pnl = pos.isLive
+                            ? (pos.unrealizedPnl || 0)
+                            : (priceDelta / pos.entryPrice) * pos.size - (pos.accumulatedFunding || 0);
                           const pnlPct = (pnl / pos.collateral) * 100;
                           const isEditing = editingSLTP === pos.id;
                           return (
@@ -1067,10 +1190,30 @@ export default function TradePage() {
                                   {closePartial === pos.id ? (
                                     <div className="flex gap-1 flex-wrap justify-end">
                                       {[25, 50, 75, 100].map(pct => (
-                                        <button key={pct} onClick={() => {
-                                          const result = closePerpPosition(pos.id, curPrice, pct / 100);
-                                          if (result.error) flash('error', result.error);
-                                          else flash('success', `${pct === 100 ? 'Closed' : `Closed ${pct}% of`} ${pos.symbol} — P&L: ${result.pnl >= 0 ? '+' : ''}$${result.pnl.toFixed(2)}`);
+                                        <button key={pct} onClick={async () => {
+                                          if (isLiveMode && pos.isLive) {
+                                            // ── Live close ──
+                                            try {
+                                              const priceScale = PERCOLATOR_CONFIG.PRICE_SCALE;
+                                              await liveMutations.closeTrade.mutateAsync({
+                                                userIdx: liveState?.userIdx,
+                                                lpIdx: liveState?.lpIdx || 0,
+                                                currentSize: Math.round(pos.size * priceScale) * (pos.side === 'long' ? 1 : -1),
+                                                fraction: pct / 100,
+                                                maxSlippage: PERCOLATOR_CONFIG.DEFAULT_SLIPPAGE_BPS,
+                                                slabPubkey: perpMarketKey,
+                                              });
+                                              flash('success', `${pct === 100 ? 'Closed' : `Closed ${pct}% of`} ${pos.symbol} (on-chain)`);
+                                            } catch (e) {
+                                              const msg = mapPercolatorError(e);
+                                              if (msg) flash('error', msg);
+                                            }
+                                          } else {
+                                            // ── Paper close ──
+                                            const result = closePerpPosition(pos.id, curPrice, pct / 100);
+                                            if (result.error) flash('error', result.error);
+                                            else flash('success', `${pct === 100 ? 'Closed' : `Closed ${pct}% of`} ${pos.symbol} — P&L: ${result.pnl >= 0 ? '+' : ''}$${result.pnl.toFixed(2)}`);
+                                          }
                                           setClosePartial(null);
                                         }}
                                           className={`px-1.5 py-0.5 rounded border text-[.56rem] font-bold cursor-pointer transition-all

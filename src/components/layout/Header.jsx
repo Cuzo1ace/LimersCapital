@@ -219,9 +219,15 @@ export default function Header() {
                 <div className="absolute right-0 top-full mt-2 rounded-xl border border-border p-2 z-50"
                   style={{ background: 'var(--color-night-2)', boxShadow: '0 8px 28px rgba(0,0,0,.5)', width: 'min(14rem, calc(100vw - 1.5rem))' }}>
                   <div className="text-[.68rem] text-muted mb-2 px-2">Select a wallet</div>
-                  {wallets.map((wallet) => (
-                    <WalletOption key={wallet.name} wallet={wallet} onConnected={handleWalletConnected} />
-                  ))}
+                  {wallets
+                    .filter(w => w.features.includes('standard:connect'))
+                    .map((wallet) => (
+                      <WalletOption key={wallet.name} wallet={wallet} onConnected={handleWalletConnected} />
+                    ))
+                  }
+                  {wallets.filter(w => w.features.includes('standard:connect')).length === 0 && (
+                    <div className="text-[.66rem] text-muted text-center py-3">No compatible wallets detected</div>
+                  )}
                   <div className="border-t border-border mt-1 pt-1">
                     <a href={SOLFLARE_LINK} target="_blank" rel="noopener noreferrer"
                       className="block text-[.68rem] text-muted hover:text-txt no-underline px-2 py-1.5 transition-colors">
@@ -355,9 +361,15 @@ export default function Header() {
             <div className="text-[.72rem] text-muted">Select a wallet</div>
             <button onClick={() => setShowWalletPicker(false)} className="text-muted text-sm cursor-pointer border-none bg-transparent">✕</button>
           </div>
-          {wallets.map((wallet) => (
-            <WalletOption key={wallet.name} wallet={wallet} onConnected={handleWalletConnected} />
-          ))}
+          {wallets
+            .filter(w => w.features.includes('standard:connect'))
+            .map((wallet) => (
+              <WalletOption key={wallet.name} wallet={wallet} onConnected={handleWalletConnected} />
+            ))
+          }
+          {wallets.filter(w => w.features.includes('standard:connect')).length === 0 && (
+            <div className="text-[.66rem] text-muted text-center py-3">No compatible wallets detected</div>
+          )}
           <div className="border-t border-border mt-1 pt-1">
             <a href={SOLFLARE_LINK} target="_blank" rel="noopener noreferrer"
               className="block text-[.68rem] text-muted hover:text-txt no-underline px-2 py-1.5 transition-colors">
@@ -380,8 +392,11 @@ function WalletOption({ wallet, onConnected }) {
       if (accounts.length > 0) {
         onConnected(accounts[0]);
       }
-    } catch {
-      // User rejected — do nothing
+    } catch (err) {
+      // User rejected or wallet incompatible — log for debugging
+      if (err?.message && !err.message.includes('rejected')) {
+        console.warn('[Wallet] Connection failed:', err.message);
+      }
     }
   }
 

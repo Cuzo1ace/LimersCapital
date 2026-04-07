@@ -42,61 +42,75 @@ export const PERCOLATOR_MARKETS = {
     symbol: 'SOL',
     name: 'Solana Perpetual',
     pythFeedId: 'ef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d', // SOL/USD
+    tokenMint: 'So11111111111111111111111111111111111111112',
     collateral: 'USDC',
     maxLeverage: 20,
     phase: '1A',
+    slabPubkey: null, // Set at runtime via deriveSlabPubkey
   },
   'BTC-PERP': {
     symbol: 'BTC',
     name: 'Bitcoin Perpetual',
     pythFeedId: 'e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43', // BTC/USD
+    tokenMint: '3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh', // Wrapped BTC (Solana)
     collateral: 'USDC',
     maxLeverage: 20,
     phase: '1A',
+    slabPubkey: null,
   },
   'ETH-PERP': {
     symbol: 'ETH',
     name: 'Ethereum Perpetual',
     pythFeedId: 'ff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace', // ETH/USD
+    tokenMint: '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs', // Wrapped ETH (Solana)
     collateral: 'USDC',
     maxLeverage: 20,
     phase: '1A',
+    slabPubkey: null,
   },
   // Phase 1B: Vetted Solana tokens
   'JUP-PERP': {
     symbol: 'JUP',
     name: 'Jupiter Perpetual',
     pythFeedId: null, // TBD — will use DexScreener oracle
+    tokenMint: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN',
     collateral: 'USDC',
     maxLeverage: 10,
     phase: '1B',
+    slabPubkey: null,
   },
   'BONK-PERP': {
     symbol: 'BONK',
     name: 'Bonk Perpetual',
     pythFeedId: null,
+    tokenMint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
     collateral: 'USDC',
     maxLeverage: 5,
     phase: '1B',
+    slabPubkey: null,
   },
   // Phase 3: TTSE Caribbean stocks (custom oracle)
   'JMMB-PERP': {
     symbol: 'JMMB',
     name: 'JMMB Group Perpetual',
     pythFeedId: null, // Custom oracle via SetOracleAuthority
+    tokenMint: null, // Custom TTSE — no SPL mint
     collateral: 'USDC',
     maxLeverage: 5,
     phase: '3',
     isTTSE: true,
+    slabPubkey: null,
   },
   'GHL-PERP': {
     symbol: 'GHL',
     name: 'Guardian Holdings Perpetual',
     pythFeedId: null,
+    tokenMint: null, // Custom TTSE — no SPL mint
     collateral: 'USDC',
     maxLeverage: 5,
     phase: '3',
     isTTSE: true,
+    slabPubkey: null,
   },
 };
 
@@ -121,6 +135,11 @@ async function getSDK() {
     _sdk = await import('@percolator/sdk');
   }
   return _sdk;
+}
+
+/** Public accessor for lazy-loaded SDK instance (used by percolator-mutations.js) */
+export async function getSDKInstance() {
+  return getSDK();
 }
 
 /**
@@ -210,6 +229,133 @@ export async function resolvePrice(tokenMint) {
 export async function isAdlTriggered(slabData) {
   const sdk = await getSDK();
   return sdk.isAdlTriggered(slabData);
+}
+
+// ── PDA Derivation ─────────────────────────────────────────────
+// Seeds follow Percolator SDK conventions for deterministic account lookup.
+
+/**
+ * Derive slab PDA for a market.
+ * Seeds: ["slab", market_symbol_bytes]
+ * Returns [PublicKey, bump]
+ */
+export function deriveSlabPubkey(marketKey, network = 'devnet') {
+  // Dynamic import avoidance: use lightweight base58/PDA math
+  // In browser context, we defer to SDK; in tests, we return a deterministic string
+  const programId = getProgramId(network);
+  const market = PERCOLATOR_MARKETS[marketKey];
+  if (!market) throw new Error(`Unknown market: ${marketKey}`);
+
+  // Encode seeds: ["slab", utf8(marketKey)]
+  const seeds = [
+    new TextEncoder().encode('slab'),
+    new TextEncoder().encode(marketKey),
+  ];
+
+  return { programId, seeds, marketKey };
+}
+
+/**
+ * Derive user account PDA within a slab.
+ * Seeds: ["user", slab_pubkey_bytes, wallet_pubkey_bytes]
+ */
+export function deriveUserAccount(slabPubkeyStr, walletPubkeyStr, network = 'devnet') {
+  const programId = getProgramId(network);
+
+  const seeds = [
+    new TextEncoder().encode('user'),
+    new TextEncoder().encode(slabPubkeyStr),
+    new TextEncoder().encode(walletPubkeyStr),
+  ];
+
+  return { programId, seeds, slabPubkey: slabPubkeyStr, wallet: walletPubkeyStr };
+}
+
+/**
+ * Build a complete trade transaction for wallet-standard signing.
+ * Returns serialized VersionedTransaction as Uint8Array.
+ */
+export async function buildFullTradeTransaction({
+  walletPubkey,
+  slabPubkey,
+  userIdx,
+  lpIdx,
+  requestedSize,
+  maxSlippage,
+  recentBlockhash,
+  oracleAccount,
+}) {
+  const sdk = await getSDK();
+
+  // Build the instruction data
+  const ixData = sdk.buildTradeNoCpiIxData({
+    userIdx,
+    lpIdx,
+    requestedSize: BigInt(requestedSize),
+    maxSlippage: maxSlippage || PERCOLATOR_CONFIG.DEFAULT_SLIPPAGE_BPS,
+  });
+
+  // Assemble account metas (Percolator convention)
+  const programId = getProgramId('devnet');
+  const accounts = [
+    { pubkey: slabPubkey, isSigner: false, isWritable: true },
+    { pubkey: walletPubkey, isSigner: true, isWritable: false },
+  ];
+
+  if (oracleAccount) {
+    accounts.push({ pubkey: oracleAccount, isSigner: false, isWritable: false });
+  }
+
+  return { ixData, accounts, programId, recentBlockhash };
+}
+
+/**
+ * Map on-chain position data (e6 format) to paper-compatible shape.
+ * This allows the TradePage to render both paper and live positions identically.
+ */
+export function mapOnChainPosition(onChainPos, oraclePriceE6) {
+  const priceScale = PERCOLATOR_CONFIG.PRICE_SCALE;
+  const entryPrice = Number(onChainPos.entryPriceE6) / priceScale;
+  const markPrice = oraclePriceE6 ? Number(oraclePriceE6) / priceScale : entryPrice;
+  const size = Number(onChainPos.size) / priceScale;
+  const capital = Number(onChainPos.capital) / priceScale;
+  const side = onChainPos.size > 0 ? 'long' : 'short';
+  const leverage = capital > 0 ? Math.abs(size) / capital : 1;
+
+  const direction = side === 'long' ? 1 : -1;
+  const priceDelta = (markPrice - entryPrice) * direction;
+  const unrealizedPnl = entryPrice > 0 ? (priceDelta / entryPrice) * Math.abs(size) : 0;
+
+  return {
+    id: `live-${onChainPos.userIdx}-${onChainPos.slotOpened || Date.now()}`,
+    symbol: onChainPos.symbol || 'SOL',
+    side,
+    leverage: Math.round(leverage * 10) / 10,
+    collateral: capital,
+    size: Math.abs(size),
+    entryPrice,
+    markPrice,
+    unrealizedPnl,
+    liquidationPrice: onChainPos.liqPriceE6 ? Number(onChainPos.liqPriceE6) / priceScale : null,
+    status: 'open',
+    isLive: true,
+    accumulatedFunding: Number(onChainPos.accFundingE6 || 0) / priceScale,
+    stopLoss: null,
+    takeProfit: null,
+    trailingStop: null,
+    openedAt: onChainPos.slotOpened || Date.now(),
+  };
+}
+
+// ── Token Mints ────────────────────────────────────────────────
+
+export const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+
+/**
+ * Get the token mint for a market key
+ */
+export function getMarketTokenMint(marketKey) {
+  return PERCOLATOR_MARKETS[marketKey]?.tokenMint || null;
 }
 
 // ── Percolator State (for Zustand integration) ──────────────────

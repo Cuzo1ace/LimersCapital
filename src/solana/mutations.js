@@ -2,10 +2,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { BN } from '@anchor-lang/core';
 import { PublicKey } from '@solana/web3.js';
 import { getLimerProgram, getUserProfilePDA, getTradeLogPDA } from './program';
+import { confirmTransactionSafe } from './confirm';
+import { createRpc } from './config';
 
 /**
  * Hook that provides all Limer program mutations.
  * Follows the Solana Journal dApp pattern — React Query mutations with wallet signing.
+ * All mutations now include transaction confirmation polling for safety.
  *
  * @param {object|null} wallet  AnchorProvider-compatible wallet (from makeAnchorWallet)
  * @param {string}      cluster 'devnet' | 'mainnet-beta'
@@ -18,14 +21,33 @@ export function useLimerMutations(wallet, cluster) {
   const queryClient = useQueryClient();
   const owner = wallet?.publicKey;
 
-  // Invalidate cached PDA data after any mutation succeeds
-  function onSuccess(signature) {
+  // Shared RPC for confirmation polling (read-only, no wallet needed)
+  const rpc = createRpc(cluster);
+
+  /**
+   * Confirm a transaction after sending, then invalidate caches.
+   * Returns the confirmation result for logging.
+   */
+  async function confirmAndInvalidate(signature, action) {
+    const result = await confirmTransactionSafe(rpc, signature, {
+      commitment: 'confirmed',
+      timeoutMs: 30_000,
+      onStatusChange: (status) => console.log(`[Limer] ${action}: ${status}`),
+    });
+
+    if (result?.err) {
+      throw new Error(`[Limer] ${action} confirmed but failed on-chain: ${JSON.stringify(result.err)}`);
+    }
+
     if (owner) {
       const key = owner.toBase58();
       queryClient.invalidateQueries({ queryKey: ['user-profile', key] });
       queryClient.invalidateQueries({ queryKey: ['trade-log', key] });
     }
-    console.log('[Limer] tx confirmed:', signature);
+
+    const elapsed = result?.elapsed ? ` (${result.elapsed}ms)` : '';
+    console.log(`[Limer] ${action} confirmed${elapsed}:`, signature);
+    return signature;
   }
 
   function onError(error, action) {
@@ -49,7 +71,7 @@ export function useLimerMutations(wallet, cluster) {
       const [userProfilePDA] = getUserProfilePDA(owner);
       const [tradeLogPDA] = getTradeLogPDA(owner);
 
-      return program.methods
+      const sig = await program.methods
         .initializeUser()
         .accounts({
           userProfile: userProfilePDA,
@@ -58,8 +80,8 @@ export function useLimerMutations(wallet, cluster) {
           systemProgram: PublicKey.default,
         })
         .rpc();
+      return confirmAndInvalidate(sig, 'initializeUser');
     },
-    onSuccess,
     onError: (e) => onError(e, 'initializeUser'),
   });
 
@@ -71,12 +93,12 @@ export function useLimerMutations(wallet, cluster) {
       const program = await getProgram();
       const [userProfilePDA] = getUserProfilePDA(owner);
 
-      return program.methods
+      const sig = await program.methods
         .awardXp(new BN(amount))
         .accounts({ userProfile: userProfilePDA, owner })
         .rpc();
+      return confirmAndInvalidate(sig, 'awardXP');
     },
-    onSuccess,
     onError: (e) => onError(e, 'awardXP'),
   });
 
@@ -88,12 +110,12 @@ export function useLimerMutations(wallet, cluster) {
       const program = await getProgram();
       const [userProfilePDA] = getUserProfilePDA(owner);
 
-      return program.methods
+      const sig = await program.methods
         .awardLp(new BN(baseAmount), multiplierPct)
         .accounts({ userProfile: userProfilePDA, owner })
         .rpc();
+      return confirmAndInvalidate(sig, 'awardLP');
     },
-    onSuccess,
     onError: (e) => onError(e, 'awardLP'),
   });
 
@@ -105,12 +127,12 @@ export function useLimerMutations(wallet, cluster) {
       const program = await getProgram();
       const [userProfilePDA] = getUserProfilePDA(owner);
 
-      return program.methods
+      const sig = await program.methods
         .recordBadge(badgeIndex)
         .accounts({ userProfile: userProfilePDA, owner })
         .rpc();
+      return confirmAndInvalidate(sig, 'recordBadge');
     },
-    onSuccess,
     onError: (e) => onError(e, 'recordBadge'),
   });
 
@@ -122,12 +144,12 @@ export function useLimerMutations(wallet, cluster) {
       const program = await getProgram();
       const [userProfilePDA] = getUserProfilePDA(owner);
 
-      return program.methods
+      const sig = await program.methods
         .recordModule(moduleIndex)
         .accounts({ userProfile: userProfilePDA, owner })
         .rpc();
+      return confirmAndInvalidate(sig, 'recordModule');
     },
-    onSuccess,
     onError: (e) => onError(e, 'recordModule'),
   });
 
@@ -139,12 +161,12 @@ export function useLimerMutations(wallet, cluster) {
       const program = await getProgram();
       const [userProfilePDA] = getUserProfilePDA(owner);
 
-      return program.methods
+      const sig = await program.methods
         .checkInDaily()
         .accounts({ userProfile: userProfilePDA, owner })
         .rpc();
+      return confirmAndInvalidate(sig, 'dailyCheckIn');
     },
-    onSuccess,
     onError: (e) => onError(e, 'dailyCheckIn'),
   });
 
@@ -156,12 +178,12 @@ export function useLimerMutations(wallet, cluster) {
       const program = await getProgram();
       const [tradeLogPDA] = getTradeLogPDA(owner);
 
-      return program.methods
+      const sig = await program.methods
         .recordTrade(new BN(volumeUsd), new BN(feeAmount))
         .accounts({ tradeLog: tradeLogPDA, owner })
         .rpc();
+      return confirmAndInvalidate(sig, 'recordTrade');
     },
-    onSuccess,
     onError: (e) => onError(e, 'recordTrade'),
   });
 

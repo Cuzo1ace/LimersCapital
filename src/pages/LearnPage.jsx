@@ -6,6 +6,7 @@ import { QUIZZES } from '../data/quizzes';
 import { GLOSSARY } from '../data/glossary';
 import { getTier, getNextTier } from '../data/gamification';
 import BadgeGrid from '../components/gamification/BadgeGrid';
+import SkillMap from '../components/gamification/SkillMap';
 import { submitQuizToServer } from '../api/game';
 
 /**
@@ -177,6 +178,11 @@ export default function LearnPage() {
           </div>
         </div>
       )}
+
+      {/* Skill Map */}
+      <div className="mb-7">
+        <SkillMap />
+      </div>
 
       {/* Progress Dashboard */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-7">

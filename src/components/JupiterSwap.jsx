@@ -137,7 +137,31 @@ export default function JupiterSwap({ variant } = {}) {
       const result = await connectedWallet.features['solana:signAndSendTransaction']
         .signAndSendTransaction({ transaction: txBuf, account });
 
-      setTxSignature(result.signature);
+      // Decode signature from Uint8Array to base58 string
+      const sig = typeof result.signature === 'string'
+        ? result.signature
+        : Array.from(result.signature).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      setTxSignature(sig);
+      setSwapStatus('confirming');
+
+      // Poll for confirmation instead of assuming success
+      const { confirmTransaction } = await import('../solana/confirm');
+      const { createRpc } = await import('../solana/config');
+      const rpc = createRpc('mainnet-beta');
+      const confirmation = await confirmTransaction(rpc, sig, {
+        commitment: 'confirmed',
+        timeoutMs: 60_000,
+        onStatusChange: (status) => {
+          console.log('[Jupiter] Swap tx status:', status);
+          if (status === 'confirming') setSwapStatus('confirming');
+        },
+      });
+
+      if (confirmation.err) {
+        throw new Error(`Swap confirmed but failed on-chain: ${JSON.stringify(confirmation.err)}`);
+      }
+
       setSwapStatus('success');
     } catch (e) {
       console.error('Swap error:', e);
@@ -347,13 +371,14 @@ export default function JupiterSwap({ variant } = {}) {
           </button>
           <button
             onClick={executeSwap}
-            disabled={swapStatus === 'signing' || swapStatus === 'sending'}
+            disabled={swapStatus === 'signing' || swapStatus === 'sending' || swapStatus === 'confirming'}
             className={unified
               ? "flex-[2] py-2.5 rounded text-[.78rem] font-bold border-none cursor-pointer transition-all bg-up text-night hover:brightness-110 disabled:opacity-30"
               : "flex-[2] py-3 rounded-xl text-[.88rem] font-headline font-bold border-none cursor-pointer transition-all bg-up text-night hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"}
           >
             {swapStatus === 'signing' ? 'Signing...' :
              swapStatus === 'sending' ? 'Sending...' :
+             swapStatus === 'confirming' ? 'Confirming on-chain...' :
              `Swap ${inputToken.symbol} → ${outputToken.symbol}`}
           </button>
         </div>
