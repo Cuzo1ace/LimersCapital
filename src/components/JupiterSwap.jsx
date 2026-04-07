@@ -71,6 +71,8 @@ export default function JupiterSwap({ variant } = {}) {
 
       if (data.error) throw new Error(data.error);
 
+      // Tag with fetch timestamp for freshness check before swap
+      data._fetchedAt = Date.now();
       setQuoteData(data);
     } catch (e) {
       setQuoteError(e.message);
@@ -105,6 +107,11 @@ export default function JupiterSwap({ variant } = {}) {
 
       if (!swapTransaction) throw new Error('No transaction returned from Jupiter');
 
+      // Check quote freshness — reject if older than 30s to avoid stale prices
+      if (quoteData._fetchedAt && Date.now() - quoteData._fetchedAt > 30_000) {
+        throw new Error('Quote expired. Please fetch a new quote.');
+      }
+
       // The transaction needs to be signed by the wallet
       // This requires wallet-standard signAndSendTransaction
       setSwapStatus('sending');
@@ -113,6 +120,25 @@ export default function JupiterSwap({ variant } = {}) {
       const { VersionedTransaction, Connection } = await import('@solana/web3.js');
       const txBuf = Uint8Array.from(atob(swapTransaction), c => c.charCodeAt(0));
       const transaction = VersionedTransaction.deserialize(txBuf);
+
+      // Simulate transaction before signing — DeFi best practice to catch errors early
+      try {
+        const simConnection = new Connection(
+          import.meta.env.VITE_API_PROXY_URL
+            ? `${import.meta.env.VITE_API_PROXY_URL}/rpc`
+            : 'https://api.mainnet-beta.solana.com'
+        );
+        const simResult = await simConnection.simulateTransaction(transaction);
+        if (simResult.value.err) {
+          console.error('[Jupiter] Simulation failed:', simResult.value.err);
+          throw new Error(`Transaction would fail: ${JSON.stringify(simResult.value.err)}`);
+        }
+        console.log('[Jupiter] Simulation passed — proceeding to sign');
+      } catch (simErr) {
+        if (simErr.message.includes('Transaction would fail')) throw simErr;
+        // If simulation itself errors (RPC down), proceed anyway — wallet will catch it
+        console.warn('[Jupiter] Simulation skipped:', simErr.message);
+      }
 
       // Get wallet from window (wallet-standard)
       const wallets = window.navigator?.wallets?.get?.() || [];

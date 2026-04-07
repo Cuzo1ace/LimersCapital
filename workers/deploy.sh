@@ -31,11 +31,21 @@ wrangler deploy api-proxy.js -c wrangler-api.toml
 echo "  ✅ limer-api-proxy deployed"
 echo ""
 
-# 3. Set Helius secret (if not already set)
-echo "→ Setting HELIUS_API_KEY secret..."
-echo "  (You'll be prompted to paste your key — it won't be echoed)"
+# 3. Set secrets (if not already set)
+echo "→ Setting API secrets..."
+echo "  (You'll be prompted to paste each key — they won't be echoed)"
+echo ""
+echo "  [1/3] HELIUS_API_KEY:"
 wrangler secret put HELIUS_API_KEY -c wrangler-api.toml
-echo "  ✅ Secret stored"
+echo "  ✅ HELIUS_API_KEY stored"
+echo ""
+echo "  [2/3] FMP_API_KEY (Financial Modeling Prep):"
+wrangler secret put FMP_API_KEY -c wrangler-api.toml
+echo "  ✅ FMP_API_KEY stored"
+echo ""
+echo "  [3/3] FINNHUB_API_KEY:"
+wrangler secret put FINNHUB_API_KEY -c wrangler-api.toml
+echo "  ✅ FINNHUB_API_KEY stored"
 echo ""
 
 echo "════════════════════════════════════════════════"

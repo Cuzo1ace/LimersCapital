@@ -6,12 +6,13 @@ import { TTSE_FALLBACK } from '../api/ttse';
 export default function ListingPage() {
   const { submitListingApplication, listingApplications } = useStore();
   const [form, setForm] = useState({ company: '', contact: '', email: '', tier: 'Explorer', message: '' });
+  const [privacyConsent, setPrivacyConsent] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
 
   function handleSubmit(e) {
     e.preventDefault();
-    if (!form.company || !form.email) return;
+    if (!form.company || !form.email || !privacyConsent) return;
     submitListingApplication(form);
     setSubmitted(true);
   }
@@ -138,8 +139,16 @@ export default function ListingPage() {
                 className="w-full bg-black/30 border border-border text-txt rounded-lg px-4 py-2.5 font-mono text-[.82rem] outline-none focus:border-sea transition-colors resize-none"
                 placeholder="Tell us about your company and tokenization goals..." />
             </div>
-            <button type="submit"
-              className="px-6 py-3 rounded-xl bg-sea text-night font-body font-bold text-[.88rem] cursor-pointer border-none transition-all hover:brightness-90">
+            <label className="flex items-start gap-2.5 mb-4 cursor-pointer">
+              <input type="checkbox" checked={privacyConsent} onChange={e => setPrivacyConsent(e.target.checked)}
+                className="mt-0.5 w-4 h-4 accent-sea cursor-pointer" />
+              <span className="text-[.72rem] text-txt-2 leading-relaxed">
+                I consent to Limer's Capital collecting and processing the information provided above for the purpose of evaluating my listing application. This data will not be shared with third parties without my permission.
+              </span>
+            </label>
+            <button type="submit" disabled={!privacyConsent}
+              className={`px-6 py-3 rounded-xl font-body font-bold text-[.88rem] cursor-pointer border-none transition-all
+                ${privacyConsent ? 'bg-sea text-night hover:brightness-90' : 'bg-border text-muted cursor-not-allowed'}`}>
               Submit Application (+100 LP)
             </button>
           </form>

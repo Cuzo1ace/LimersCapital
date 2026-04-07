@@ -84,7 +84,7 @@ export default {
     } catch (err) {
       return new Response(`Worker error: ${err.message}`, {
         status: 500,
-        headers: CORS_HEADERS,
+        headers,
       });
     }
   },

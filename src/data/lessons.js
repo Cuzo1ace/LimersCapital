@@ -79,7 +79,7 @@ export const LESSONS = {
       'The Bahamas launched the Sand Dollar in October 2020 — the world\'s first fully deployed Central Bank Digital Currency (CBDC). It\'s a digital version of the Bahamian dollar, issued by the Central Bank.',
       'The Eastern Caribbean Central Bank launched DCash across 8 island nations, allowing instant peer-to-peer payments in digital EC dollars. Jamaica followed with JAM-DEX in 2022.',
       'CBDCs are different from crypto: they\'re issued and controlled by central banks, not decentralized. Think of them as digital cash — same value as physical bills, but transferred via phone.',
-      'For Caribbean investors, CBDCs bridge the gap between traditional finance and crypto. Wam (Trinidad\'s licensed e-money wallet) represents a similar local digital money innovation.',
+      'For Caribbean investors, CBDCs bridge the gap between traditional finance and crypto. Wam is a VASP-licensed company with Central Bank of Trinidad & Tobago approval to provide a digital TTD — enabling instant bank-to-platform transfers for local users. Limer\'s Capital is part of the Wam ecosystem, giving you a regulated local fiat bridge into on-chain finance.',
     ],
     readTime: 3,
   },
@@ -427,7 +427,7 @@ export const LESSONS = {
     summary: 'How premium ownership unlocks access to partner ecosystems and new yield sources.',
     content: [
       'Owning $LIMER isn\'t just about revenue share — it\'s a key that unlocks an expanding ecosystem. Premium tier holders get access to partner integrations that grow over time.',
-      'Wam Integration: Wam provides seamless fiat on/off ramps and cross-platform rewards. Premium holders get full Wam access — meaning you can move between fiat and crypto effortlessly, earn rewards across partner platforms, and benefit from Wam\'s growing merchant network.',
+      'Wam Integration: Wam is a VASP-licensed company with Central Bank approval to provide a digital TTD and instant bank-to-platform transfers for local users. Limer\'s Capital is part of the Wam ecosystem — this means premium holders of $LIMER get access to Wam rewards, yield-bearing instruments, and discounted on/off ramp fees. This regulated fiat bridge is what makes on-chain trading accessible for everyday Caribbean users.',
       'ViFi Yield: ViFi (Decentralized WiFi) is building connectivity infrastructure powered by token incentives. Premium holders earn passive yield from ViFi\'s network — your ownership extends beyond finance into real-world infrastructure. You\'re not just investing in a trading platform; you\'re owning a piece of the connectivity layer.',
       'The key insight is that these benefits grow. As Limer\'s Capital adds partnerships, premium holders are first in line. New yield sources, new integrations, new opportunities — all flowing to the people who believed early and hold $LIMER.',
       'This is UBO in practice: your ownership stake today gives you rights to value that doesn\'t even exist yet. When a new partner joins the ecosystem, you benefit automatically. When a new revenue stream opens, your share is already allocated.',

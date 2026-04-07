@@ -16,8 +16,9 @@ const HERMES_BASE = 'https://hermes.pyth.network/v2/updates/price/latest';
 const DEXSCREENER_BASE = 'https://api.dexscreener.com/tokens/v1/solana';
 
 // Financial Modeling Prep — cryptocurrency supply + ICO metadata
-const FMP_BASE = 'https://financialmodelingprep.com/stable';
-const FMP_KEY  = 'NsWZ81GaptVqV9LkQijHMxKSAZgVI5Gy';
+// API key is stored server-side in the Cloudflare Worker (limer-api-proxy).
+// The frontend NEVER sees the FMP key — all requests route through the proxy.
+const FMP_PROXY_URL = API_PROXY_URL ? `${API_PROXY_URL}/fmp` : null;
 
 // Helius — dedicated RPC + DAS API for on-chain token metadata / logos
 // API key is stored server-side in the Cloudflare Worker (limer-api-proxy).
@@ -402,7 +403,11 @@ export async function fetchSolPrice() {
 // ─── Financial Modeling Prep — supply + ICO metadata ───────────────────
 // Returns { SOL: { circulatingSupply, totalSupply, icoDate }, ... }
 export async function fetchFMPCryptoList() {
-  const res = await fetch(`${FMP_BASE}/cryptocurrency-list?apikey=${FMP_KEY}`);
+  if (!FMP_PROXY_URL) {
+    console.warn('FMP proxy not configured — supply data unavailable');
+    return {};
+  }
+  const res = await fetch(`${FMP_PROXY_URL}/cryptocurrency-list`);
   if (!res.ok) throw new Error(`FMP error: ${res.status}`);
   const data = await res.json();
   const map = {};

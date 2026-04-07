@@ -63,6 +63,6 @@ export const LISTING_FAQ = [
   { q: 'How does tokenization work?', a: 'We issue SPL tokens on Solana backed by custodied shares. Each token represents fractional ownership in the underlying TTSE-listed security.' },
   { q: 'Is this legal in Trinidad & Tobago?', a: 'We are building toward alignment with the TTSEC framework and Caribbean regulatory guidelines. Our platform is currently educational and paper-trading only — no real securities are traded until proper licensing is obtained.' },
   { q: 'What does it cost?', a: 'Explorer tier is free — your company appears on our platform with live data. Pioneer and Enterprise tiers offer additional features at published rates.' },
-  { q: 'How do investors buy tokenized shares?', a: 'Investors connect a Solana wallet (Solflare) and trade using USDC or SOL. They can also fund via Wam (TTD on-ramp).' },
+  { q: 'How do investors buy tokenized shares?', a: 'Investors connect a Solana wallet (Solflare) and trade using USDC or SOL. They can also fund via Wam — a VASP-licensed company with Central Bank approval for instant TTD-to-platform transfers.' },
   { q: 'Can I track investor analytics?', a: 'Pioneer and Enterprise tiers include dashboards showing investor demographics, trading volume, holder distribution, and engagement metrics.' },
 ];

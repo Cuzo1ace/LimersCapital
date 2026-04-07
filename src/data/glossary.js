@@ -1,7 +1,7 @@
 export const GLOSSARY = [
   { term: 'RWA', def: 'Real-World Asset — a blockchain token representing ownership in a physical or traditional financial asset like bonds, real estate, or gold.' },
   { term: 'TVL', def: 'Total Value Locked — the total capital deposited in a DeFi protocol\'s smart contracts. Higher TVL generally indicates more trust.' },
-  { term: 'VASP', def: 'Virtual Asset Service Provider — a regulated entity offering crypto services such as exchanges, custodians, or wallet providers.' },
+  { term: 'VASP', def: 'Virtual Asset Service Provider — a regulated entity offering crypto services such as exchanges, custodians, or wallet providers. Wam is a VASP-licensed company in Trinidad & Tobago with Central Bank approval.' },
   { term: 'CBDC', def: 'Central Bank Digital Currency — a digital form of fiat currency issued by a central bank. Examples: Sand Dollar (Bahamas), JAM-DEX (Jamaica).' },
   { term: 'DEX', def: 'Decentralized Exchange — a peer-to-peer marketplace for trading crypto without intermediaries. Jupiter is Solana\'s leading DEX aggregator.' },
   { term: 'Mint', def: 'On Solana, the unique address identifying a specific token (like a contract address on Ethereum). Each token has exactly one mint address.' },

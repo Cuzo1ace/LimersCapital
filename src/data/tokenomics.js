@@ -44,7 +44,7 @@ export const REVENUE_STREAMS = [
   { source: 'Spot Trading Fees (0.25%)', pct: 30, icon: '💹', collected: 'USDC', desc: 'Auto-converted via Jupiter aggregator' },
   { source: 'Perpetuals Fees (0.1% open + close)', pct: 25, icon: '📈', collected: 'USDC', desc: 'Collected from collateral' },
   { source: 'TTSE Listing & Trading (0.15%)', pct: 15, icon: '🏛️', collected: 'USDC/TTD', desc: 'Listing fees + per-trade commission' },
-  { source: 'Premium Tier (Wam + ViFi Yield)', pct: 10, icon: '⭐', collected: 'USDC/SOL', desc: 'Monthly subscription — access to Wam, ViFi yield, and exclusive benefits' },
+  { source: 'Premium Tier (Wam + ViFi Yield)', pct: 10, icon: '⭐', collected: 'USDC/SOL', desc: 'Monthly subscription — Wam ecosystem access (VASP-licensed, Central Bank approved), ViFi yield, and exclusive benefits' },
   { source: 'Institutional API Access', pct: 10, icon: '🏦', collected: 'USDC', desc: 'Tiered monthly plans for data and trading APIs' },
   { source: 'Solflare/Mobile Referral Fees', pct: 5, icon: '📱', collected: 'USDC', desc: 'Revenue share on referred trading volume' },
   { source: 'Bridge & Cross-chain Fees', pct: 5, icon: '🌉', collected: 'Native → USDC', desc: 'Per-transaction conversion fees' },
@@ -56,7 +56,7 @@ export const REVENUE_DISTRIBUTION = {
 };
 
 export const PREMIUM_BENEFITS = [
-  { icon: '🌐', title: 'Wam Access', desc: 'Full integration with Wam for seamless fiat on/off ramp and cross-platform rewards' },
+  { icon: '🌐', title: 'Wam Access', desc: 'Part of the Wam ecosystem — premium holders get Wam rewards, yield-bearing instruments, and discounted on/off ramp fees' },
   { icon: '📡', title: 'ViFi Yield', desc: 'Access decentralized WiFi yield through ViFi network — earn passive income from connectivity infrastructure' },
   { icon: '🔓', title: 'Early Token Access', desc: 'Priority access to new token listings, IDOs, and TTSE tokenizations before public launch' },
   { icon: '📊', title: 'Pro Analytics', desc: 'Advanced charting, on-chain flow data, whale tracking, and AI-powered trade signals' },
@@ -77,5 +77,5 @@ export const VALUE_PROPS = [
   { icon: '🗳️', title: 'Governance', desc: 'Vote on new listings, fee structures, treasury allocation, and platform direction' },
   { icon: '🖼️', title: 'dNFT Yield Engine', desc: 'Platform allocation held in dynamic NFTs — transparent vesting, on-chain revenue accrual, publicly verifiable' },
   { icon: '🌴', title: 'Universal Basic Ownership', desc: 'The first protocol designed so every participant owns a share of the infrastructure they use' },
-  { icon: '⭐', title: 'Premium: Wam + ViFi', desc: 'Premium holders unlock Wam integration, ViFi yield, pro analytics, and growing ecosystem benefits' },
+  { icon: '⭐', title: 'Premium: Wam + ViFi', desc: 'Premium holders unlock Wam ecosystem access (VASP-licensed digital TTD), ViFi yield, pro analytics, and growing benefits' },
 ];

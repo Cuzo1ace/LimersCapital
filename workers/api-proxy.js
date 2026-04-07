@@ -16,6 +16,7 @@
  *   HELIUS_API_KEY     — Helius RPC + DAS API key
  *   ANTHROPIC_API_KEY  — Claude API key for AI market briefs
  *   FINNHUB_API_KEY    — Finnhub financial data API key
+ *   FMP_API_KEY        — Financial Modeling Prep API key
  *
  * Deploy:
  *   cd workers
@@ -60,7 +61,30 @@ const rateLimitMap = new Map();
 const RATE_LIMIT_WINDOW = 60_000; // 1 minute
 const RATE_LIMIT_MAX = 60; // 60 requests per minute per IP
 
+let lastRateLimitCleanup = Date.now();
+const RATE_LIMIT_CLEANUP_INTERVAL = 5 * 60_000; // 5 minutes
+const RATE_LIMIT_MAX_ENTRIES = 10_000;
+
+function cleanupRateLimitMap() {
+  const now = Date.now();
+  if (now - lastRateLimitCleanup < RATE_LIMIT_CLEANUP_INTERVAL) return;
+  lastRateLimitCleanup = now;
+
+  // Purge expired entries to prevent unbounded memory growth
+  for (const [key, entry] of rateLimitMap) {
+    if (now - entry.start > RATE_LIMIT_WINDOW * 2) {
+      rateLimitMap.delete(key);
+    }
+  }
+
+  // Hard cap: if still too large, clear everything (safety valve)
+  if (rateLimitMap.size > RATE_LIMIT_MAX_ENTRIES) {
+    rateLimitMap.clear();
+  }
+}
+
 function checkRateLimit(ip) {
+  cleanupRateLimitMap();
   const now = Date.now();
   const entry = rateLimitMap.get(ip);
 
@@ -161,12 +185,22 @@ const QUIZ_ANSWERS = {
 // ── Quiz attempt rate limiting (in-memory, per isolate) ──
 const quizAttemptMap = new Map();
 const QUIZ_MAX_ATTEMPTS_PER_DAY = 3;
+let lastQuizCleanup = Date.now();
 
 function checkQuizAttempts(ip, quizId) {
   const key = `${ip}:${quizId}`;
   const now = Date.now();
-  const entry = quizAttemptMap.get(key);
   const dayMs = 86400000;
+
+  // Periodic cleanup — purge expired quiz entries
+  if (now - lastQuizCleanup > 3600_000) { // every hour
+    lastQuizCleanup = now;
+    for (const [k, v] of quizAttemptMap) {
+      if (now - v.start > dayMs) quizAttemptMap.delete(k);
+    }
+  }
+
+  const entry = quizAttemptMap.get(key);
 
   if (!entry || now - entry.start > dayMs) {
     quizAttemptMap.set(key, { start: now, count: 1 });
@@ -236,8 +270,55 @@ async function handleGameRoute(path, request, env, origin) {
   }
 
   if (path.startsWith('/game/award-') && request.method === 'POST') {
-    // TODO: Validate + store in KV when available
-    return new Response(JSON.stringify({ ok: true, message: 'Recorded' }), {
+    const clientIp = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const awardType = path.includes('award-lp') ? 'lp' : 'xp';
+
+    // Rate limit: max 30 award calls per minute per IP (prevents spam)
+    const awardKey = `${clientIp}:award-${awardType}`;
+    const now = Date.now();
+    const awardEntry = rateLimitMap.get(awardKey);
+    if (awardEntry && now - awardEntry.start < 60_000 && awardEntry.count > 30) {
+      return new Response(JSON.stringify({ error: 'Too many award requests' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': '60', ...corsHeaders(origin) },
+      });
+    }
+    if (!awardEntry || now - awardEntry.start > 60_000) {
+      rateLimitMap.set(awardKey, { start: now, count: 1 });
+    } else {
+      awardEntry.count++;
+    }
+
+    // Validate body
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+        status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+      });
+    }
+
+    const { action, amount } = body;
+
+    // Validate action type
+    const VALID_ACTIONS = ['trade', 'lesson', 'quiz', 'badge', 'checkin', 'challenge', 'insight', 'knowledge', 'micro-lesson', 'journal'];
+    if (!action || !VALID_ACTIONS.includes(action)) {
+      return new Response(JSON.stringify({ error: 'Invalid action type' }), {
+        status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+      });
+    }
+
+    // Validate amount is a reasonable number (prevents inflated scores)
+    const MAX_AWARD = awardType === 'lp' ? 500 : 1000;
+    if (typeof amount !== 'number' || amount <= 0 || amount > MAX_AWARD || !Number.isFinite(amount)) {
+      return new Response(JSON.stringify({ error: `Invalid ${awardType.toUpperCase()} amount (max ${MAX_AWARD})` }), {
+        status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+      });
+    }
+
+    // TODO: Store validated amount in KV when available
+    return new Response(JSON.stringify({ ok: true, message: 'Recorded', validated: true }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...corsHeaders(origin) },
     });
@@ -646,6 +727,13 @@ const ROUTES = {
     buildUrl: (env) => `https://finnhub.io/api/v1/stock/metric?token=${env.FINNHUB_API_KEY}`,
     cacheTtl: 3600,
     passQuery: true,
+  },
+
+  // ── Financial Modeling Prep (API key injected server-side) ──
+  '/fmp/cryptocurrency-list': {
+    method: 'GET',
+    buildUrl: (env) => `https://financialmodelingprep.com/stable/cryptocurrency-list?apikey=${env.FMP_API_KEY}`,
+    cacheTtl: 3600, // 1 hour — supply data changes infrequently
   },
 };
 

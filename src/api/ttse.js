@@ -9,10 +9,6 @@
 const TTSE_PROXY_URL =
   import.meta.env.VITE_TTSE_PROXY_URL || null;
 
-// Legacy fallback (allorigins) — only used if Worker URL is not configured
-const ALLORIGINS_BASE = 'https://api.allorigins.win/get?url=';
-const TTSE_URL = 'https://www.stockex.co.tt/market-quote/';
-
 export const TTD_RATE = 6.79; // 1 USD ≈ TT$6.79
 
 export const SECTOR_META = {
@@ -122,21 +118,12 @@ export async function fetchTTSEData() {
     let html = null;
 
     if (TTSE_PROXY_URL) {
-      // Path 1: Cloudflare Worker — direct HTML response
+      // Cloudflare Worker — direct HTML response (self-controlled, no third-party dependency)
       const r = await fetch(TTSE_PROXY_URL, { signal: controller.signal });
       clearTimeout(timeout);
       if (r.ok) {
         html = await r.text();
       }
-    } else {
-      // Path 2: allorigins legacy fallback (JSON wrapper)
-      const r = await fetch(
-        `${ALLORIGINS_BASE}${encodeURIComponent(TTSE_URL)}`,
-        { signal: controller.signal }
-      );
-      clearTimeout(timeout);
-      const j = await r.json();
-      if (j.contents) html = j.contents;
     }
 
     if (html) {
