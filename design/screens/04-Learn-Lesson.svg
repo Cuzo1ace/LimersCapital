@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844" style="background:#0d0e10">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&amp;family=Inter:wght@400;500&amp;family=DM+Mono:wght@400&amp;display=swap');
+    </style>
+  </defs>
+
+  <!-- Screen background -->
+  <rect width="390" height="844" fill="#0d0e10" rx="44"/>
+
+  <!-- STATUS BAR -->
+  <g id="status-bar">
+    <rect x="0" y="0" width="390" height="44" fill="#0d0e10"/>
+    <text x="28" y="28" font-family="Inter" font-weight="600" font-size="15" fill="#fdfbfe" letter-spacing="0.2">9:41</text>
+    <g id="signal" transform="translate(311, 16)">
+      <rect x="0" y="6" width="3" height="6" rx="1" fill="#fdfbfe"/>
+      <rect x="5" y="4" width="3" height="8" rx="1" fill="#fdfbfe"/>
+      <rect x="10" y="2" width="3" height="10" rx="1" fill="#fdfbfe"/>
+      <rect x="15" y="0" width="3" height="12" rx="1" fill="#fdfbfe" opacity="0.35"/>
+    </g>
+    <g id="wifi" transform="translate(335, 18)">
+      <path d="M8 10 C5.5 7.5 2.5 7.5 0 10" stroke="#fdfbfe" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.35"/>
+      <path d="M10 7.5 C6.5 4 1.5 4 -2 7.5" stroke="#fdfbfe" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.6"/>
+      <path d="M12 5 C7.5 0.5 0.5 0.5 -4 5" stroke="#fdfbfe" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <circle cx="4" cy="12" r="1.5" fill="#fdfbfe"/>
+    </g>
+    <g id="battery" transform="translate(354, 18)">
+      <rect x="0" y="1" width="22" height="11" rx="3" stroke="#fdfbfe" stroke-width="1.2" fill="none"/>
+      <rect x="22.5" y="4" width="2" height="5" rx="1" fill="#fdfbfe" opacity="0.5"/>
+      <rect x="1.5" y="2.5" width="16" height="8" rx="2" fill="#fdfbfe"/>
+    </g>
+  </g>
+
+  <!-- HEADER -->
+  <g id="header">
+    <rect x="0" y="44" width="390" height="56" fill="#0d0e10"/>
+    <!-- Back arrow -->
+    <g id="back-btn" transform="translate(16, 58)">
+      <rect width="40" height="40" rx="8" fill="#1e2022"/>
+      <path d="M24 20 L16 20 M16 20 L21 15 M16 20 L21 25" stroke="#fdfbfe" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </g>
+    <!-- Title — truncated to fit -->
+    <text x="195" y="72" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="16" fill="#fdfbfe" text-anchor="middle">Blockchain Basics</text>
+    <!-- Progress indicator -->
+    <rect x="318" y="62" width="56" height="24" rx="8" fill="#1e2022"/>
+    <text x="346" y="78" font-family="Inter" font-weight="500" font-size="12" fill="#ababad" text-anchor="middle">3 / 8</text>
+  </g>
+
+  <!-- Lesson progress bar (thin, full width) -->
+  <g id="lesson-progress-bar">
+    <rect x="0" y="100" width="390" height="3" fill="#1e2022"/>
+    <!-- 3/8 = 37.5% -->
+    <rect x="0" y="100" width="146" height="3" fill="#00ffa3"/>
+  </g>
+
+  <!-- LESSON CONTENT AREA -->
+  <g id="lesson-content">
+    <!-- Lesson title -->
+    <text x="16" y="136" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="20" fill="#fdfbfe">What is a Blockchain?</text>
+
+    <!-- Subtitle -->
+    <text x="16" y="158" font-family="Inter" font-size="12" fill="#ababad">Lesson 3 of 8  ·  5 min read</text>
+
+    <!-- Divider -->
+    <line x1="16" y1="174" x2="374" y2="174" stroke="#47484a66" stroke-width="1"/>
+
+    <!-- Body paragraph 1 -->
+    <text x="16" y="198" font-family="Inter" font-size="15" fill="#fdfbfe" xml:space="preserve">A blockchain is a distributed database shared</text>
+    <text x="16" y="218" font-family="Inter" font-size="15" fill="#fdfbfe" xml:space="preserve">among the nodes of a computer network. As a</text>
+    <text x="16" y="238" font-family="Inter" font-size="15" fill="#fdfbfe" xml:space="preserve">database, it stores information electronically</text>
+    <text x="16" y="258" font-family="Inter" font-size="15" fill="#fdfbfe" xml:space="preserve">in digital format.</text>
+
+    <!-- Body paragraph 2 -->
+    <text x="16" y="290" font-family="Inter" font-size="15" fill="#fdfbfe" xml:space="preserve">Unlike traditional databases, blockchains</text>
+    <text x="16" y="310" font-family="Inter" font-size="15" fill="#fdfbfe" xml:space="preserve">structure data into groups called blocks that</text>
+    <text x="16" y="330" font-family="Inter" font-size="15" fill="#fdfbfe" xml:space="preserve">are chained together cryptographically.</text>
+
+    <!-- Diagram placeholder -->
+    <g id="diagram-placeholder" transform="translate(16, 350)">
+      <rect width="358" height="160" rx="12" fill="#121316" stroke="#47484a66" stroke-width="1.5" stroke-dasharray="8 4"/>
+      <!-- Block 1 -->
+      <rect x="24" y="44" width="70" height="60" rx="8" fill="#1e2022" stroke="#47484a66" stroke-width="1"/>
+      <text x="59" y="69" font-family="Inter" font-weight="500" font-size="10" fill="#ababad" text-anchor="middle">Block</text>
+      <text x="59" y="83" font-family="'DM Mono', monospace" font-size="9" fill="#00ffa3" text-anchor="middle">#001</text>
+      <text x="59" y="97" font-family="'DM Mono', monospace" font-size="8" fill="#47484a" text-anchor="middle">0x3f2a...</text>
+      <!-- Arrow 1 -->
+      <path d="M94 74 L114 74 M108 68 L114 74 L108 80" stroke="#00ffa3" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Block 2 -->
+      <rect x="114" y="44" width="70" height="60" rx="8" fill="#1e2022" stroke="#00ffa3" stroke-width="1.5"/>
+      <text x="149" y="69" font-family="Inter" font-weight="500" font-size="10" fill="#ababad" text-anchor="middle">Block</text>
+      <text x="149" y="83" font-family="'DM Mono', monospace" font-size="9" fill="#00ffa3" text-anchor="middle">#002</text>
+      <text x="149" y="97" font-family="'DM Mono', monospace" font-size="8" fill="#47484a" text-anchor="middle">0x9d1c...</text>
+      <!-- Arrow 2 -->
+      <path d="M184 74 L204 74 M198 68 L204 74 L198 80" stroke="#00ffa3" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Block 3 -->
+      <rect x="204" y="44" width="70" height="60" rx="8" fill="#1e2022" stroke="#47484a66" stroke-width="1"/>
+      <text x="239" y="69" font-family="Inter" font-weight="500" font-size="10" fill="#ababad" text-anchor="middle">Block</text>
+      <text x="239" y="83" font-family="'DM Mono', monospace" font-size="9" fill="#00ffa3" text-anchor="middle">#003</text>
+      <text x="239" y="97" font-family="'DM Mono', monospace" font-size="8" fill="#47484a" text-anchor="middle">0x7b4e...</text>
+      <!-- Arrow 3 (dots) -->
+      <circle cx="294" cy="71" r="2" fill="#47484a"/>
+      <circle cx="302" cy="71" r="2" fill="#47484a"/>
+      <circle cx="310" cy="71" r="2" fill="#47484a"/>
+      <!-- Caption -->
+      <text x="179" y="138" font-family="Inter" font-size="11" fill="#ababad" text-anchor="middle">Diagram: How blocks connect</text>
+    </g>
+
+    <!-- Key Concept callout -->
+    <g id="key-concept-callout" transform="translate(16, 530)">
+      <rect width="358" height="88" rx="12" fill="#1e2022"/>
+      <!-- Green left border -->
+      <rect width="4" height="88" rx="2" fill="#00ffa3"/>
+      <!-- Label -->
+      <text x="20" y="24" font-family="Inter" font-weight="500" font-size="11" fill="#00ffa3" letter-spacing="0.8">KEY CONCEPT</text>
+      <!-- Content -->
+      <text x="20" y="46" font-family="Inter" font-size="14" fill="#fdfbfe">Immutability: Once data is recorded</text>
+      <text x="20" y="64" font-family="Inter" font-size="14" fill="#fdfbfe">on a blockchain, it cannot be altered</text>
+      <text x="20" y="82" font-family="Inter" font-size="14" fill="#fdfbfe">without network consensus.</text>
+    </g>
+  </g>
+
+  <!-- CONTINUE BUTTON -->
+  <g id="continue-button" transform="translate(16, 706)">
+    <rect width="358" height="48" rx="12" fill="#00ffa3"/>
+    <text x="179" y="29" font-family="'Space Grotesk', sans-serif" font-weight="600" font-size="16" fill="#0d0e10" text-anchor="middle">Continue</text>
+    <!-- Arrow right -->
+    <path d="M332 24 L340 24 M336 20 L340 24 L336 28" stroke="#0d0e10" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- BOTTOM NAV -->
+  <g id="bottom-nav">
+    <rect x="0" y="788" width="390" height="56" fill="#121316"/>
+    <line x1="0" y1="788" x2="390" y2="788" stroke="#47484a66" stroke-width="1"/>
+    <g id="nav-home" transform="translate(15, 796)">
+      <path d="M37 22 L37 14 L44 8 L51 14 L51 22 Z" stroke="#ababad" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+      <rect x="40" y="16" width="8" height="6" rx="1" fill="none" stroke="#ababad" stroke-width="1.5"/>
+      <text x="44" y="38" font-family="Inter" font-size="10" fill="#ababad" text-anchor="middle">Home</text>
+    </g>
+    <g id="nav-map" transform="translate(93, 796)">
+      <path d="M37 22 C37 16 44 8 44 8 C44 8 51 16 51 22 C51 26 44 28 44 22 Z" stroke="#ababad" stroke-width="1.5" fill="none"/>
+      <circle cx="44" cy="18" r="2.5" stroke="#ababad" stroke-width="1.3" fill="none"/>
+      <text x="44" y="38" font-family="Inter" font-size="10" fill="#ababad" text-anchor="middle">Map</text>
+    </g>
+    <g id="nav-learn-active" transform="translate(171, 796)">
+      <rect x="28" y="4" width="32" height="24" rx="4" fill="none" stroke="#00ffa3" stroke-width="1.5"/>
+      <line x1="34" y1="10" x2="54" y2="10" stroke="#00ffa3" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="34" y1="15" x2="54" y2="15" stroke="#00ffa3" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="34" y1="20" x2="46" y2="20" stroke="#00ffa3" stroke-width="1.5" stroke-linecap="round"/>
+      <text x="44" y="38" font-family="Inter" font-weight="500" font-size="10" fill="#00ffa3" text-anchor="middle">Learn</text>
+    </g>
+    <g id="nav-portfolio" transform="translate(249, 796)">
+      <circle cx="44" cy="14" r="8" stroke="#ababad" stroke-width="1.5" fill="none"/>
+      <path d="M44 14 L44 8 A8 8 0 0 1 51 18 Z" fill="#ababad" opacity="0.5"/>
+      <text x="44" y="38" font-family="Inter" font-size="10" fill="#ababad" text-anchor="middle">Portfolio</text>
+    </g>
+    <g id="nav-profile" transform="translate(327, 796)">
+      <circle cx="44" cy="12" r="5" stroke="#ababad" stroke-width="1.5" fill="none"/>
+      <path d="M36 26 C36 20 52 20 52 26" stroke="#ababad" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <text x="44" y="38" font-family="Inter" font-size="10" fill="#ababad" text-anchor="middle">Profile</text>
+    </g>
+    <rect x="155" y="836" width="80" height="4" rx="2" fill="#fdfbfe" opacity="0.2"/>
+  </g>
+</svg>

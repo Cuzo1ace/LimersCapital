@@ -61,10 +61,10 @@ export default function RewardToast() {
           onClose={() => setSharing(false)}
         />
       )}
-      <div className="fixed bottom-5 right-5 z-[999] animate-[slideUp_0.3s_ease] max-w-[340px]"
+      <div className="fixed bottom-20 md:bottom-5 right-5 z-[999] animate-[slideUp_0.3s_ease] max-w-[340px] backdrop-blur-xl"
         style={{
-          background: 'var(--color-night-2)',
-          border: `1px solid ${style.border}`,
+          background: 'rgba(18, 19, 22, 0.85)',
+          border: `1px solid rgba(255,255,255,0.08)`,
           borderLeft: `3px solid ${style.border}`,
           borderRadius: '12px',
           padding: '14px 18px',

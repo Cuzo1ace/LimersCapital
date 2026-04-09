@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844">
+  <!-- Background with overlay -->
+  <rect width="390" height="844" fill="#0d0e10"/>
+  <rect width="390" height="844" fill="#000000" opacity="0.4"/>
+
+  <!-- ==================== NAVIGATION DRAWER ==================== -->
+  <g id="nav-drawer">
+    <!-- Drawer background -->
+    <rect x="0" y="200" width="390" height="644" rx="24" fill="#121316"/>
+    <rect x="171" y="212" width="48" height="4" rx="2" fill="#47484a66"/>
+
+    <!-- User Card -->
+    <g id="user-card" transform="translate(16,232)">
+      <rect width="358" height="80" rx="16" fill="#1e2022"/>
+      <!-- Avatar -->
+      <circle cx="48" cy="40" r="24" fill="#00ffa3" opacity="0.15"/>
+      <text x="48" y="46" font-family="Space Grotesk" font-weight="700" font-size="18" fill="#00ffa3" text-anchor="middle">LC</text>
+      <!-- Info -->
+      <text x="84" y="30" font-family="DM Mono" font-size="13" fill="#fdfbfe">7xKd...m3fR</text>
+      <!-- Tier badge -->
+      <rect x="84" y="38" width="64" height="20" rx="10" fill="#FFCA3A" opacity="0.15"/>
+      <text x="92" y="52" font-family="Inter" font-weight="600" font-size="10" fill="#FFCA3A">Explorer</text>
+      <!-- Stats -->
+      <text x="220" y="30" font-family="DM Mono" font-size="12" fill="#00ffa3">2,450 XP</text>
+      <text x="220" y="52" font-family="DM Mono" font-size="12" fill="#bf81ff">340 LP</text>
+      <!-- Streak -->
+      <text x="320" y="30" font-family="Inter" font-size="11" fill="#FFCA3A">7 day</text>
+      <path d="M340,36 C340,36 346,42 346,46 C346,49 344,51 340,51 C336,51 334,49 334,46 C334,42 340,36 340,36Z" fill="#FFCA3A" opacity="0.8"/>
+    </g>
+
+    <!-- Section: Core -->
+    <g id="section-core" transform="translate(16,328)">
+      <text x="8" y="14" font-family="Inter" font-weight="600" font-size="11" fill="#ababad" letter-spacing="1">CORE</text>
+
+      <g transform="translate(0,28)">
+        <rect width="358" height="44" rx="8" fill="transparent"/>
+        <rect x="8" y="10" width="24" height="24" rx="6" fill="#00ffa3" opacity="0.1"/>
+        <text x="20" y="27" font-family="Inter" font-weight="600" font-size="12" fill="#00ffa3" text-anchor="middle">D</text>
+        <text x="44" y="28" font-family="Inter" font-weight="500" font-size="14" fill="#fdfbfe">Dashboard</text>
+      </g>
+      <g transform="translate(0,72)">
+        <rect width="358" height="44" rx="8" fill="transparent"/>
+        <rect x="8" y="10" width="24" height="24" rx="6" fill="#bf81ff" opacity="0.1"/>
+        <text x="20" y="27" font-family="Inter" font-weight="600" font-size="12" fill="#bf81ff" text-anchor="middle">L</text>
+        <text x="44" y="28" font-family="Inter" font-weight="500" font-size="14" fill="#fdfbfe">Learn</text>
+      </g>
+      <g transform="translate(0,116)">
+        <rect width="358" height="44" rx="8" fill="transparent"/>
+        <rect x="8" y="10" width="24" height="24" rx="6" fill="#FFCA3A" opacity="0.1"/>
+        <text x="20" y="27" font-family="Inter" font-weight="600" font-size="12" fill="#FFCA3A" text-anchor="middle">M</text>
+        <text x="44" y="28" font-family="Inter" font-weight="500" font-size="14" fill="#fdfbfe">Market</text>
+      </g>
+      <g transform="translate(0,160)">
+        <rect width="358" height="44" rx="8" fill="transparent"/>
+        <rect x="8" y="10" width="24" height="24" rx="6" fill="#2D9B56" opacity="0.1"/>
+        <text x="20" y="27" font-family="Inter" font-weight="600" font-size="12" fill="#2D9B56" text-anchor="middle">T</text>
+        <text x="44" y="28" font-family="Inter" font-weight="500" font-size="14" fill="#fdfbfe">Trade</text>
+      </g>
+      <g transform="translate(0,204)">
+        <rect width="358" height="44" rx="8" fill="transparent"/>
+        <rect x="8" y="10" width="24" height="24" rx="6" fill="#627EEA" opacity="0.1"/>
+        <text x="20" y="27" font-family="Inter" font-weight="600" font-size="12" fill="#627EEA" text-anchor="middle">P</text>
+        <text x="44" y="28" font-family="Inter" font-weight="500" font-size="14" fill="#fdfbfe">Portfolio</text>
+      </g>
+    </g>
+
+    <!-- Divider -->
+    <line x1="32" y1="590" x2="358" y2="590" stroke="#47484a66" stroke-width="1"/>
+
+    <!-- Section: Ecosystem -->
+    <g id="section-ecosystem" transform="translate(16,600)">
+      <text x="8" y="14" font-family="Inter" font-weight="600" font-size="11" fill="#ababad" letter-spacing="1">ECOSYSTEM</text>
+
+      <g transform="translate(0,28)">
+        <text x="44" y="16" font-family="Inter" font-size="14" fill="#fdfbfe">$LIMER Token</text>
+      </g>
+      <g transform="translate(180,28)">
+        <text x="0" y="16" font-family="Inter" font-size="14" fill="#fdfbfe">Competition</text>
+      </g>
+      <g transform="translate(0,56)">
+        <text x="44" y="16" font-family="Inter" font-size="14" fill="#fdfbfe">Community</text>
+      </g>
+      <g transform="translate(180,56)">
+        <text x="0" y="16" font-family="Inter" font-size="14" fill="#fdfbfe">Revenue</text>
+      </g>
+    </g>
+
+    <!-- Divider -->
+    <line x1="32" y1="692" x2="358" y2="692" stroke="#47484a66" stroke-width="1"/>
+
+    <!-- Section: Info -->
+    <g id="section-info" transform="translate(16,702)">
+      <text x="8" y="14" font-family="Inter" font-weight="600" font-size="11" fill="#ababad" letter-spacing="1">INFO</text>
+      <g transform="translate(0,28)">
+        <text x="44" y="16" font-family="Inter" font-size="13" fill="#ababad">Regulation</text>
+        <text x="150" y="16" font-family="Inter" font-size="13" fill="#ababad">FAQ</text>
+        <text x="210" y="16" font-family="Inter" font-size="13" fill="#ababad">Legal</text>
+        <text x="280" y="16" font-family="Inter" font-size="13" fill="#ababad">About</text>
+      </g>
+    </g>
+
+    <!-- Settings Row -->
+    <g id="settings-row" transform="translate(16,760)">
+      <rect width="358" height="44" rx="12" fill="#1e2022"/>
+      <!-- Theme toggle -->
+      <text x="16" y="28" font-family="Inter" font-size="12" fill="#ababad">Theme</text>
+      <rect x="60" y="12" width="40" height="20" rx="10" fill="#00ffa3" opacity="0.3"/>
+      <circle cx="88" cy="22" r="8" fill="#00ffa3"/>
+      <!-- Language -->
+      <text x="120" y="28" font-family="Inter" font-size="12" fill="#ababad">EN</text>
+      <!-- Network -->
+      <rect x="260" y="12" width="80" height="20" rx="10" fill="#1e2022" stroke="#47484a66" stroke-width="1"/>
+      <circle cx="274" cy="22" r="4" fill="#00ffa3"/>
+      <text x="284" y="27" font-family="DM Mono" font-size="10" fill="#ababad">Mainnet</text>
+    </g>
+  </g>
+</svg>

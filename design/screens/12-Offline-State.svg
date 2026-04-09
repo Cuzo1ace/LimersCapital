@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844">
+  <!-- Background -->
+  <rect width="390" height="844" fill="#0d0e10"/>
+
+  <!-- Status bar -->
+  <g id="status-bar">
+    <text x="32" y="20" font-family="Inter" font-weight="600" font-size="14" fill="#fdfbfe">9:41</text>
+    <g transform="translate(310,8)">
+      <rect x="0" y="8" width="3" height="4" rx="0.5" fill="#ababad"/>
+      <rect x="5" y="5" width="3" height="7" rx="0.5" fill="#ababad"/>
+      <rect x="10" y="2" width="3" height="10" rx="0.5" fill="#ababad" opacity="0.3"/>
+      <rect x="15" y="0" width="3" height="12" rx="0.5" fill="#ababad" opacity="0.3"/>
+    </g>
+    <!-- No WiFi icon -->
+    <g transform="translate(340,8)">
+      <path d="M0 6 L6 0 L12 6" stroke="#ababad" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.3"/>
+      <line x1="2" y1="0" x2="10" y2="8" stroke="#ff716c" stroke-width="1.5" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(358,8)">
+      <rect x="0" y="1" width="22" height="10" rx="2" stroke="#fdfbfe" stroke-width="1" fill="none"/>
+      <rect x="2" y="3" width="12" height="6" rx="1" fill="#FFCA3A"/>
+    </g>
+  </g>
+
+  <!-- ==================== OFFLINE BANNER ==================== -->
+  <g id="offline-banner">
+    <rect x="0" y="30" width="390" height="40" fill="#FFCA3A" opacity="0.12"/>
+    <rect x="0" y="30" width="390" height="40" fill="none" stroke="#FFCA3A" stroke-width="0" opacity="0"/>
+    <!-- Warning icon -->
+    <g transform="translate(16,38)">
+      <path d="M12 0 L24 22 L0 22 Z" fill="none" stroke="#FFCA3A" stroke-width="1.5"/>
+      <line x1="12" y1="8" x2="12" y2="14" stroke="#FFCA3A" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="12" cy="18" r="1" fill="#FFCA3A"/>
+    </g>
+    <text x="48" y="50" font-family="Inter" font-weight="500" font-size="13" fill="#FFCA3A">You're offline</text>
+    <text x="48" y="64" font-family="Inter" font-size="11" fill="#ababad">Prices from 2 min ago</text>
+    <!-- Retry -->
+    <text x="358" y="54" font-family="Inter" font-weight="600" font-size="12" fill="#FFCA3A" text-anchor="end">Retry</text>
+  </g>
+
+  <!-- Header (below banner) -->
+  <g id="header">
+    <circle cx="40" cy="98" r="14" fill="#00ffa3" opacity="0.15"/>
+    <text x="38" y="103" font-family="Space Grotesk" font-weight="700" font-size="14" fill="#00ffa3" text-anchor="middle">L</text>
+    <text x="60" y="103" font-family="Space Grotesk" font-weight="700" font-size="18" fill="#fdfbfe">Limer's</text>
+    <!-- Wallet (disconnected) -->
+    <rect x="272" y="84" width="72" height="28" rx="14" fill="#1e2022" stroke="#47484a66" stroke-width="1"/>
+    <circle cx="288" cy="98" r="6" fill="#ababad" opacity="0.3"/>
+    <text x="300" y="102" font-family="DM Mono" font-size="11" fill="#ababad">7xK..3f</text>
+  </g>
+
+  <!-- Stale price ticker -->
+  <g id="price-ticker-stale">
+    <rect x="0" y="124" width="390" height="32" fill="#121316"/>
+    <text x="16" y="144" font-family="DM Mono" font-size="12" fill="#ababad" opacity="0.5">
+      <tspan>SOL</tspan>
+      <tspan dx="4">$148.32</tspan>
+      <tspan dx="12">BTC</tspan>
+      <tspan dx="4">$67,421</tspan>
+      <tspan dx="12">ETH</tspan>
+      <tspan dx="4">$3,102</tspan>
+    </text>
+  </g>
+
+  <!-- Hero card (cached) -->
+  <g id="hero-cached">
+    <rect x="16" y="168" width="358" height="120" rx="16" fill="#121316" stroke="#47484a66" stroke-width="1"/>
+    <text x="32" y="196" font-family="Space Grotesk" font-weight="600" font-size="16" fill="#fdfbfe">Your Progress</text>
+    <text x="32" y="220" font-family="DM Mono" font-size="24" fill="#00ffa3">2,450 XP</text>
+    <rect x="32" y="236" width="310" height="6" rx="3" fill="#1e2022"/>
+    <rect x="32" y="236" width="204" height="6" rx="3" fill="#00ffa3" opacity="0.5"/>
+    <text x="32" y="260" font-family="Inter" font-size="11" fill="#ababad">Level 5 — cached data</text>
+  </g>
+
+  <!-- Quick actions (dimmed) -->
+  <g id="quick-actions-offline" opacity="0.5">
+    <text x="16" y="316" font-family="Space Grotesk" font-weight="600" font-size="16" fill="#fdfbfe">Quick Actions</text>
+    <g transform="translate(26,328)">
+      <rect width="72" height="72" rx="12" fill="#121316" stroke="#47484a66" stroke-width="1"/>
+      <text x="36" y="36" font-family="Inter" font-weight="700" font-size="16" fill="#00ffa3" text-anchor="middle">L</text>
+      <text x="36" y="58" font-family="Inter" font-weight="500" font-size="12" fill="#fdfbfe" text-anchor="middle">Learn</text>
+    </g>
+    <g transform="translate(114,328)">
+      <rect width="72" height="72" rx="12" fill="#121316" stroke="#47484a66" stroke-width="1"/>
+      <text x="36" y="36" font-family="Inter" font-weight="700" font-size="16" fill="#ababad" text-anchor="middle">T</text>
+      <text x="36" y="58" font-family="Inter" font-weight="500" font-size="12" fill="#ababad" text-anchor="middle">Trade</text>
+      <!-- Offline badge -->
+      <rect x="48" y="-4" width="28" height="16" rx="8" fill="#FFCA3A"/>
+      <text x="62" y="8" font-family="Inter" font-weight="600" font-size="8" fill="#0d0e10" text-anchor="middle">OFF</text>
+    </g>
+    <g transform="translate(202,328)">
+      <rect width="72" height="72" rx="12" fill="#121316" stroke="#47484a66" stroke-width="1"/>
+      <text x="36" y="36" font-family="Inter" font-weight="700" font-size="16" fill="#ababad" text-anchor="middle">M</text>
+      <text x="36" y="58" font-family="Inter" font-weight="500" font-size="12" fill="#ababad" text-anchor="middle">Market</text>
+      <rect x="48" y="-4" width="28" height="16" rx="8" fill="#FFCA3A"/>
+      <text x="62" y="8" font-family="Inter" font-weight="600" font-size="8" fill="#0d0e10" text-anchor="middle">OFF</text>
+    </g>
+    <g transform="translate(290,328)">
+      <rect width="72" height="72" rx="12" fill="#121316" stroke="#47484a66" stroke-width="1"/>
+      <text x="36" y="36" font-family="Inter" font-weight="700" font-size="16" fill="#ababad" text-anchor="middle">P</text>
+      <text x="36" y="58" font-family="Inter" font-weight="500" font-size="12" fill="#ababad" text-anchor="middle">Portfolio</text>
+      <rect x="48" y="-4" width="28" height="16" rx="8" fill="#FFCA3A"/>
+      <text x="62" y="8" font-family="Inter" font-weight="600" font-size="8" fill="#0d0e10" text-anchor="middle">OFF</text>
+    </g>
+  </g>
+
+  <!-- Cached prices (stale) -->
+  <g id="prices-stale">
+    <text x="16" y="432" font-family="Space Grotesk" font-weight="600" font-size="16" fill="#fdfbfe">Live Prices</text>
+    <rect x="120" y="418" width="52" height="18" rx="9" fill="#FFCA3A" opacity="0.15"/>
+    <text x="146" y="431" font-family="Inter" font-weight="500" font-size="10" fill="#FFCA3A" text-anchor="middle">cached</text>
+
+    <!-- Stale price rows -->
+    <g transform="translate(0,444)" opacity="0.6">
+      <rect x="16" y="0" width="358" height="56" rx="12" fill="#121316"/>
+      <circle cx="44" cy="28" r="16" fill="#9945FF" opacity="0.15"/>
+      <text x="44" y="33" font-family="Inter" font-weight="700" font-size="12" fill="#9945FF" text-anchor="middle">S</text>
+      <text x="68" y="22" font-family="Inter" font-weight="500" font-size="14" fill="#fdfbfe">Solana</text>
+      <text x="68" y="38" font-family="Inter" font-size="12" fill="#ababad">SOL</text>
+      <text x="358" y="28" font-family="DM Mono" font-size="13" fill="#ababad" text-anchor="end">$148.32</text>
+    </g>
+    <g transform="translate(0,508)" opacity="0.6">
+      <rect x="16" y="0" width="358" height="56" rx="12" fill="#121316"/>
+      <circle cx="44" cy="28" r="16" fill="#F7931A" opacity="0.15"/>
+      <text x="44" y="33" font-family="Inter" font-weight="700" font-size="12" fill="#F7931A" text-anchor="middle">B</text>
+      <text x="68" y="22" font-family="Inter" font-weight="500" font-size="14" fill="#fdfbfe">Bitcoin</text>
+      <text x="68" y="38" font-family="Inter" font-size="12" fill="#ababad">BTC</text>
+      <text x="358" y="28" font-family="DM Mono" font-size="13" fill="#ababad" text-anchor="end">$67,421</text>
+    </g>
+  </g>
+
+  <!-- Bottom nav -->
+  <g id="bottom-nav">
+    <rect x="0" y="788" width="390" height="56" fill="#121316"/>
+    <line x1="0" y1="788" x2="390" y2="788" stroke="#47484a66" stroke-width="1"/>
+    <g transform="translate(23,798)">
+      <rect x="14" y="2" width="20" height="16" rx="3" fill="#00ffa3"/>
+      <text x="24" y="34" font-family="Inter" font-weight="600" font-size="10" fill="#00ffa3" text-anchor="middle">Home</text>
+    </g>
+    <g transform="translate(101,798)">
+      <rect x="14" y="2" width="20" height="16" rx="3" stroke="#ababad" stroke-width="1.5" fill="none"/>
+      <text x="24" y="34" font-family="Inter" font-size="10" fill="#ababad" text-anchor="middle">Learn</text>
+    </g>
+    <g transform="translate(179,798)">
+      <polyline points="14,18 19,8 24,14 29,4 34,12" stroke="#ababad" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <text x="24" y="34" font-family="Inter" font-size="10" fill="#ababad" text-anchor="middle">Market</text>
+    </g>
+    <g transform="translate(257,798)">
+      <path d="M14,14 L24,4 L34,14" stroke="#ababad" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <text x="24" y="34" font-family="Inter" font-size="10" fill="#ababad" text-anchor="middle">Trade</text>
+    </g>
+    <g transform="translate(335,798)">
+      <circle cx="24" cy="10" r="8" stroke="#ababad" stroke-width="1.5" fill="none"/>
+      <text x="24" y="34" font-family="Inter" font-size="10" fill="#ababad" text-anchor="middle">Portfolio</text>
+    </g>
+  </g>
+</svg>

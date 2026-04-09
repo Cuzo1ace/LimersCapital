@@ -324,15 +324,17 @@ export default function Header() {
               {isConnected ? shortenAddress(safeDisplayAddress) : 'Connect'}
             </button>
 
-            {/* Hamburger */}
+            {/* More menu (dots) */}
             <button
               onClick={() => setMobileNavOpen(true)}
-              className="flex flex-col justify-center items-center w-9 h-9 gap-1.5 rounded-lg bg-white/5 border border-border cursor-pointer"
+              className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/5 border border-border cursor-pointer press-scale"
               aria-label="Open navigation menu"
             >
-              <span className="w-4.5 h-0.5 bg-txt rounded-full" />
-              <span className="w-4.5 h-0.5 bg-txt rounded-full" />
-              <span className="w-3 h-0.5 bg-txt rounded-full" />
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" className="text-txt">
+                <circle cx="3" cy="8" r="1.5" />
+                <circle cx="8" cy="8" r="1.5" />
+                <circle cx="13" cy="8" r="1.5" />
+              </svg>
             </button>
           </div>
 

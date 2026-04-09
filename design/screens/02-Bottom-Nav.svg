@@ -1,0 +1,473 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="390"
+  height="844"
+  viewBox="0 0 390 844"
+  fill="none"
+>
+  <!-- ============================================================
+       DESIGN TOKENS (dark theme)
+       bg:        #0d0e10
+       nav-bg:    #121316
+       active:    #00ffa3  (sea green)
+       inactive:  #ababad
+       border:    #47484a66
+       text:      #fdfbfe
+       fonts:     Space Grotesk (headings) / Inter (labels)
+  ============================================================ -->
+
+  <!-- ── Frame background ── -->
+  <rect width="390" height="844" fill="#0d0e10"/>
+
+  <!-- ── Page title ── -->
+  <text
+    x="195" y="44"
+    font-family="'Space Grotesk', sans-serif"
+    font-size="16" font-weight="600"
+    fill="#fdfbfe"
+    text-anchor="middle"
+    dominant-baseline="middle"
+  >Bottom Navigation — Reference</text>
+
+  <!-- ============================================================
+       SHARED ICON DEFS
+       Each icon has an "active" (filled / accented) and
+       "inactive" (stroked / muted) version.
+  ============================================================ -->
+  <defs>
+
+    <!-- ── HOME icon ── -->
+    <!-- active: filled house -->
+    <g id="icon-home-active">
+      <!-- roof triangle -->
+      <polygon points="12,7 22,15 2,15" fill="#00ffa3"/>
+      <!-- door body -->
+      <rect x="4" y="15" width="16" height="9" rx="1" fill="#00ffa3"/>
+      <!-- door cutout -->
+      <rect x="9" y="17" width="6" height="7" fill="#121316"/>
+    </g>
+    <!-- inactive: stroked house -->
+    <g id="icon-home-inactive">
+      <polygon points="12,7 22,15 2,15" fill="none" stroke="#ababad" stroke-width="1.5" stroke-linejoin="round"/>
+      <rect x="4" y="15" width="16" height="9" rx="1" fill="none" stroke="#ababad" stroke-width="1.5"/>
+      <rect x="9" y="17" width="6" height="7" fill="none" stroke="#ababad" stroke-width="1.2"/>
+    </g>
+
+    <!-- ── LEARN icon (open book) ── -->
+    <!-- active -->
+    <g id="icon-learn-active">
+      <!-- left page -->
+      <rect x="2" y="6" width="9" height="12" rx="1" fill="#00ffa3"/>
+      <!-- right page -->
+      <rect x="13" y="6" width="9" height="12" rx="1" fill="#00ffa3"/>
+      <!-- spine line -->
+      <line x1="12" y1="6" x2="12" y2="18" stroke="#121316" stroke-width="1.5"/>
+      <!-- lines on left page -->
+      <line x1="4" y1="10" x2="9" y2="10" stroke="#121316" stroke-width="1"/>
+      <line x1="4" y1="13" x2="9" y2="13" stroke="#121316" stroke-width="1"/>
+      <!-- lines on right page -->
+      <line x1="15" y1="10" x2="20" y2="10" stroke="#121316" stroke-width="1"/>
+      <line x1="15" y1="13" x2="20" y2="13" stroke="#121316" stroke-width="1"/>
+    </g>
+    <!-- inactive -->
+    <g id="icon-learn-inactive">
+      <rect x="2" y="6" width="9" height="12" rx="1" fill="none" stroke="#ababad" stroke-width="1.5"/>
+      <rect x="13" y="6" width="9" height="12" rx="1" fill="none" stroke="#ababad" stroke-width="1.5"/>
+      <line x1="12" y1="6" x2="12" y2="18" stroke="#ababad" stroke-width="1.5"/>
+      <line x1="4" y1="10" x2="9" y2="10" stroke="#ababad" stroke-width="1"/>
+      <line x1="4" y1="13" x2="9" y2="13" stroke="#ababad" stroke-width="1"/>
+      <line x1="15" y1="10" x2="20" y2="10" stroke="#ababad" stroke-width="1"/>
+      <line x1="15" y1="13" x2="20" y2="13" stroke="#ababad" stroke-width="1"/>
+    </g>
+
+    <!-- ── MARKET icon (chart line) ── -->
+    <!-- active -->
+    <g id="icon-market-active">
+      <!-- axes -->
+      <line x1="2" y1="20" x2="2" y2="5"  stroke="#00ffa3" stroke-width="1.5"/>
+      <line x1="2" y1="20" x2="22" y2="20" stroke="#00ffa3" stroke-width="1.5"/>
+      <!-- upward polyline -->
+      <polyline points="4,17 8,13 12,15 16,9 20,6" fill="none" stroke="#00ffa3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- dot at peak -->
+      <circle cx="20" cy="6" r="2" fill="#00ffa3"/>
+    </g>
+    <!-- inactive -->
+    <g id="icon-market-inactive">
+      <line x1="2" y1="20" x2="2" y2="5"  stroke="#ababad" stroke-width="1.5"/>
+      <line x1="2" y1="20" x2="22" y2="20" stroke="#ababad" stroke-width="1.5"/>
+      <polyline points="4,17 8,13 12,15 16,9 20,6" fill="none" stroke="#ababad" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="20" cy="6" r="2" fill="#ababad"/>
+    </g>
+
+    <!-- ── TRADE icon (up/down arrows) ── -->
+    <!-- active -->
+    <g id="icon-trade-active">
+      <!-- up arrow -->
+      <line x1="8" y1="19" x2="8" y2="5"  stroke="#00ffa3" stroke-width="2" stroke-linecap="round"/>
+      <polyline points="4,9 8,5 12,9" fill="none" stroke="#00ffa3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- down arrow -->
+      <line x1="16" y1="5" x2="16" y2="19" stroke="#00ffa3" stroke-width="2" stroke-linecap="round"/>
+      <polyline points="12,15 16,19 20,15" fill="none" stroke="#00ffa3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <!-- inactive -->
+    <g id="icon-trade-inactive">
+      <line x1="8" y1="19" x2="8" y2="5"  stroke="#ababad" stroke-width="2" stroke-linecap="round"/>
+      <polyline points="4,9 8,5 12,9" fill="none" stroke="#ababad" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="16" y1="5" x2="16" y2="19" stroke="#ababad" stroke-width="2" stroke-linecap="round"/>
+      <polyline points="12,15 16,19 20,15" fill="none" stroke="#ababad" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <!-- ── PORTFOLIO icon (pie chart) ── -->
+    <!-- active: filled pie with slice -->
+    <g id="icon-portfolio-active">
+      <!-- full circle base -->
+      <circle cx="12" cy="12" r="9" fill="#00ffa3"/>
+      <!-- pie slice cutout (top-right ~90deg wedge) -->
+      <!-- Path: M center, L to 12-o-clock, arc to 3-o-clock, Z -->
+      <path d="M12,12 L12,3 A9,9 0 0,1 21,12 Z" fill="#121316"/>
+      <!-- center dot -->
+      <circle cx="12" cy="12" r="2" fill="#00ffa3"/>
+    </g>
+    <!-- inactive -->
+    <g id="icon-portfolio-inactive">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="#ababad" stroke-width="1.5"/>
+      <!-- divider lines suggesting pie segments -->
+      <line x1="12" y1="12" x2="12" y2="3"  stroke="#ababad" stroke-width="1.5"/>
+      <line x1="12" y1="12" x2="21" y2="12" stroke="#ababad" stroke-width="1.5"/>
+    </g>
+
+  </defs>
+
+
+  <!-- ============================================================
+       VARIATION A — Home Active
+       y offset: 100
+  ============================================================ -->
+  <g id="variation-a">
+
+    <!-- section label -->
+    <text
+      x="16" y="92"
+      font-family="'Space Grotesk', sans-serif"
+      font-size="11" font-weight="500"
+      fill="#ababad"
+      dominant-baseline="middle"
+    >A  —  Home Tab Active</text>
+
+    <!-- nav bar background -->
+    <rect x="0" y="100" width="390" height="56" fill="#121316"/>
+    <!-- top border -->
+    <line x1="0" y1="100" x2="390" y2="100" stroke="#47484a" stroke-opacity="0.4" stroke-width="1"/>
+
+    <!-- ── Tab 1: HOME (active) ── x-center = 39 -->
+    <g id="a-tab-home">
+      <!-- hit area indicator (invisible) -->
+      <rect x="15" y="100" width="48" height="56" fill="transparent"/>
+      <!-- active pill highlight -->
+      <rect x="22" y="104" width="34" height="28" rx="14" fill="#00ffa3" fill-opacity="0.10"/>
+      <!-- icon centred at (39, 118): icon is 24×24 so offset by (-12,-12) -->
+      <use href="#icon-home-active" transform="translate(27,106)"/>
+      <!-- active label -->
+      <text
+        x="39" y="133"
+        font-family="'Inter', sans-serif"
+        font-size="9" font-weight="600"
+        fill="#00ffa3"
+        text-anchor="middle"
+        dominant-baseline="middle"
+      >Home</text>
+    </g>
+
+    <!-- ── Tab 2: LEARN (inactive) ── x-center = 117 -->
+    <g id="a-tab-learn">
+      <rect x="93" y="100" width="48" height="56" fill="transparent"/>
+      <use href="#icon-learn-inactive" transform="translate(105,106)"/>
+    </g>
+
+    <!-- ── Tab 3: MARKET (inactive) ── x-center = 195 -->
+    <g id="a-tab-market">
+      <rect x="171" y="100" width="48" height="56" fill="transparent"/>
+      <use href="#icon-market-inactive" transform="translate(183,106)"/>
+    </g>
+
+    <!-- ── Tab 4: TRADE (inactive) ── x-center = 273 -->
+    <g id="a-tab-trade">
+      <rect x="249" y="100" width="48" height="56" fill="transparent"/>
+      <use href="#icon-trade-inactive" transform="translate(261,106)"/>
+    </g>
+
+    <!-- ── Tab 5: PORTFOLIO (inactive) ── x-center = 351 -->
+    <g id="a-tab-portfolio">
+      <rect x="327" y="100" width="48" height="56" fill="transparent"/>
+      <use href="#icon-portfolio-inactive" transform="translate(339,106)"/>
+    </g>
+
+  </g><!-- /variation-a -->
+
+
+  <!-- ============================================================
+       VARIATION B — Market Active
+       y offset: 280
+  ============================================================ -->
+  <g id="variation-b">
+
+    <text
+      x="16" y="272"
+      font-family="'Space Grotesk', sans-serif"
+      font-size="11" font-weight="500"
+      fill="#ababad"
+      dominant-baseline="middle"
+    >B  —  Market Tab Active</text>
+
+    <rect x="0" y="280" width="390" height="56" fill="#121316"/>
+    <line x1="0" y1="280" x2="390" y2="280" stroke="#47484a" stroke-opacity="0.4" stroke-width="1"/>
+
+    <!-- Tab 1: HOME inactive -->
+    <g id="b-tab-home">
+      <rect x="15" y="280" width="48" height="56" fill="transparent"/>
+      <use href="#icon-home-inactive" transform="translate(27,286)"/>
+    </g>
+
+    <!-- Tab 2: LEARN inactive -->
+    <g id="b-tab-learn">
+      <rect x="93" y="280" width="48" height="56" fill="transparent"/>
+      <use href="#icon-learn-inactive" transform="translate(105,286)"/>
+    </g>
+
+    <!-- Tab 3: MARKET active -->
+    <g id="b-tab-market">
+      <rect x="171" y="280" width="48" height="56" fill="transparent"/>
+      <rect x="178" y="284" width="34" height="28" rx="14" fill="#00ffa3" fill-opacity="0.10"/>
+      <use href="#icon-market-active" transform="translate(183,286)"/>
+      <text
+        x="195" y="313"
+        font-family="'Inter', sans-serif"
+        font-size="9" font-weight="600"
+        fill="#00ffa3"
+        text-anchor="middle"
+        dominant-baseline="middle"
+      >Market</text>
+    </g>
+
+    <!-- Tab 4: TRADE inactive -->
+    <g id="b-tab-trade">
+      <rect x="249" y="280" width="48" height="56" fill="transparent"/>
+      <use href="#icon-trade-inactive" transform="translate(261,286)"/>
+    </g>
+
+    <!-- Tab 5: PORTFOLIO inactive -->
+    <g id="b-tab-portfolio">
+      <rect x="327" y="280" width="48" height="56" fill="transparent"/>
+      <use href="#icon-portfolio-inactive" transform="translate(339,286)"/>
+    </g>
+
+  </g><!-- /variation-b -->
+
+
+  <!-- ============================================================
+       VARIATION C — Trade Active
+       y offset: 460
+  ============================================================ -->
+  <g id="variation-c">
+
+    <text
+      x="16" y="452"
+      font-family="'Space Grotesk', sans-serif"
+      font-size="11" font-weight="500"
+      fill="#ababad"
+      dominant-baseline="middle"
+    >C  —  Trade Tab Active</text>
+
+    <rect x="0" y="460" width="390" height="56" fill="#121316"/>
+    <line x1="0" y1="460" x2="390" y2="460" stroke="#47484a" stroke-opacity="0.4" stroke-width="1"/>
+
+    <!-- Tab 1: HOME inactive -->
+    <g id="c-tab-home">
+      <rect x="15" y="460" width="48" height="56" fill="transparent"/>
+      <use href="#icon-home-inactive" transform="translate(27,466)"/>
+    </g>
+
+    <!-- Tab 2: LEARN inactive -->
+    <g id="c-tab-learn">
+      <rect x="93" y="460" width="48" height="56" fill="transparent"/>
+      <use href="#icon-learn-inactive" transform="translate(105,466)"/>
+    </g>
+
+    <!-- Tab 3: MARKET inactive -->
+    <g id="c-tab-market">
+      <rect x="171" y="460" width="48" height="56" fill="transparent"/>
+      <use href="#icon-market-inactive" transform="translate(183,466)"/>
+    </g>
+
+    <!-- Tab 4: TRADE active -->
+    <g id="c-tab-trade">
+      <rect x="249" y="460" width="48" height="56" fill="transparent"/>
+      <rect x="256" y="464" width="34" height="28" rx="14" fill="#00ffa3" fill-opacity="0.10"/>
+      <use href="#icon-trade-active" transform="translate(261,466)"/>
+      <text
+        x="273" y="493"
+        font-family="'Inter', sans-serif"
+        font-size="9" font-weight="600"
+        fill="#00ffa3"
+        text-anchor="middle"
+        dominant-baseline="middle"
+      >Trade</text>
+    </g>
+
+    <!-- Tab 5: PORTFOLIO inactive -->
+    <g id="c-tab-portfolio">
+      <rect x="327" y="460" width="48" height="56" fill="transparent"/>
+      <use href="#icon-portfolio-inactive" transform="translate(339,466)"/>
+    </g>
+
+  </g><!-- /variation-c -->
+
+
+  <!-- ============================================================
+       VARIATION D — Anatomy / All States with Annotations
+       y offset: 640
+  ============================================================ -->
+  <g id="variation-d">
+
+    <text
+      x="16" y="630"
+      font-family="'Space Grotesk', sans-serif"
+      font-size="11" font-weight="500"
+      fill="#ababad"
+      dominant-baseline="middle"
+    >D  —  Anatomy &amp; Spec</text>
+
+    <!-- nav bar -->
+    <rect x="0" y="640" width="390" height="56" fill="#121316"/>
+    <line x1="0" y1="640" x2="390" y2="640" stroke="#47484a" stroke-opacity="0.4" stroke-width="1"/>
+
+    <!-- show all 5 tabs in mixed states for variety -->
+
+    <!-- Tab 1: HOME active -->
+    <g id="d-tab-home">
+      <rect x="15" y="640" width="48" height="56" fill="transparent"/>
+      <rect x="22" y="644" width="34" height="28" rx="14" fill="#00ffa3" fill-opacity="0.10"/>
+      <use href="#icon-home-active" transform="translate(27,646)"/>
+      <text
+        x="39" y="673"
+        font-family="'Inter', sans-serif"
+        font-size="9" font-weight="600"
+        fill="#00ffa3"
+        text-anchor="middle"
+        dominant-baseline="middle"
+      >Home</text>
+    </g>
+
+    <!-- Tab 2: LEARN inactive -->
+    <g id="d-tab-learn">
+      <rect x="93" y="640" width="48" height="56" fill="transparent"/>
+      <use href="#icon-learn-inactive" transform="translate(105,646)"/>
+    </g>
+
+    <!-- Tab 3: MARKET inactive -->
+    <g id="d-tab-market">
+      <rect x="171" y="640" width="48" height="56" fill="transparent"/>
+      <use href="#icon-market-inactive" transform="translate(183,646)"/>
+    </g>
+
+    <!-- Tab 4: TRADE inactive -->
+    <g id="d-tab-trade">
+      <rect x="249" y="640" width="48" height="56" fill="transparent"/>
+      <use href="#icon-trade-inactive" transform="translate(261,646)"/>
+    </g>
+
+    <!-- Tab 5: PORTFOLIO inactive -->
+    <g id="d-tab-portfolio">
+      <rect x="327" y="640" width="48" height="56" fill="transparent"/>
+      <use href="#icon-portfolio-inactive" transform="translate(339,646)"/>
+    </g>
+
+    <!-- ── Annotations ── -->
+
+    <!-- 56px height brace (right side) -->
+    <line x1="378" y1="640" x2="378" y2="696" stroke="#47484a" stroke-width="1" stroke-dasharray="3,2"/>
+    <line x1="374" y1="640" x2="382" y2="640" stroke="#47484a" stroke-width="1"/>
+    <line x1="374" y1="696" x2="382" y2="696" stroke="#47484a" stroke-width="1"/>
+    <text
+      x="388" y="668"
+      font-family="'Inter', sans-serif"
+      font-size="8"
+      fill="#47484a"
+      text-anchor="middle"
+      dominant-baseline="middle"
+      transform="rotate(90, 388, 668)"
+    >56px</text>
+
+    <!-- 48×48 hit area callout on tab 2 (learn) -->
+    <!-- dashed rect showing 48×48 hit area centred on tab -->
+    <rect
+      x="93" y="644"
+      width="48" height="48"
+      fill="none"
+      stroke="#00ffa3" stroke-width="1" stroke-opacity="0.5"
+      stroke-dasharray="4,2"
+    />
+    <!-- callout line + label -->
+    <line x1="117" y1="644" x2="117" y2="628" stroke="#00ffa3" stroke-width="1" stroke-opacity="0.5" stroke-dasharray="3,2"/>
+    <text
+      x="117" y="622"
+      font-family="'Inter', sans-serif"
+      font-size="8" font-weight="500"
+      fill="#00ffa3"
+      text-anchor="middle"
+      dominant-baseline="middle"
+    >48×48 hit area</text>
+
+    <!-- safe-area-inset-bottom callout -->
+    <!-- dashed zone below nav -->
+    <rect x="0" y="696" width="390" height="20" fill="#00ffa3" fill-opacity="0.04"/>
+    <line x1="0" y1="696" x2="390" y2="696" stroke="#00ffa3" stroke-width="1" stroke-opacity="0.3" stroke-dasharray="4,3"/>
+    <text
+      x="195" y="708"
+      font-family="'Inter', sans-serif"
+      font-size="8" font-weight="400"
+      fill="#00ffa3" fill-opacity="0.7"
+      text-anchor="middle"
+      dominant-baseline="middle"
+    >safe-area-inset-bottom (env(safe-area-inset-bottom))</text>
+
+    <!-- tab labels below the bar (annotation layer) -->
+    <!-- using a lighter annotation style to name each tab -->
+    <text x="39"  y="724" font-family="'Inter', sans-serif" font-size="8" fill="#ababad" fill-opacity="0.6" text-anchor="middle">Home</text>
+    <text x="117" y="724" font-family="'Inter', sans-serif" font-size="8" fill="#ababad" fill-opacity="0.6" text-anchor="middle">Learn</text>
+    <text x="195" y="724" font-family="'Inter', sans-serif" font-size="8" fill="#ababad" fill-opacity="0.6" text-anchor="middle">Market</text>
+    <text x="273" y="724" font-family="'Inter', sans-serif" font-size="8" fill="#ababad" fill-opacity="0.6" text-anchor="middle">Trade</text>
+    <text x="351" y="724" font-family="'Inter', sans-serif" font-size="8" fill="#ababad" fill-opacity="0.6" text-anchor="middle">Portfolio</text>
+
+    <!-- vertical dividers between tabs (annotation) -->
+    <line x1="78"  y1="640" x2="78"  y2="716" stroke="#47484a" stroke-width="0.5" stroke-opacity="0.3" stroke-dasharray="2,3"/>
+    <line x1="156" y1="640" x2="156" y2="716" stroke="#47484a" stroke-width="0.5" stroke-opacity="0.3" stroke-dasharray="2,3"/>
+    <line x1="234" y1="640" x2="234" y2="716" stroke="#47484a" stroke-width="0.5" stroke-opacity="0.3" stroke-dasharray="2,3"/>
+    <line x1="312" y1="640" x2="312" y2="716" stroke="#47484a" stroke-width="0.5" stroke-opacity="0.3" stroke-dasharray="2,3"/>
+
+    <!-- "78px / tab" width annotation -->
+    <line x1="0"  y1="735" x2="78"  y2="735" stroke="#47484a" stroke-width="0.75"/>
+    <line x1="0"  y1="731" x2="0"   y2="739" stroke="#47484a" stroke-width="0.75"/>
+    <line x1="78" y1="731" x2="78"  y2="739" stroke="#47484a" stroke-width="0.75"/>
+    <text
+      x="39" y="748"
+      font-family="'Inter', sans-serif"
+      font-size="8"
+      fill="#47484a"
+      text-anchor="middle"
+      dominant-baseline="middle"
+    >78px / tab</text>
+
+  </g><!-- /variation-d -->
+
+  <!-- ── Footer caption ── -->
+  <text
+    x="195" y="800"
+    font-family="'Inter', sans-serif"
+    font-size="9" font-weight="400"
+    fill="#47484a"
+    text-anchor="middle"
+    dominant-baseline="middle"
+  >Limer's Capital · Bottom Nav · 390×844 · Dark Theme</text>
+
+</svg>

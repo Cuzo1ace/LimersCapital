@@ -7,7 +7,7 @@
 export function Skeleton({ w = '100%', h = '14px', rounded = '6px', className = '' }) {
   return (
     <div
-      className={`animate-pulse bg-white/8 ${className}`}
+      className={`shimmer ${className}`}
       style={{ width: w, height: h, borderRadius: rounded }}
       aria-hidden="true"
     />

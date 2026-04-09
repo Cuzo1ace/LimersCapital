@@ -10,6 +10,8 @@ import GlowCard from '../components/ui/GlowCard';
 import AchievementBadge from '../components/gamification/AchievementBadge';
 import LiquidMetalButton from '../components/ui/LiquidMetalButton';
 import GradientDots from '../components/ui/GradientDots';
+import HeroSection from '../components/dashboard/HeroSection';
+import GlassCard from '../components/ui/GlassCard';
 import CommunityFeed from '../components/CommunityFeed';
 import Tooltip from '../components/ui/Tooltip';
 import DailyKnowledgeCard from '../components/DailyKnowledgeCard';
@@ -140,29 +142,17 @@ export default function DashboardPage() {
       {/* Daily Knowledge — show after at least 1 lesson completed */}
       {modulesCompleted.length > 0 && <DailyKnowledgeCard />}
 
-      {/* ── Welcome Header ── */}
-      <div className="rounded-xl p-6 md:p-8 mb-6 border border-border relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, var(--color-night-2) 0%, rgba(0,255,163,.06) 100%)' }}>
-        {/* Animated dot-grid background */}
-        <GradientDots
-          dotSize={6}
-          spacing={14}
-          duration={40}
-          colorCycleDuration={10}
-          backgroundColor="transparent"
-          className="opacity-15 pointer-events-none rounded-xl"
-        />
-        {/* Decorative tier icon */}
-        <div className="absolute right-6 top-4 text-[4rem] opacity-10 select-none pointer-events-none" aria-hidden="true">
-          {tier.icon}
-        </div>
+      {/* ── Hero Section ── */}
+      <HeroSection />
 
-        <div className="flex items-start justify-between gap-4 flex-wrap mb-5">
+      {/* ── Tier & Progress Card ── */}
+      <GlassCard variant="elevated" className="p-5 md:p-6 mb-6">
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
           <div>
             <div className="text-[.66rem] text-muted uppercase tracking-widest mb-1 font-headline">{t('dashboard.yourStatus')}</div>
-            <h1 className="font-headline text-[2rem] font-black leading-tight" style={{ color: tier.color }}>
+            <h2 className="font-headline text-[1.6rem] font-black leading-tight" style={{ color: tier.color }}>
               {tier.icon} {tier.name}
-            </h1>
+            </h2>
             <div className="text-[.73rem] text-txt-2 mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
               {currentStreak > 0 && <span>🔥 {t('dashboard.streak', { count: currentStreak })}</span>}
               {streakShields > 0 && <span>🛡️ {t('dashboard.shield', { count: streakShields })}</span>}
@@ -204,7 +194,7 @@ export default function DashboardPage() {
             />
           </div>
         </div>
-      </div>
+      </GlassCard>
 
       {/* ── Skill Map (compact) + Quick Stats ── */}
       {trades.length >= 3 && (

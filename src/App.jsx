@@ -1,7 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AnimatePresence, motion } from 'framer-motion';
 import Header from './components/layout/Header';
 import PriceTicker from './components/PriceTicker';
+import BackgroundGradient from './components/ui/BackgroundGradient';
+import BottomTabBar from './components/layout/BottomTabBar';
 import ErrorBoundary from './components/ErrorBoundary';
 import RewardToast from './components/gamification/RewardToast';
 import DashboardPage from './pages/DashboardPage';
@@ -129,8 +132,10 @@ function ThemeSync() {
 }
 
 export default function App() {
+  const activeTab = useStore(s => s.activeTab);
   return (
     <QueryClientProvider client={queryClient}>
+      <BackgroundGradient />
       <NetworkStatus />
       <StreakCheck />
       <NewUserRedirect />
@@ -141,12 +146,23 @@ export default function App() {
       <OnboardingTour />
       <Header />
       <PriceTicker />
-      <main className="relative z-[1] px-3 py-4 md:p-7 max-w-[1440px] mx-auto">
+      <main className="relative z-[1] px-3 py-4 pb-20 md:p-7 md:pb-7 max-w-[1440px] mx-auto">
         <AnnouncementBanner />
         <ErrorBoundary>
-          <TabContent />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.12 }}
+            >
+              <TabContent />
+            </motion.div>
+          </AnimatePresence>
         </ErrorBoundary>
       </main>
+      <BottomTabBar />
       <FeedbackWidget />
       <InstallPrompt />
       <UpdatePrompt />

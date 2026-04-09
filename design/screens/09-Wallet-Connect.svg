@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844">
+  <!-- Background with overlay -->
+  <rect width="390" height="844" fill="#0d0e10"/>
+  <!-- Dimmed content behind sheet -->
+  <rect width="390" height="844" fill="#000000" opacity="0.5"/>
+
+  <!-- ==================== BOTTOM SHEET ==================== -->
+  <g id="wallet-connect-sheet">
+    <!-- Sheet background -->
+    <rect x="0" y="400" width="390" height="444" rx="24" fill="#121316"/>
+    <!-- Handle -->
+    <rect x="171" y="412" width="48" height="4" rx="2" fill="#47484a66"/>
+
+    <!-- Title -->
+    <text x="195" y="452" font-family="Space Grotesk" font-weight="700" font-size="20" fill="#fdfbfe" text-anchor="middle">Connect Wallet</text>
+    <text x="195" y="472" font-family="Inter" font-size="13" fill="#ababad" text-anchor="middle">Choose your preferred wallet</text>
+
+    <!-- Wallet Options -->
+    <!-- Phantom -->
+    <g id="wallet-phantom" transform="translate(16,492)">
+      <rect width="358" height="60" rx="12" fill="#1e2022" stroke="#47484a66" stroke-width="1"/>
+      <rect x="16" y="14" width="32" height="32" rx="8" fill="#AB9FF2" opacity="0.2"/>
+      <text x="32" y="35" font-family="Inter" font-weight="700" font-size="14" fill="#AB9FF2" text-anchor="middle">P</text>
+      <text x="60" y="30" font-family="Inter" font-weight="500" font-size="15" fill="#fdfbfe">Phantom</text>
+      <text x="60" y="46" font-family="Inter" font-size="11" fill="#ababad">Popular</text>
+      <!-- Arrow -->
+      <path d="M332,26 L340,30 L332,34" stroke="#ababad" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    </g>
+
+    <!-- Solflare -->
+    <g id="wallet-solflare" transform="translate(16,560)">
+      <rect width="358" height="60" rx="12" fill="#1e2022" stroke="#47484a66" stroke-width="1"/>
+      <rect x="16" y="14" width="32" height="32" rx="8" fill="#F7931A" opacity="0.2"/>
+      <text x="32" y="35" font-family="Inter" font-weight="700" font-size="14" fill="#F7931A" text-anchor="middle">S</text>
+      <text x="60" y="30" font-family="Inter" font-weight="500" font-size="15" fill="#fdfbfe">Solflare</text>
+      <text x="60" y="46" font-family="Inter" font-size="11" fill="#ababad">Mobile &amp; Extension</text>
+      <path d="M332,26 L340,30 L332,34" stroke="#ababad" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    </g>
+
+    <!-- Backpack -->
+    <g id="wallet-backpack" transform="translate(16,628)">
+      <rect width="358" height="60" rx="12" fill="#1e2022" stroke="#47484a66" stroke-width="1"/>
+      <rect x="16" y="14" width="32" height="32" rx="8" fill="#E33E3F" opacity="0.2"/>
+      <text x="32" y="35" font-family="Inter" font-weight="700" font-size="14" fill="#E33E3F" text-anchor="middle">B</text>
+      <text x="60" y="30" font-family="Inter" font-weight="500" font-size="15" fill="#fdfbfe">Backpack</text>
+      <text x="60" y="46" font-family="Inter" font-size="11" fill="#ababad">xNFT Wallet</text>
+      <path d="M332,26 L340,30 L332,34" stroke="#ababad" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    </g>
+
+    <!-- QR Code area -->
+    <g id="qr-section" transform="translate(16,704)">
+      <rect width="358" height="80" rx="12" fill="#1e2022" stroke="#47484a66" stroke-width="1" stroke-dasharray="4,4"/>
+      <rect x="149" y="12" width="56" height="56" rx="4" fill="#fdfbfe" opacity="0.1"/>
+      <!-- QR placeholder pattern -->
+      <g transform="translate(155,18)">
+        <rect width="8" height="8" fill="#fdfbfe" opacity="0.4"/>
+        <rect x="12" width="8" height="8" fill="#fdfbfe" opacity="0.4"/>
+        <rect x="24" width="8" height="8" fill="#fdfbfe" opacity="0.4"/>
+        <rect x="36" width="8" height="8" fill="#fdfbfe" opacity="0.4"/>
+        <rect y="12" width="8" height="8" fill="#fdfbfe" opacity="0.4"/>
+        <rect x="24" y="12" width="8" height="8" fill="#fdfbfe" opacity="0.4"/>
+        <rect y="24" width="8" height="8" fill="#fdfbfe" opacity="0.4"/>
+        <rect x="12" y="24" width="8" height="8" fill="#fdfbfe" opacity="0.4"/>
+        <rect x="36" y="24" width="8" height="8" fill="#fdfbfe" opacity="0.4"/>
+        <rect y="36" width="8" height="8" fill="#fdfbfe" opacity="0.4"/>
+        <rect x="12" y="36" width="8" height="8" fill="#fdfbfe" opacity="0.4"/>
+        <rect x="24" y="36" width="8" height="8" fill="#fdfbfe" opacity="0.4"/>
+        <rect x="36" y="36" width="8" height="8" fill="#fdfbfe" opacity="0.4"/>
+      </g>
+      <text x="230" y="40" font-family="Inter" font-size="12" fill="#ababad">Scan with desktop wallet</text>
+      <text x="230" y="56" font-family="Inter" font-size="11" fill="#ababad">for cross-device connection</text>
+    </g>
+
+    <!-- Educational link -->
+    <g id="education-link" transform="translate(16,800)">
+      <text x="179" y="12" font-family="Inter" font-size="13" fill="#bf81ff" text-anchor="middle" text-decoration="underline">What's a wallet?</text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,252 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844">
+  <defs>
+    <linearGradient id="heroGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#121316"/>
+      <stop offset="100%" stop-color="#1e2022"/>
+    </linearGradient>
+    <linearGradient id="xpGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00ffa3"/>
+      <stop offset="100%" stop-color="#bf81ff"/>
+    </linearGradient>
+    <clipPath id="xpClip"><rect x="24" y="268" width="204" height="6" rx="3"/></clipPath>
+    <linearGradient id="tickerGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0d0e10" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#0d0e10"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="390" height="844" fill="#0d0e10"/>
+
+  <!-- ==================== STATUS BAR (0-44) ==================== -->
+  <g id="status-bar">
+    <text x="32" y="20" font-family="Inter" font-weight="600" font-size="14" fill="#fdfbfe">9:41</text>
+    <!-- Signal -->
+    <g transform="translate(310,8)">
+      <rect x="0" y="8" width="3" height="4" rx="0.5" fill="#fdfbfe"/>
+      <rect x="5" y="5" width="3" height="7" rx="0.5" fill="#fdfbfe"/>
+      <rect x="10" y="2" width="3" height="10" rx="0.5" fill="#fdfbfe"/>
+      <rect x="15" y="0" width="3" height="12" rx="0.5" fill="#fdfbfe"/>
+    </g>
+    <!-- WiFi -->
+    <g transform="translate(340,8)">
+      <path d="M0 6 L6 0 L12 6" stroke="#fdfbfe" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <path d="M2.5 4 L6 1.5 L9.5 4" stroke="#fdfbfe" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <circle cx="6" cy="6" r="1.5" fill="#fdfbfe"/>
+    </g>
+    <!-- Battery -->
+    <g transform="translate(358,8)">
+      <rect x="0" y="1" width="22" height="10" rx="2" stroke="#fdfbfe" stroke-width="1" fill="none"/>
+      <rect x="2" y="3" width="16" height="6" rx="1" fill="#00ffa3"/>
+      <rect x="22" y="4" width="2" height="4" rx="0.5" fill="#fdfbfe"/>
+    </g>
+  </g>
+
+  <!-- ==================== HEADER (44-96) ==================== -->
+  <g id="header">
+    <!-- Logo -->
+    <circle cx="40" cy="70" r="14" fill="#00ffa3" opacity="0.15"/>
+    <text x="38" y="75" font-family="Space Grotesk" font-weight="700" font-size="14" fill="#00ffa3" text-anchor="middle">L</text>
+    <text x="60" y="75" font-family="Space Grotesk" font-weight="700" font-size="18" fill="#fdfbfe">Limer's</text>
+
+    <!-- Wallet button -->
+    <rect x="272" y="56" width="72" height="28" rx="14" fill="#1e2022" stroke="#47484a66" stroke-width="1"/>
+    <circle cx="288" cy="70" r="6" fill="#bf81ff" opacity="0.3"/>
+    <text x="300" y="74" font-family="DM Mono" font-size="11" fill="#ababad">7xK..3f</text>
+
+    <!-- Hamburger -->
+    <g transform="translate(356,62)">
+      <rect y="0" width="18" height="2" rx="1" fill="#fdfbfe"/>
+      <rect y="6" width="18" height="2" rx="1" fill="#fdfbfe"/>
+      <rect y="12" width="12" height="2" rx="1" fill="#fdfbfe"/>
+    </g>
+  </g>
+
+  <!-- ==================== PRICE TICKER (96-128) ==================== -->
+  <g id="price-ticker">
+    <rect x="0" y="96" width="390" height="32" fill="#121316"/>
+    <text x="16" y="116" font-family="DM Mono" font-size="12" fill="#ababad">
+      <tspan fill="#fdfbfe">SOL</tspan>
+      <tspan dx="4" fill="#00ffa3">$148.32</tspan>
+      <tspan dx="12" fill="#fdfbfe">BTC</tspan>
+      <tspan dx="4" fill="#00ffa3">$67,421</tspan>
+      <tspan dx="12" fill="#fdfbfe">ETH</tspan>
+      <tspan dx="4" fill="#ff716c">$3,102</tspan>
+      <tspan dx="12" fill="#fdfbfe">USDC</tspan>
+      <tspan dx="4" fill="#ababad">$1.00</tspan>
+    </text>
+  </g>
+
+  <!-- ==================== HERO CARD (140-310) ==================== -->
+  <g id="hero-card">
+    <rect x="16" y="140" width="358" height="170" rx="16" fill="url(#heroGrad)" stroke="#47484a66" stroke-width="1"/>
+
+    <!-- Title row -->
+    <text x="32" y="170" font-family="Space Grotesk" font-weight="600" font-size="16" fill="#fdfbfe">Your Progress</text>
+
+    <!-- Streak flame -->
+    <g transform="translate(330,155)">
+      <path d="M8 0 C8 0 14 6 14 11 C14 15 11 18 8 18 C5 18 2 15 2 11 C2 6 8 0 8 0Z" fill="#FFCA3A" opacity="0.9"/>
+      <text x="8" y="32" font-family="Inter" font-weight="600" font-size="11" fill="#FFCA3A" text-anchor="middle">7 day</text>
+    </g>
+
+    <!-- XP section -->
+    <text x="32" y="200" font-family="Inter" font-size="12" fill="#ababad">Experience Points</text>
+    <text x="32" y="224" font-family="DM Mono" font-weight="400" font-size="28" fill="#00ffa3">2,450</text>
+    <text x="120" y="224" font-family="Inter" font-size="12" fill="#ababad">XP</text>
+
+    <!-- XP Progress bar -->
+    <rect x="32" y="238" width="310" height="6" rx="3" fill="#1e2022"/>
+    <rect x="32" y="238" width="204" height="6" rx="3" fill="url(#xpGrad)"/>
+    <text x="32" y="256" font-family="Inter" font-size="11" fill="#ababad">Level 5</text>
+    <text x="342" y="256" font-family="Inter" font-size="11" fill="#ababad" text-anchor="end">Level 6</text>
+
+    <!-- LP count -->
+    <rect x="32" y="270" width="90" height="28" rx="8" fill="#0d0e10"/>
+    <text x="44" y="289" font-family="DM Mono" font-size="13" fill="#bf81ff">340 LP</text>
+
+    <!-- Tier badge -->
+    <rect x="132" y="270" width="80" height="28" rx="8" fill="#0d0e10"/>
+    <text x="144" y="289" font-family="Inter" font-weight="500" font-size="12" fill="#FFCA3A">Explorer</text>
+  </g>
+
+  <!-- ==================== QUICK ACTIONS (322-408) ==================== -->
+  <g id="quick-actions">
+    <text x="16" y="338" font-family="Space Grotesk" font-weight="600" font-size="16" fill="#fdfbfe">Quick Actions</text>
+
+    <!-- 4-icon grid -->
+    <!-- Learn -->
+    <g transform="translate(26,350)">
+      <rect width="72" height="72" rx="12" fill="#121316" stroke="#47484a66" stroke-width="1"/>
+      <rect x="22" y="12" width="28" height="28" rx="8" fill="#00ffa3" opacity="0.15"/>
+      <text x="36" y="33" font-family="Inter" font-weight="700" font-size="16" fill="#00ffa3" text-anchor="middle">L</text>
+      <text x="36" y="58" font-family="Inter" font-weight="500" font-size="12" fill="#fdfbfe" text-anchor="middle">Learn</text>
+    </g>
+    <!-- Trade -->
+    <g transform="translate(114,350)">
+      <rect width="72" height="72" rx="12" fill="#121316" stroke="#47484a66" stroke-width="1"/>
+      <rect x="22" y="12" width="28" height="28" rx="8" fill="#bf81ff" opacity="0.15"/>
+      <text x="36" y="33" font-family="Inter" font-weight="700" font-size="16" fill="#bf81ff" text-anchor="middle">T</text>
+      <text x="36" y="58" font-family="Inter" font-weight="500" font-size="12" fill="#fdfbfe" text-anchor="middle">Trade</text>
+    </g>
+    <!-- Market -->
+    <g transform="translate(202,350)">
+      <rect width="72" height="72" rx="12" fill="#121316" stroke="#47484a66" stroke-width="1"/>
+      <rect x="22" y="12" width="28" height="28" rx="8" fill="#FFCA3A" opacity="0.15"/>
+      <text x="36" y="33" font-family="Inter" font-weight="700" font-size="16" fill="#FFCA3A" text-anchor="middle">M</text>
+      <text x="36" y="58" font-family="Inter" font-weight="500" font-size="12" fill="#fdfbfe" text-anchor="middle">Market</text>
+    </g>
+    <!-- Portfolio -->
+    <g transform="translate(290,350)">
+      <rect width="72" height="72" rx="12" fill="#121316" stroke="#47484a66" stroke-width="1"/>
+      <rect x="22" y="12" width="28" height="28" rx="8" fill="#2D9B56" opacity="0.15"/>
+      <text x="36" y="33" font-family="Inter" font-weight="700" font-size="16" fill="#2D9B56" text-anchor="middle">P</text>
+      <text x="36" y="58" font-family="Inter" font-weight="500" font-size="12" fill="#fdfbfe" text-anchor="middle">Portfolio</text>
+    </g>
+  </g>
+
+  <!-- ==================== LIVE PRICES (432-712) ==================== -->
+  <g id="live-prices">
+    <text x="16" y="448" font-family="Space Grotesk" font-weight="600" font-size="16" fill="#fdfbfe">Live Prices</text>
+    <text x="374" y="448" font-family="Inter" font-size="12" fill="#00ffa3" text-anchor="end">See All</text>
+
+    <!-- Price Row 1: SOL -->
+    <g transform="translate(0,460)">
+      <rect x="16" y="0" width="358" height="56" rx="12" fill="#121316"/>
+      <circle cx="44" cy="28" r="16" fill="#9945FF" opacity="0.2"/>
+      <text x="44" y="33" font-family="Inter" font-weight="700" font-size="12" fill="#9945FF" text-anchor="middle">S</text>
+      <text x="68" y="22" font-family="Inter" font-weight="500" font-size="14" fill="#fdfbfe">Solana</text>
+      <text x="68" y="38" font-family="Inter" font-size="12" fill="#ababad">SOL</text>
+      <!-- Sparkline -->
+      <polyline points="260,34 268,28 276,30 284,22 292,18 300,24 308,16" stroke="#00ffa3" stroke-width="1.5" fill="none"/>
+      <text x="326" y="22" font-family="DM Mono" font-size="13" fill="#fdfbfe" text-anchor="end">$148.32</text>
+      <text x="358" y="22" font-family="DM Mono" font-size="11" fill="#00ffa3" text-anchor="end">+5.2%</text>
+    </g>
+
+    <!-- Price Row 2: BTC -->
+    <g transform="translate(0,524)">
+      <rect x="16" y="0" width="358" height="56" rx="12" fill="#121316"/>
+      <circle cx="44" cy="28" r="16" fill="#F7931A" opacity="0.2"/>
+      <text x="44" y="33" font-family="Inter" font-weight="700" font-size="12" fill="#F7931A" text-anchor="middle">B</text>
+      <text x="68" y="22" font-family="Inter" font-weight="500" font-size="14" fill="#fdfbfe">Bitcoin</text>
+      <text x="68" y="38" font-family="Inter" font-size="12" fill="#ababad">BTC</text>
+      <polyline points="260,20 268,24 276,22 284,28 292,26 300,30 308,28" stroke="#00ffa3" stroke-width="1.5" fill="none"/>
+      <text x="326" y="22" font-family="DM Mono" font-size="13" fill="#fdfbfe" text-anchor="end">$67,421</text>
+      <text x="358" y="22" font-family="DM Mono" font-size="11" fill="#00ffa3" text-anchor="end">+1.8%</text>
+    </g>
+
+    <!-- Price Row 3: ETH -->
+    <g transform="translate(0,588)">
+      <rect x="16" y="0" width="358" height="56" rx="12" fill="#121316"/>
+      <circle cx="44" cy="28" r="16" fill="#627EEA" opacity="0.2"/>
+      <text x="44" y="33" font-family="Inter" font-weight="700" font-size="12" fill="#627EEA" text-anchor="middle">E</text>
+      <text x="68" y="22" font-family="Inter" font-weight="500" font-size="14" fill="#fdfbfe">Ethereum</text>
+      <text x="68" y="38" font-family="Inter" font-size="12" fill="#ababad">ETH</text>
+      <polyline points="260,18 268,22 276,28 284,24 292,30 300,32 308,34" stroke="#ff716c" stroke-width="1.5" fill="none"/>
+      <text x="326" y="22" font-family="DM Mono" font-size="13" fill="#fdfbfe" text-anchor="end">$3,102</text>
+      <text x="358" y="22" font-family="DM Mono" font-size="11" fill="#ff716c" text-anchor="end">-2.1%</text>
+    </g>
+
+    <!-- Price Row 4: USDC -->
+    <g transform="translate(0,652)">
+      <rect x="16" y="0" width="358" height="56" rx="12" fill="#121316"/>
+      <circle cx="44" cy="28" r="16" fill="#2775CA" opacity="0.2"/>
+      <text x="44" y="33" font-family="Inter" font-weight="700" font-size="12" fill="#2775CA" text-anchor="middle">U</text>
+      <text x="68" y="22" font-family="Inter" font-weight="500" font-size="14" fill="#fdfbfe">USD Coin</text>
+      <text x="68" y="38" font-family="Inter" font-size="12" fill="#ababad">USDC</text>
+      <polyline points="260,26 268,26 276,26 284,26 292,26 300,26 308,26" stroke="#ababad" stroke-width="1.5" fill="none"/>
+      <text x="326" y="22" font-family="DM Mono" font-size="13" fill="#fdfbfe" text-anchor="end">$1.00</text>
+      <text x="358" y="22" font-family="DM Mono" font-size="11" fill="#ababad" text-anchor="end">0.0%</text>
+    </g>
+
+    <!-- Price Row 5: LIMER -->
+    <g transform="translate(0,716)">
+      <rect x="16" y="0" width="358" height="56" rx="12" fill="#121316"/>
+      <circle cx="44" cy="28" r="16" fill="#00ffa3" opacity="0.2"/>
+      <text x="44" y="33" font-family="Inter" font-weight="700" font-size="12" fill="#00ffa3" text-anchor="middle">$L</text>
+      <text x="68" y="22" font-family="Inter" font-weight="500" font-size="14" fill="#fdfbfe">$LIMER</text>
+      <text x="68" y="38" font-family="Inter" font-size="12" fill="#ababad">LIMER</text>
+      <polyline points="260,30 268,26 276,22 284,20 292,16 300,14 308,10" stroke="#00ffa3" stroke-width="1.5" fill="none"/>
+      <text x="326" y="22" font-family="DM Mono" font-size="13" fill="#fdfbfe" text-anchor="end">$0.042</text>
+      <text x="358" y="22" font-family="DM Mono" font-size="11" fill="#00ffa3" text-anchor="end">+12.4%</text>
+    </g>
+  </g>
+
+  <!-- ==================== BOTTOM NAV (788-844) ==================== -->
+  <g id="bottom-nav">
+    <rect x="0" y="788" width="390" height="56" fill="#121316"/>
+    <line x1="0" y1="788" x2="390" y2="788" stroke="#47484a66" stroke-width="1"/>
+
+    <!-- Home (active) -->
+    <g transform="translate(23,798)">
+      <rect x="0" y="-2" width="48" height="48" rx="8" fill="transparent"/>
+      <rect x="14" y="2" width="20" height="16" rx="3" fill="#00ffa3"/>
+      <rect x="18" y="10" width="5" height="8" rx="1" fill="#121316"/>
+      <text x="24" y="34" font-family="Inter" font-weight="600" font-size="10" fill="#00ffa3" text-anchor="middle">Home</text>
+    </g>
+    <!-- Learn -->
+    <g transform="translate(101,798)">
+      <rect x="0" y="-2" width="48" height="48" rx="8" fill="transparent"/>
+      <rect x="14" y="2" width="20" height="16" rx="3" stroke="#ababad" stroke-width="1.5" fill="none"/>
+      <text x="24" y="34" font-family="Inter" font-size="10" fill="#ababad" text-anchor="middle">Learn</text>
+    </g>
+    <!-- Market -->
+    <g transform="translate(179,798)">
+      <rect x="0" y="-2" width="48" height="48" rx="8" fill="transparent"/>
+      <polyline points="14,18 19,8 24,14 29,4 34,12" stroke="#ababad" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <text x="24" y="34" font-family="Inter" font-size="10" fill="#ababad" text-anchor="middle">Market</text>
+    </g>
+    <!-- Trade -->
+    <g transform="translate(257,798)">
+      <rect x="0" y="-2" width="48" height="48" rx="8" fill="transparent"/>
+      <path d="M14,14 L24,4 L34,14 M14,18 L34,18" stroke="#ababad" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <text x="24" y="34" font-family="Inter" font-size="10" fill="#ababad" text-anchor="middle">Trade</text>
+    </g>
+    <!-- Portfolio -->
+    <g transform="translate(335,798)">
+      <rect x="0" y="-2" width="48" height="48" rx="8" fill="transparent"/>
+      <circle cx="24" cy="10" r="8" stroke="#ababad" stroke-width="1.5" fill="none"/>
+      <text x="24" y="34" font-family="Inter" font-size="10" fill="#ababad" text-anchor="middle">Portfolio</text>
+    </g>
+  </g>
+</svg>

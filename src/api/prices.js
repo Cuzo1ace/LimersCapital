@@ -1,10 +1,13 @@
-// CoinGecko free API — no key needed
-const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
-
 import {
   safeFloat, validatePythFeed, validateDexPair,
   validateCGSimplePrice, validateCGMarketItem, validateJupiterPrice, validateDeFiLlamaTVL,
 } from '../utils/validate';
+
+// API proxy URL — must be declared before any const that references it
+const API_PROXY_URL = import.meta.env.VITE_API_PROXY_URL || '';
+
+// CoinGecko free API — no key needed
+const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
 
 // Pyth Hermes — oracle-grade prices, free, no key, CORS-enabled
 const HERMES_BASE = 'https://hermes.pyth.network/v2/updates/price/latest';
@@ -20,7 +23,6 @@ const FMP_PROXY_URL = API_PROXY_URL ? `${API_PROXY_URL}/fmp` : null;
 // Helius — dedicated RPC + DAS API for on-chain token metadata / logos
 // API key is stored server-side in the Cloudflare Worker (limer-api-proxy).
 // The frontend NEVER sees the Helius key — all requests route through the proxy.
-const API_PROXY_URL = import.meta.env.VITE_API_PROXY_URL || '';
 // Jupiter Price API v2 — routed through API proxy to avoid CORS
 const JUPITER_BASE = API_PROXY_URL ? `${API_PROXY_URL}/jupiter/price` : 'https://api.jup.ag/price/v2';
 const HELIUS_RPC_URL_DIRECT = import.meta.env.VITE_SOLANA_RPC_URL || '';

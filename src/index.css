@@ -49,16 +49,7 @@ body::before {
   z-index: 0;
 }
 
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 120% 60% at 80% -10%, rgba(0,255,163,.08) 0%, transparent 60%),
-    radial-gradient(ellipse 80% 50% at -10% 80%, rgba(191,129,255,.06) 0%, transparent 60%);
-  pointer-events: none;
-  z-index: 0;
-}
+/* body::after replaced by BackgroundGradient.jsx component */
 
 /* Selection */
 ::selection {
@@ -74,11 +65,7 @@ html.light body::before {
   background-image: radial-gradient(circle at 2px 2px, rgba(0,0,0,0.04) 1px, transparent 0);
   background-size: 24px 24px;
 }
-html.light body::after {
-  background:
-    radial-gradient(ellipse 120% 60% at 80% -10%, rgba(0,255,163,.05) 0%, transparent 60%),
-    radial-gradient(ellipse 80% 50% at -10% 80%, rgba(191,129,255,.04) 0%, transparent 60%);
-}
+/* Light mode body::after handled by BackgroundGradient component */
 html.light {
   /* Backgrounds */
   --color-night: #f5f5f5;
@@ -197,4 +184,70 @@ html.light ::selection {
       #fff,
       #00000000 calc(var(--spread, 20) * 2deg)
     );
+}
+
+/* ── Ocean gradient blob animations ── */
+@keyframes ocean-blob-0 {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  33% { transform: translate(-40%, -60%) scale(1.1); }
+  66% { transform: translate(-60%, -40%) scale(0.9); }
+}
+@keyframes ocean-blob-1 {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  33% { transform: translate(-60%, -40%) scale(0.85); }
+  66% { transform: translate(-40%, -55%) scale(1.15); }
+}
+@keyframes ocean-blob-2 {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  33% { transform: translate(-55%, -45%) scale(1.05); }
+  66% { transform: translate(-45%, -55%) scale(0.95); }
+}
+@keyframes ocean-blob-3 {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  33% { transform: translate(-35%, -65%) scale(1.1); }
+  66% { transform: translate(-65%, -45%) scale(0.9); }
+}
+@keyframes ocean-blob-4 {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  33% { transform: translate(-45%, -60%) scale(0.9); }
+  66% { transform: translate(-55%, -40%) scale(1.1); }
+}
+
+/* ── Gradient text animation ── */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── Shimmer skeleton ── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ── Press scale utility ── */
+.press-scale {
+  transition: transform 0.15s ease;
+}
+.press-scale:active {
+  transform: scale(0.97);
+}
+
+/* Light mode: reduce gradient blob visibility */
+html.light .bg-gradient-blob {
+  opacity: 0.5 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer,
+  [class*="ocean-blob"],
+  [style*="ocean-blob"] {
+    animation: none !important;
+  }
 }

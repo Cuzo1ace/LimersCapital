@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844" style="background:#0d0e10">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&amp;family=Inter:wght@400;500&amp;family=DM+Mono:wght@400&amp;display=swap');
+    </style>
+    <clipPath id="screen-clip">
+      <rect width="390" height="844" rx="44"/>
+    </clipPath>
+  </defs>
+
+  <!-- Screen background -->
+  <rect width="390" height="844" fill="#0d0e10" rx="44"/>
+
+  <!-- STATUS BAR -->
+  <g id="status-bar">
+    <rect x="0" y="0" width="390" height="44" fill="#0d0e10"/>
+    <!-- Time -->
+    <text x="28" y="28" font-family="Inter" font-weight="600" font-size="15" fill="#fdfbfe" letter-spacing="0.2">9:41</text>
+    <!-- Signal bars -->
+    <g id="signal" transform="translate(311, 16)">
+      <rect x="0" y="6" width="3" height="6" rx="1" fill="#fdfbfe"/>
+      <rect x="5" y="4" width="3" height="8" rx="1" fill="#fdfbfe"/>
+      <rect x="10" y="2" width="3" height="10" rx="1" fill="#fdfbfe"/>
+      <rect x="15" y="0" width="3" height="12" rx="1" fill="#fdfbfe" opacity="0.35"/>
+    </g>
+    <!-- Wifi -->
+    <g id="wifi" transform="translate(335, 18)">
+      <path d="M8 10 C5.5 7.5 2.5 7.5 0 10" stroke="#fdfbfe" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.35"/>
+      <path d="M10 7.5 C6.5 4 1.5 4 -2 7.5" stroke="#fdfbfe" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.6"/>
+      <path d="M12 5 C7.5 0.5 0.5 0.5 -4 5" stroke="#fdfbfe" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <circle cx="4" cy="12" r="1.5" fill="#fdfbfe"/>
+    </g>
+    <!-- Battery -->
+    <g id="battery" transform="translate(354, 18)">
+      <rect x="0" y="1" width="22" height="11" rx="3" stroke="#fdfbfe" stroke-width="1.2" fill="none"/>
+      <rect x="22.5" y="4" width="2" height="5" rx="1" fill="#fdfbfe" opacity="0.5"/>
+      <rect x="1.5" y="2.5" width="16" height="8" rx="2" fill="#fdfbfe"/>
+    </g>
+  </g>
+
+  <!-- HEADER -->
+  <g id="header">
+    <rect x="0" y="44" width="390" height="56" fill="#0d0e10"/>
+    <!-- Back arrow -->
+    <g id="back-btn" transform="translate(16, 58)">
+      <rect width="40" height="40" rx="8" fill="#1e2022"/>
+      <path d="M24 20 L16 20 M16 20 L21 15 M16 20 L21 25" stroke="#fdfbfe" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </g>
+    <!-- Title -->
+    <text x="195" y="74" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="20" fill="#fdfbfe" text-anchor="middle">Learn</text>
+    <!-- Search icon -->
+    <g id="search-btn" transform="translate(334, 58)">
+      <rect width="40" height="40" rx="8" fill="#1e2022"/>
+      <circle cx="18" cy="17" r="7" stroke="#fdfbfe" stroke-width="1.8" fill="none"/>
+      <line x1="23" y1="22" x2="28" y2="27" stroke="#fdfbfe" stroke-width="1.8" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- PROGRESS RING SECTION -->
+  <g id="progress-ring-section" transform="translate(195, 130)">
+    <!-- Background ring -->
+    <circle cx="0" cy="40" r="40" fill="none" stroke="#1e2022" stroke-width="8"/>
+    <!-- Progress arc 35% = 0.35 * 2π * 40 ≈ 87.96 out of 251.33 circumference -->
+    <circle cx="0" cy="40" r="40" fill="none" stroke="#00ffa3" stroke-width="8"
+      stroke-dasharray="87.96 163.37"
+      stroke-dashoffset="62.83"
+      stroke-linecap="round"
+      transform="rotate(-90 0 40)"/>
+    <!-- Percentage text -->
+    <text x="0" y="36" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="18" fill="#fdfbfe" text-anchor="middle">35%</text>
+    <text x="0" y="52" font-family="Inter" font-size="9" fill="#ababad" text-anchor="middle">complete</text>
+    <!-- Label below ring -->
+    <text x="0" y="104" font-family="Inter" font-size="13" fill="#ababad" text-anchor="middle">12 of 34 lessons</text>
+  </g>
+
+  <!-- MODULE CARDS -->
+  <!-- Card 1: Blockchain Basics -->
+  <g id="card-blockchain-basics" transform="translate(16, 260)">
+    <rect width="358" height="120" rx="12" fill="#121316"/>
+    <!-- Icon background -->
+    <rect x="16" y="20" width="52" height="52" rx="10" fill="#1e2022"/>
+    <!-- Chain icon -->
+    <g transform="translate(29, 33)">
+      <rect x="0" y="8" width="10" height="10" rx="2" stroke="#00ffa3" stroke-width="1.8" fill="none"/>
+      <rect x="16" y="8" width="10" height="10" rx="2" stroke="#00ffa3" stroke-width="1.8" fill="none"/>
+      <line x1="10" y1="13" x2="16" y2="13" stroke="#00ffa3" stroke-width="1.8" stroke-linecap="round"/>
+    </g>
+    <!-- Card text -->
+    <text x="84" y="40" font-family="'Space Grotesk', sans-serif" font-weight="600" font-size="15" fill="#fdfbfe">Blockchain Basics</text>
+    <text x="84" y="58" font-family="Inter" font-size="12" fill="#ababad">Fundamentals of distributed ledgers</text>
+    <!-- Completed badge -->
+    <rect x="84" y="66" width="80" height="22" rx="6" fill="#00ffa320"/>
+    <text x="124" y="81" font-family="Inter" font-weight="500" font-size="11" fill="#00ffa3" text-anchor="middle">Completed</text>
+    <!-- Progress bar track -->
+    <rect x="16" y="100" width="326" height="6" rx="3" fill="#1e2022"/>
+    <!-- Progress bar fill 100% -->
+    <rect x="16" y="100" width="326" height="6" rx="3" fill="#00ffa3"/>
+  </g>
+
+  <!-- Card 2: DeFi Foundations -->
+  <g id="card-defi-foundations" transform="translate(16, 396)">
+    <rect width="358" height="120" rx="12" fill="#121316"/>
+    <!-- Icon background -->
+    <rect x="16" y="20" width="52" height="52" rx="10" fill="#1e2022"/>
+    <!-- DeFi icon (diamond shape) -->
+    <g transform="translate(29, 29)">
+      <path d="M13 0 L26 13 L13 26 L0 13 Z" stroke="#bf81ff" stroke-width="1.8" fill="none"/>
+      <path d="M0 13 L9 8 L17 8 L26 13" stroke="#bf81ff" stroke-width="1.2" fill="none" opacity="0.6"/>
+    </g>
+    <!-- Card text -->
+    <text x="84" y="40" font-family="'Space Grotesk', sans-serif" font-weight="600" font-size="15" fill="#fdfbfe">DeFi Foundations</text>
+    <text x="84" y="58" font-family="Inter" font-size="12" fill="#ababad">Decentralized finance concepts</text>
+    <!-- In Progress badge -->
+    <rect x="84" y="66" width="86" height="22" rx="6" fill="#bf81ff20"/>
+    <text x="127" y="81" font-family="Inter" font-weight="500" font-size="11" fill="#bf81ff" text-anchor="middle">In Progress</text>
+    <!-- Progress bar track -->
+    <rect x="16" y="100" width="326" height="6" rx="3" fill="#1e2022"/>
+    <!-- Progress bar fill 60% -->
+    <rect x="16" y="100" width="195.6" height="6" rx="3" fill="#bf81ff"/>
+  </g>
+
+  <!-- Card 3: Solana Ecosystem -->
+  <g id="card-solana-ecosystem" transform="translate(16, 532)" opacity="0.6">
+    <rect width="358" height="120" rx="12" fill="#121316"/>
+    <!-- Icon background -->
+    <rect x="16" y="20" width="52" height="52" rx="10" fill="#1e2022"/>
+    <!-- Solana icon (simplified) -->
+    <g transform="translate(29, 31)">
+      <rect x="0" y="0" width="26" height="5" rx="2" fill="#47484a"/>
+      <rect x="4" y="9" width="26" height="5" rx="2" fill="#47484a"/>
+      <rect x="0" y="18" width="26" height="5" rx="2" fill="#47484a"/>
+    </g>
+    <!-- Card text -->
+    <text x="84" y="40" font-family="'Space Grotesk', sans-serif" font-weight="600" font-size="15" fill="#fdfbfe">Solana Ecosystem</text>
+    <text x="84" y="58" font-family="Inter" font-size="12" fill="#ababad">Speed, tokens &amp; dApps on Solana</text>
+    <!-- Locked badge -->
+    <rect x="84" y="66" width="72" height="22" rx="6" fill="#47484a33"/>
+    <!-- Lock icon -->
+    <g transform="translate(90, 70)">
+      <rect x="0" y="4" width="10" height="8" rx="2" fill="none" stroke="#ababad" stroke-width="1.3"/>
+      <path d="M2 4 L2 2.5 C2 0.5 8 0.5 8 2.5 L8 4" stroke="#ababad" stroke-width="1.3" fill="none"/>
+    </g>
+    <text x="148" y="81" font-family="Inter" font-weight="500" font-size="11" fill="#ababad" text-anchor="middle">Locked</text>
+    <!-- Progress bar track -->
+    <rect x="16" y="100" width="326" height="6" rx="3" fill="#1e2022"/>
+  </g>
+
+  <!-- BOTTOM NAV -->
+  <g id="bottom-nav">
+    <rect x="0" y="788" width="390" height="56" fill="#121316"/>
+    <line x1="0" y1="788" x2="390" y2="788" stroke="#47484a66" stroke-width="1"/>
+    <!-- Home tab -->
+    <g id="nav-home" transform="translate(15, 796)">
+      <path d="M37 22 L37 14 L44 8 L51 14 L51 22 Z" stroke="#ababad" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+      <rect x="40" y="16" width="8" height="6" rx="1" fill="none" stroke="#ababad" stroke-width="1.5"/>
+      <text x="44" y="38" font-family="Inter" font-size="10" fill="#ababad" text-anchor="middle">Home</text>
+    </g>
+    <!-- Map tab -->
+    <g id="nav-map" transform="translate(93, 796)">
+      <path d="M37 22 C37 16 44 8 44 8 C44 8 51 16 51 22 C51 26 44 28 44 22 Z" stroke="#ababad" stroke-width="1.5" fill="none"/>
+      <circle cx="44" cy="18" r="2.5" stroke="#ababad" stroke-width="1.3" fill="none"/>
+      <text x="44" y="38" font-family="Inter" font-size="10" fill="#ababad" text-anchor="middle">Map</text>
+    </g>
+    <!-- Learn tab (ACTIVE) -->
+    <g id="nav-learn-active" transform="translate(171, 796)">
+      <rect x="28" y="4" width="32" height="24" rx="4" fill="none" stroke="#00ffa3" stroke-width="1.5"/>
+      <line x1="34" y1="10" x2="54" y2="10" stroke="#00ffa3" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="34" y1="15" x2="54" y2="15" stroke="#00ffa3" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="34" y1="20" x2="46" y2="20" stroke="#00ffa3" stroke-width="1.5" stroke-linecap="round"/>
+      <text x="44" y="38" font-family="Inter" font-weight="500" font-size="10" fill="#00ffa3" text-anchor="middle">Learn</text>
+    </g>
+    <!-- Portfolio tab -->
+    <g id="nav-portfolio" transform="translate(249, 796)">
+      <circle cx="44" cy="14" r="8" stroke="#ababad" stroke-width="1.5" fill="none"/>
+      <path d="M44 14 L44 8 A8 8 0 0 1 51 18 Z" fill="#ababad" opacity="0.5"/>
+      <text x="44" y="38" font-family="Inter" font-size="10" fill="#ababad" text-anchor="middle">Portfolio</text>
+    </g>
+    <!-- Profile tab -->
+    <g id="nav-profile" transform="translate(327, 796)">
+      <circle cx="44" cy="12" r="5" stroke="#ababad" stroke-width="1.5" fill="none"/>
+      <path d="M36 26 C36 20 52 20 52 26" stroke="#ababad" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <text x="44" y="38" font-family="Inter" font-size="10" fill="#ababad" text-anchor="middle">Profile</text>
+    </g>
+    <!-- Home indicator -->
+    <rect x="155" y="836" width="80" height="4" rx="2" fill="#fdfbfe" opacity="0.2"/>
+  </g>
+</svg>
