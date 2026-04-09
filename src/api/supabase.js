@@ -376,19 +376,27 @@ export async function fetchCompetitionLeaderboard(competitionId = 'season-1') {
  */
 export function subscribeLeaderboard(callback) {
   if (!isSupabaseReady()) return () => {};
-
-  const channel = supabase
-    .channel('leaderboard-changes')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'users' },
-      () => {
-        fetchLeaderboard().then(callback);
-      },
-    )
-    .subscribe();
-
-  return () => supabase.removeChannel(channel);
+  // Wrap in try-catch: Supabase realtime WebSocket construction can throw
+  // synchronously on Safari/iOS when CSP blocks the wss:// connection or when
+  // WebSockets are otherwise unavailable. We don't want this to crash React.
+  try {
+    const channel = supabase
+      .channel('leaderboard-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'users' },
+        () => {
+          fetchLeaderboard().then(callback).catch(() => {});
+        },
+      )
+      .subscribe();
+    return () => {
+      try { supabase.removeChannel(channel); } catch {}
+    };
+  } catch (e) {
+    if (typeof console !== 'undefined') console.warn('[supabase] realtime unavailable:', e?.message);
+    return () => {};
+  }
 }
 
 /**
@@ -397,19 +405,24 @@ export function subscribeLeaderboard(callback) {
  */
 export function subscribeActivityFeed(callback) {
   if (!isSupabaseReady()) return () => {};
-
-  const channel = supabase
-    .channel('activity-feed')
-    .on(
-      'postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'activity_feed' },
-      (payload) => {
-        callback(payload.new);
-      },
-    )
-    .subscribe();
-
-  return () => supabase.removeChannel(channel);
+  try {
+    const channel = supabase
+      .channel('activity-feed')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'activity_feed' },
+        (payload) => {
+          callback(payload.new);
+        },
+      )
+      .subscribe();
+    return () => {
+      try { supabase.removeChannel(channel); } catch {}
+    };
+  } catch (e) {
+    if (typeof console !== 'undefined') console.warn('[supabase] realtime unavailable:', e?.message);
+    return () => {};
+  }
 }
 
 /**
@@ -418,17 +431,22 @@ export function subscribeActivityFeed(callback) {
  */
 export function subscribeAnnouncements(callback) {
   if (!isSupabaseReady()) return () => {};
-
-  const channel = supabase
-    .channel('announcements')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'announcements' },
-      () => {
-        fetchAnnouncements().then(callback);
-      },
-    )
-    .subscribe();
-
-  return () => supabase.removeChannel(channel);
+  try {
+    const channel = supabase
+      .channel('announcements')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'announcements' },
+        () => {
+          fetchAnnouncements().then(callback).catch(() => {});
+        },
+      )
+      .subscribe();
+    return () => {
+      try { supabase.removeChannel(channel); } catch {}
+    };
+  } catch (e) {
+    if (typeof console !== 'undefined') console.warn('[supabase] realtime unavailable:', e?.message);
+    return () => {};
+  }
 }

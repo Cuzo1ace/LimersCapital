@@ -22,9 +22,12 @@ jobs:
       - name: Build
         run: npm run build
         env:
+          VITE_API_PROXY_URL: ${{ secrets.VITE_API_PROXY_URL }}
           VITE_HELIUS_API_KEY: ${{ secrets.VITE_HELIUS_API_KEY }}
           VITE_SOLANA_RPC_URL: ${{ secrets.VITE_SOLANA_RPC_URL }}
           VITE_TTSE_PROXY_URL: ${{ secrets.VITE_TTSE_PROXY_URL }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Deploy to Cloudflare Pages
         run: npx wrangler pages deploy dist --project-name caribcryptomap
