@@ -27,6 +27,8 @@ import { useLimerMutations } from './mutations';
 import { useUserProfile, useTradeLog } from './hooks';
 import { BADGES } from '../data/badges';
 import { MODULES } from '../data/modules';
+// Chain abstraction — optional adapter parameter enables future multi-chain support
+import { getChainAdapter } from '../chain';
 
 // ── Index maps ─────────────────────────────────────────────────
 // Badge ID string → bitmap bit position (0-31)
@@ -45,7 +47,7 @@ export const MODULE_INDEX = Object.fromEntries(MODULES.map((m, i) => [m.id, i]))
  * Mount inside the React tree. Watches Zustand state and syncs
  * milestone events to the on-chain Limer program via wallet-signed txs.
  */
-export function useLimerBridge() {
+export function useLimerBridge(adapter = getChainAdapter('solana')) {
   const [selectedAccount] = useSelectedWalletAccount();
   const cluster = useStore((s) => s.cluster);
 

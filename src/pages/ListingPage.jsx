@@ -2,9 +2,10 @@ import { useState } from 'react';
 import useStore from '../store/useStore';
 import { LISTING_TIERS, LISTING_BENEFITS, LISTING_FAQ } from '../data/listings';
 import { TTSE_FALLBACK } from '../api/ttse';
+import { submitListing } from '../api/supabase';
 
 export default function ListingPage() {
-  const { submitListingApplication, listingApplications } = useStore();
+  const { submitListingApplication, listingApplications, walletAddress } = useStore();
   const [form, setForm] = useState({ company: '', contact: '', email: '', tier: 'Explorer', message: '' });
   const [privacyConsent, setPrivacyConsent] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -14,6 +15,8 @@ export default function ListingPage() {
     e.preventDefault();
     if (!form.company || !form.email || !privacyConsent) return;
     submitListingApplication(form);
+    // Persist to Supabase (fire-and-forget)
+    submitListing({ ...form, walletAddress });
     setSubmitted(true);
   }
 

@@ -105,6 +105,28 @@ workers/
 
 [Solflare](https://www.solflare.com) — Users connecting with Solflare receive a 2% token allocation boost. Solana Mobile (Seeker) users receive an additional 1% boost.
 
+## Treasury & Security
+
+Treasury operations use a 2-of-3 Squads Protocol multi-sig. Deployment keys are distributed via Shamir Secret Sharing (3-of-5 threshold). See [docs/TREASURY.md](docs/TREASURY.md) for full details.
+
+## Open Source
+
+The Limer's Capital protocol layer is open-source under the [MIT License](LICENSE):
+
+- Anchor program (`anchor/programs/limer/`)
+- Chain abstraction interface (`src/chain/`)
+- Education content (`src/data/lessons.js`, `src/data/quizzes.js`, `src/data/modules.js`, `src/data/curriculum.js`)
+- Regulatory mapping (`src/data/regulations.js`)
+- Treasury configuration (`src/data/treasury.js`)
+- Documentation (`docs/`)
+
+The consumer application, premium features, and proprietary business logic remain All Rights Reserved.
+
+### Contributing
+
+See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for development setup, code style, and PR process.
+
 ## License
 
-Proprietary — Limer's Capital. All rights reserved.
+Protocol layer: MIT License — see [LICENSE](LICENSE)
+Application layer: Proprietary — Limer's Capital. All rights reserved.

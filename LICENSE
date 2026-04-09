@@ -1,0 +1,48 @@
+Dual License — Limer's Capital
+
+=== PROTOCOL LAYER (MIT License) ===
+
+The following files are licensed under the MIT License:
+
+- anchor/programs/limer/ (on-chain Anchor program)
+- src/chain/ (chain abstraction interface)
+- src/data/lessons.js, src/data/quizzes.js, src/data/modules.js (education content)
+- src/data/regulations.js (regulatory mapping data)
+- src/data/glossary.js (financial glossary)
+- src/data/curriculum.js (curriculum metadata)
+- src/data/treasury.js (treasury configuration)
+- docs/ (all documentation)
+
+MIT License
+
+Copyright (c) 2026 Limer's Capital
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== APPLICATION LAYER (Proprietary) ===
+
+All other files not listed above — including but not limited to the consumer
+application (React components, pages, store, API clients, Cloudflare Workers,
+analytics, premium features) — are proprietary.
+
+Copyright (c) 2026 Limer's Capital. All rights reserved.
+
+No part of the application layer may be reproduced, distributed, or transmitted
+in any form without the prior written permission of Limer's Capital.

@@ -33,6 +33,24 @@ export const DISTRIBUTION = {
   },
 };
 
+// ── Insurance & Treasury Strategy (Survival Intervention 7) ──
+
+export const INSURANCE_FUND = {
+  allocation: 7_500_000,
+  source: 'treasury',
+  sourceLabel: 'Treasury (150M)',
+  pctOfTreasury: 5,
+  purpose: 'Self-insurance against platform-threatening events',
+};
+
+export const TREASURY_STRATEGY_SUMMARY = {
+  yieldTarget: '5-7% APY',
+  yieldInstruments: ['Marinade mSOL', 'JitoSOL'],
+  insuranceFund: 7_500_000,
+  counterCyclicalBudget: 15_000_000,
+  riskPolicy: 'Max 50% in any single DeFi protocol',
+};
+
 export const STAKING_TIERS = [
   { name: 'Bronze', icon: '🥉', min: 1_000, feeDiscount: 10, apyRange: '5-8%', governance: false, color: '#CD7F32' },
   { name: 'Silver', icon: '🥈', min: 10_000, feeDiscount: 25, apyRange: '8-12%', governance: true, color: '#C0C0C0' },

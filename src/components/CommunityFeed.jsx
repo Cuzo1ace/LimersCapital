@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import useStore from '../store/useStore';
+import { fetchActivityFeed, subscribeActivityFeed } from '../api/supabase';
+import { isSupabaseReady } from '../lib/supabase';
 
 /**
- * Simulated community activity feed showing anonymized platform activity.
- * Creates social proof and makes the platform feel alive.
+ * Community activity feed — shows REAL user events from Supabase.
+ * Falls back to simulated activity when Supabase is unavailable or empty.
  */
 
 const CARIBBEAN_COUNTRIES = [
@@ -37,22 +38,65 @@ function generateActivity() {
   };
 }
 
-export default function CommunityFeed({ limit = 5 }) {
-  const [activities, setActivities] = useState(() =>
-    Array.from({ length: limit }, generateActivity)
-      .sort((a, b) => parseInt(a.time) - parseInt(b.time))
-  );
+function formatTime(createdAt) {
+  const diff = Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
 
-  // Add a new activity every 30-60 seconds
+export default function CommunityFeed({ limit = 5 }) {
+  const [activities, setActivities] = useState([]);
+  const [isLive, setIsLive] = useState(false);
+
   useEffect(() => {
+    let unsub = () => {};
+
+    async function init() {
+      if (!isSupabaseReady()) {
+        setActivities(Array.from({ length: limit }, generateActivity));
+        return;
+      }
+
+      const realData = await fetchActivityFeed(limit);
+      if (realData.length > 0) {
+        setActivities(realData.map(a => ({
+          id: a.id,
+          icon: a.icon,
+          text: a.description,
+          time: formatTime(a.created_at),
+        })));
+        setIsLive(true);
+
+        unsub = subscribeActivityFeed((newEvent) => {
+          setActivities(prev => [
+            {
+              id: newEvent.id,
+              icon: newEvent.icon,
+              text: newEvent.description,
+              time: 'just now',
+            },
+            ...prev.slice(0, limit - 1),
+          ]);
+        });
+      } else {
+        setActivities(Array.from({ length: limit }, generateActivity));
+      }
+    }
+
+    init();
+    return () => unsub();
+  }, [limit]);
+
+  // Simulated mode: add activity every 30-60s
+  useEffect(() => {
+    if (isLive) return;
     const interval = setInterval(() => {
-      setActivities(prev => {
-        const next = [generateActivity(), ...prev.slice(0, limit - 1)];
-        return next;
-      });
+      setActivities(prev => [generateActivity(), ...prev.slice(0, limit - 1)]);
     }, 30000 + Math.random() * 30000);
     return () => clearInterval(interval);
-  }, [limit]);
+  }, [limit, isLive]);
 
   return (
     <div className="rounded-xl border border-border p-5" style={{ background: 'var(--color-card)' }}>
@@ -61,8 +105,10 @@ export default function CommunityFeed({ limit = 5 }) {
           🌴 Caribbean Community
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-up animate-pulse" />
-          <span className="text-[.6rem] text-up">Live</span>
+          <span className={`w-2 h-2 rounded-full ${isLive ? 'bg-up' : 'bg-sun'} animate-pulse`} />
+          <span className={`text-[.6rem] ${isLive ? 'text-up' : 'text-sun'}`}>
+            {isLive ? 'Live' : 'Simulated'}
+          </span>
         </div>
       </div>
 

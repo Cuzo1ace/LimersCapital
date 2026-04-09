@@ -28,6 +28,8 @@ import LimerBridge from './components/solana/LimerBridge';
 import PriceAlertChecker from './components/PriceAlertChecker';
 import OnboardingTour from './components/OnboardingTour';
 import NetworkStatus from './components/NetworkStatus';
+import AnnouncementBanner from './components/AnnouncementBanner';
+import FeedbackWidget from './components/FeedbackWidget';
 import { initAnalytics, track } from './analytics/track';
 
 const queryClient = new QueryClient({
@@ -137,10 +139,12 @@ export default function App() {
       <Header />
       <PriceTicker />
       <main className="relative z-[1] px-3 py-4 md:p-7 max-w-[1440px] mx-auto">
+        <AnnouncementBanner />
         <ErrorBoundary>
           <TabContent />
         </ErrorBoundary>
       </main>
+      <FeedbackWidget />
       <RewardToast />
     </QueryClientProvider>
   );

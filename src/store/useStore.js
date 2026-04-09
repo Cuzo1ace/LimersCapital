@@ -7,6 +7,7 @@ import { getLPMultiplier } from '../data/lp';
 import { pickInsight } from '../data/tradeInsights';
 import { checkChallenges, PRACTICE_CHALLENGES } from '../data/practiceChallenges';
 import { track, identify, analyticsReset } from '../analytics/track';
+import { upsertUser, syncUserStats, recordReferral, logActivity } from '../api/supabase';
 
 const INITIAL_USD = 100000;
 const INITIAL_TTD = 679000;
@@ -76,6 +77,10 @@ const useStore = create(
         if (newTradeCount === 1) get().awardXP(XP_VALUES.firstTrade, 'First trade!');
         else if (newTradeCount === 10) get().awardXP(XP_VALUES.tenTrades, '10 trades milestone!');
         else if (newTradeCount === 50) get().awardXP(XP_VALUES.fiftyTrades, '50 trades milestone!');
+        // Referral prompt at trade milestones
+        if ([1, 5, 25].includes(newTradeCount) && !get().pendingReferralPrompt) {
+          set({ pendingReferralPrompt: { trigger: newTradeCount === 1 ? 'First trade!' : `${newTradeCount} trades!`, timestamp: Date.now() } });
+        }
 
         // LP for trading
         get().awardLP(10, 'Trade executed', 'trade');
@@ -103,6 +108,10 @@ const useStore = create(
         get()._generateTeachingMoment({ side, symbol, qty, price, total, market, pnl: tradePnlForInsight });
         get()._checkPracticeChallenges();
         track('trade_executed', { side, symbol, market, total: Math.round(total) });
+        get()._syncToSupabase();
+        // Log to activity feed
+        const wa = get().walletAddress;
+        if (wa) logActivity({ walletAddress: wa, eventType: 'trade', icon: side === 'buy' ? '💹' : '📉', description: `Someone just ${side === 'buy' ? 'bought' : 'sold'} ${symbol}` });
         return { success: true };
       },
 
@@ -130,6 +139,24 @@ const useStore = create(
         const s = get();
         identify(address, { tier: getTier(s.xp).name, xp: s.xp, limerPoints: s.limerPoints });
         track('wallet_connected', { address: address.slice(0, 8) + '…' });
+
+        // ── Supabase sync (fire-and-forget) ──
+        const refCode = s.referralCode || 'LIMER-' + address.slice(0, 8).toUpperCase();
+        upsertUser({
+          walletAddress: address,
+          referralCode: refCode,
+          xp: s.xp,
+          limerPoints: s.limerPoints,
+          tier: getTier(s.xp).name,
+          currentStreak: s.currentStreak,
+          longestStreak: s.longestStreak,
+          tradesCount: s.trades.length,
+          lessonsCount: Object.keys(s.lessonsRead).length,
+        });
+        // If a referral was applied, record the relationship
+        if (pending) {
+          recordReferral(address, pending);
+        }
       },
 
       disconnectWallet: () => {
@@ -138,9 +165,34 @@ const useStore = create(
         set({ walletAddress: null, walletConnected: false });
       },
 
+      // ── Supabase Sync ────────────────────────────────────────
+      // Debounced sync — call after any state-changing event.
+      // Fire-and-forget: localStorage remains the source of truth.
+      _supabaseSyncTimer: null,
+      _syncToSupabase: () => {
+        const state = get();
+        if (!state.walletAddress) return;
+        clearTimeout(state._supabaseSyncTimer);
+        const timer = setTimeout(() => {
+          const s = get();
+          syncUserStats(s.walletAddress, {
+            xp: s.xp,
+            limerPoints: s.limerPoints,
+            tier: getTier(s.xp).name,
+            currentStreak: s.currentStreak,
+            longestStreak: s.longestStreak,
+            tradesCount: s.trades.length,
+            lessonsCount: Object.keys(s.lessonsRead).length,
+          });
+        }, 2000); // 2s debounce
+        set({ _supabaseSyncTimer: timer });
+      },
+
       // ── Network ─────────────────────────────────────────────
       cluster: 'devnet',
       setCluster: (cluster) => set({ cluster }),
+      selectedChain: 'solana',
+      setSelectedChain: (chainId) => set({ selectedChain: chainId }),
 
       // ── Navigation ──────────────────────────────────────────
       activeTab: 'dashboard',
@@ -196,6 +248,7 @@ const useStore = create(
           xp: newXP,
           pendingToasts: [...state.pendingToasts, ...toasts],
         });
+        get()._syncToSupabase();
       },
 
       markLessonRead: (lessonId) => {
@@ -208,6 +261,8 @@ const useStore = create(
         get()._checkModuleComplete();
         get()._checkBadges();
         track('lesson_completed', { lessonId, totalLessons: Object.keys(newRead).length });
+        const wa2 = get().walletAddress;
+        if (wa2) logActivity({ walletAddress: wa2, eventType: 'lesson', icon: '📚', description: `Someone just completed a lesson` });
       },
 
       // Score and pass/fail come from the server response (answers validated server-side).
@@ -270,6 +325,10 @@ const useStore = create(
             set({ modulesCompleted: newCompleted, unlockedFeatures: newUnlocks });
             get().awardXP(XP_VALUES.moduleComplete, `${mod.title} module complete!`);
             get().awardLP(50, `${mod.title} module complete!`, 'module');
+            // Referral prompt on module completion
+            if (!get().pendingReferralPrompt) {
+              set({ pendingReferralPrompt: { trigger: `${mod.title} complete!`, timestamp: Date.now() } });
+            }
             mod.unlocks.forEach(u => {
               set({ pendingToasts: [...get().pendingToasts, { id: 'u:' + u, type: 'unlock', title: 'Feature Unlocked!', message: mod.unlockLabel }] });
             });
@@ -370,6 +429,20 @@ const useStore = create(
         get()._checkBadges();
       },
 
+      // ── Streak Fee Credits ─────────────────────────────────
+      streakFeeCredits: 0,
+
+      // ── Referral Prompts ────────────────────────────────────
+      pendingReferralPrompt: null,
+      dismissReferralPrompt: () => set({ pendingReferralPrompt: null }),
+
+      // ── Premium Conversion Tracking ─────────────────────────
+      premiumConversionEvents: [],
+      trackPremiumConversion: (event) => {
+        const entry = { event, timestamp: new Date().toISOString() };
+        set(s => ({ premiumConversionEvents: [...s.premiumConversionEvents, entry].slice(0, 200) }));
+      },
+
       // ── Streak Shields ─────────────────────────────────────
       streakShields: 1,
       lastShieldRefill: null,
@@ -416,6 +489,13 @@ const useStore = create(
         set({ currentStreak: newStreak, lastLoginDate: today, longestStreak: newLongest });
         get().awardXP(XP_VALUES.dailyStreak, `Day ${newStreak} streak!`);
         get().awardLP(3 * newStreak, `Day ${newStreak} streak!`, 'streak');
+        // Streak fee credits — accumulate toward trading fee discounts at $LIMER launch
+        const creditAmount = Math.min(newStreak, 30);
+        set({ streakFeeCredits: get().streakFeeCredits + creditAmount });
+        // Referral prompt at 7-day streak milestone
+        if (newStreak === 7 && !get().pendingReferralPrompt) {
+          set({ pendingReferralPrompt: { trigger: '7-day streak!', timestamp: Date.now() } });
+        }
         get()._checkBadges();
       },
 
@@ -464,6 +544,7 @@ const useStore = create(
           pendingToasts: [...state.pendingToasts, { id: 'lp:' + Date.now().toString(36), type: 'lp', title: `+${amount} LP`, message: reason }],
         });
         get()._checkBadges();
+        get()._syncToSupabase();
       },
 
       generateReferralCode: () => {
@@ -1255,7 +1336,7 @@ const useStore = create(
         // Wallet state is re-established on connect via wallet-standard.
         // This prevents localStorage from becoming a behavioral dossier
         // linking wallet addresses to trade history.
-        _storeVersion: 3,
+        _storeVersion: 4,
         balanceUSD: state.balanceUSD, balanceTTD: state.balanceTTD,
         holdings: state.holdings, trades: state.trades,
         cluster: state.cluster,
@@ -1312,6 +1393,10 @@ const useStore = create(
         lastShieldRefill: state.lastShieldRefill,
         firstSessionDate: state.firstSessionDate,
         sessionCount: state.sessionCount,
+        // Survival Probability Interventions
+        streakFeeCredits: state.streakFeeCredits,
+        premiumConversionEvents: state.premiumConversionEvents,
+        selectedChain: state.selectedChain,
       }),
     }
   )

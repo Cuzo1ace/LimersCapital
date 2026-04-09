@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import useStore from '../store/useStore';
@@ -13,6 +14,8 @@ import CommunityFeed from '../components/CommunityFeed';
 import Tooltip from '../components/ui/Tooltip';
 import DailyKnowledgeCard from '../components/DailyKnowledgeCard';
 import SkillMap from '../components/gamification/SkillMap';
+import SocialProofBar from '../components/SocialProofBar';
+import WaitlistModal from '../components/WaitlistModal';
 
 export default function DashboardPage() {
   const { t } = useTranslation();
@@ -76,8 +79,13 @@ export default function DashboardPage() {
     return { icon: '🏆', title: 'Check Your LP Rank', desc: `${fmtNum(limerPoints)} LP accumulated → $LIMER airdrop allocation.`, cta: 'View Points', tab: 'points' };
   })();
 
+  const [showWaitlist, setShowWaitlist] = useState(false);
+
   return (
     <div>
+      {/* Social Proof */}
+      <SocialProofBar />
+
       {/* Start Here banner — guides new users to their first action */}
       {trades.length === 0 && modulesCompleted.length === 0 && (
         <div className="rounded-xl border border-sea/25 p-6 mb-6"
@@ -387,6 +395,21 @@ export default function DashboardPage() {
       <div className="mt-6">
         <CommunityFeed limit={5} />
       </div>
+
+      {/* Waitlist CTA */}
+      <div className="mt-4 rounded-xl border border-sea/20 p-5 flex items-center justify-between flex-wrap gap-3"
+        style={{ background: 'linear-gradient(135deg, rgba(0,255,163,.04), rgba(153,69,255,.04))' }}>
+        <div>
+          <div className="font-body font-bold text-[.88rem] text-txt">Get Early Access to $LIMER</div>
+          <div className="text-[.74rem] text-txt-2 mt-0.5">Join the waitlist for token launch, exclusive airdrops, and Caribbean DeFi updates.</div>
+        </div>
+        <button onClick={() => setShowWaitlist(true)}
+          className="px-5 py-2.5 rounded-xl font-body font-bold text-[.82rem] cursor-pointer border-none bg-sea text-night hover:brightness-90 transition-all">
+          Join Waitlist
+        </button>
+      </div>
+
+      {showWaitlist && <WaitlistModal onClose={() => setShowWaitlist(false)} />}
     </div>
   );
 }
