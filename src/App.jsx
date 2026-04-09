@@ -30,6 +30,9 @@ import OnboardingTour from './components/OnboardingTour';
 import NetworkStatus from './components/NetworkStatus';
 import AnnouncementBanner from './components/AnnouncementBanner';
 import FeedbackWidget from './components/FeedbackWidget';
+import InstallPrompt from './components/pwa/InstallPrompt';
+import UpdatePrompt from './components/pwa/UpdatePrompt';
+import OfflineIndicator from './components/pwa/OfflineIndicator';
 import { initAnalytics, track } from './analytics/track';
 
 const queryClient = new QueryClient({
@@ -145,6 +148,9 @@ export default function App() {
         </ErrorBoundary>
       </main>
       <FeedbackWidget />
+      <InstallPrompt />
+      <UpdatePrompt />
+      <OfflineIndicator />
       <RewardToast />
     </QueryClientProvider>
   );
