@@ -4,31 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="
-      default-src 'self';
-      script-src 'self' 'unsafe-inline' 'unsafe-eval';
-      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-      font-src 'self' https://fonts.gstatic.com;
-      img-src 'self' data: blob: https: http:;
-      connect-src 'self'
-        https://limer-api-proxy.solanacaribbean-team.workers.dev
-        https://ttse-proxy.solanacaribbean-team.workers.dev
-        https://api.coingecko.com
-        https://api.jup.ag
-        https://hermes.pyth.network
-        https://api.dexscreener.com
-        https://api.llama.fi
-        https://yields.llama.fi
-        https://dlmm.datapi.meteora.ag
-        https://api.mainnet-beta.solana.com
-        https://mainnet.helius-rpc.com
-        https://devnet.helius-rpc.com
-        wss://api.mainnet-beta.solana.com
-        wss://mainnet.helius-rpc.com;
-      frame-src 'none';
-      object-src 'none';
-      base-uri 'self';
-    " />
+    <!-- CSP is managed via public/_headers (Cloudflare Pages) -->
     <title>Limer's Capital</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
