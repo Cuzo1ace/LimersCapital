@@ -661,6 +661,14 @@ const ROUTES = {
     cacheTtl: 300,
   },
 
+  // ── Jupiter Price API (proxy to avoid CORS) ──
+  '/jupiter/price': {
+    method: 'GET',
+    buildUrl: () => 'https://api.jup.ag/price/v2',
+    cacheTtl: 30,
+    passQuery: true,
+  },
+
   // ── Finnhub Financial Data (API key injected server-side) ──
   '/finnhub/economic-calendar': {
     method: 'GET',

@@ -6,6 +6,7 @@ import { CLUSTERS, DEFAULT_CLUSTER } from './config';
 const PROGRAM_ID_STRING = 'HuCCEkDvYdm1EMs3EH9wzLYi53aVkE7orkGXma8azhFk';
 
 let _programId = null;
+let _idlWarned = false;
 export function getLimerProgramId() {
   if (!_programId) {
     _programId = new PublicKey(PROGRAM_ID_STRING);
@@ -27,7 +28,7 @@ export async function getLimerProgram(wallet, cluster = DEFAULT_CLUSTER) {
     const idl = idlModule.default || idlModule;
     return new Program(idl, getLimerProgramId(), provider);
   } catch {
-    console.warn('[Limer] IDL not found — program client unavailable until anchor build');
+    if (!_idlWarned) { console.warn('[Limer] IDL not found — program client unavailable until anchor build'); _idlWarned = true; }
     return null;
   }
 }
@@ -55,7 +56,7 @@ export async function getLimerProgramReadOnly(cluster = DEFAULT_CLUSTER) {
     const idl = idlModule.default || idlModule;
     return new Program(idl, getLimerProgramId(), provider);
   } catch {
-    console.warn('[Limer] IDL not found — program client unavailable');
+    if (!_idlWarned) { console.warn('[Limer] IDL not found — program client unavailable'); _idlWarned = true; }
     return null;
   }
 }

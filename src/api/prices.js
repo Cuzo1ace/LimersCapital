@@ -6,9 +6,6 @@ import {
   validateCGSimplePrice, validateCGMarketItem, validateJupiterPrice, validateDeFiLlamaTVL,
 } from '../utils/validate';
 
-// Jupiter Price API v2 — no key needed (last-resort fallback)
-const JUPITER_BASE = 'https://api.jup.ag/price/v2';
-
 // Pyth Hermes — oracle-grade prices, free, no key, CORS-enabled
 const HERMES_BASE = 'https://hermes.pyth.network/v2/updates/price/latest';
 
@@ -24,6 +21,8 @@ const FMP_PROXY_URL = API_PROXY_URL ? `${API_PROXY_URL}/fmp` : null;
 // API key is stored server-side in the Cloudflare Worker (limer-api-proxy).
 // The frontend NEVER sees the Helius key — all requests route through the proxy.
 const API_PROXY_URL = import.meta.env.VITE_API_PROXY_URL || '';
+// Jupiter Price API v2 — routed through API proxy to avoid CORS
+const JUPITER_BASE = API_PROXY_URL ? `${API_PROXY_URL}/jupiter/price` : 'https://api.jup.ag/price/v2';
 const HELIUS_RPC_URL_DIRECT = import.meta.env.VITE_SOLANA_RPC_URL || '';
 export const HELIUS_RPC_URL = API_PROXY_URL
   ? `${API_PROXY_URL}/rpc`           // Proxied — key stays server-side
