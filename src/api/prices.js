@@ -3,8 +3,13 @@ import {
   validateCGSimplePrice, validateCGMarketItem, validateJupiterPrice, validateDeFiLlamaTVL,
 } from '../utils/validate';
 
-// API proxy URL — must be declared before any const that references it
-const API_PROXY_URL = import.meta.env.VITE_API_PROXY_URL || '';
+// API proxy URL — must be declared before any const that references it.
+// Default to the production Worker so the site works without build-time env
+// var wiring. The Worker URL is public (not a secret) — the Helius key it
+// holds is stored server-side as a Wrangler secret.
+const API_PROXY_URL =
+  import.meta.env.VITE_API_PROXY_URL ||
+  'https://limer-api-proxy.solanacaribbean-team.workers.dev';
 
 // CoinGecko free API — no key needed
 const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
