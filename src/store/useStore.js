@@ -677,6 +677,8 @@ const useStore = create(
       },
 
       // ── Onboarding ─────────────────────────────────────────
+      landingDismissed: false,
+      setLandingDismissed: (v) => set({ landingDismissed: v }),
       hasSeenOnboarding: false,
       setHasSeenOnboarding: (v) => set({ hasSeenOnboarding: v }),
       hasSeenPaperModal: false,
@@ -1370,6 +1372,7 @@ const useStore = create(
         percolatorMode: state.percolatorMode,
         watchlist: state.watchlist,
         priceAlerts: state.priceAlerts,
+        landingDismissed: state.landingDismissed,
         hasSeenOnboarding: state.hasSeenOnboarding,
         hasSeenPaperModal: state.hasSeenPaperModal,
         showWalletWizard: state.showWalletWizard,

@@ -7,7 +7,7 @@ import { GLOSSARY } from '../data/glossary';
 import { getTier, getNextTier } from '../data/gamification';
 import BadgeGrid from '../components/gamification/BadgeGrid';
 import SkillMap from '../components/gamification/SkillMap';
-import CurriculumMode from '../components/CurriculumMode';
+import DisclaimerBar from '../components/DisclaimerBar';
 import { submitQuizToServer } from '../api/game';
 
 /**
@@ -50,12 +50,6 @@ export default function LearnPage() {
   const [activeQuiz, setActiveQuiz] = useState(null);
   const [contentTab, setContentTab] = useState('lessons'); // 'lessons' | 'glossary' | 'badges'
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [curriculumMode, setCurriculumMode] = useState(false);
-
-  // Curriculum Mode — stripped-down educational view for classrooms
-  if (curriculumMode) {
-    return <CurriculumMode onExit={() => setCurriculumMode(false)} />;
-  }
 
   const tier = getTier(xp);
   const next = getNextTier(xp);
@@ -225,14 +219,9 @@ export default function LearnPage() {
 
         {/* Main Content */}
         <div className="flex-1 min-w-0">
-          {/* Curriculum Mode Toggle */}
+          {/* Disclaimer Bar */}
           <div className="flex justify-end mb-3">
-            <button
-              onClick={() => setCurriculumMode(true)}
-              className="text-xs px-3 py-1.5 rounded-lg border border-sea/20 text-sea/70 hover:text-sea hover:bg-sea/5 transition-all"
-            >
-              Curriculum Mode
-            </button>
+            <DisclaimerBar />
           </div>
           {/* Mobile Level Selector */}
           <div className="lg:hidden mb-4">

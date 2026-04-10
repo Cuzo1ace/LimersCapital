@@ -6,6 +6,9 @@ dist/
 .vscode/
 .DS_Store
 
+# Remotion rendered video outputs (regeneratable, too large for git)
+remotion/out/
+
 # Anchor build artifacts + Solana program keypairs (NEVER commit)
 anchor/target/
 anchor/**/*-keypair.json

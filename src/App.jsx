@@ -5,6 +5,7 @@ import Header from './components/layout/Header';
 import PriceTicker from './components/PriceTicker';
 import BackgroundGradient from './components/ui/BackgroundGradient';
 import BottomTabBar from './components/layout/BottomTabBar';
+import LandingPage from './components/landing/LandingPage';
 import ErrorBoundary from './components/ErrorBoundary';
 import RewardToast from './components/gamification/RewardToast';
 import DashboardPage from './pages/DashboardPage';
@@ -133,41 +134,51 @@ function ThemeSync() {
 
 export default function App() {
   const activeTab = useStore(s => s.activeTab);
+  const landingDismissed = useStore(s => s.landingDismissed);
+  const setLandingDismissed = useStore(s => s.setLandingDismissed);
   return (
     <QueryClientProvider client={queryClient}>
       <BackgroundGradient />
       <NetworkStatus />
       <StreakCheck />
-      <NewUserRedirect />
       <ReferralHandler />
       <ThemeSync />
-      <LimerBridge />
-      <PriceAlertChecker />
-      <OnboardingTour />
-      <Header />
-      <PriceTicker />
-      <main className="relative z-[1] px-3 py-4 pb-20 md:p-7 md:pb-7 max-w-[1440px] mx-auto">
-        <AnnouncementBanner />
+      {landingDismissed ? (
+        <>
+          <NewUserRedirect />
+          <LimerBridge />
+          <PriceAlertChecker />
+          <OnboardingTour />
+          <Header />
+          <PriceTicker />
+          <main className="relative z-[1] px-3 py-4 pb-20 md:p-7 md:pb-7 max-w-[1440px] mx-auto">
+            <AnnouncementBanner />
+            <ErrorBoundary>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.12 }}
+                >
+                  <TabContent />
+                </motion.div>
+              </AnimatePresence>
+            </ErrorBoundary>
+          </main>
+          <BottomTabBar />
+          <FeedbackWidget />
+          <InstallPrompt />
+          <UpdatePrompt />
+          <OfflineIndicator />
+          <RewardToast />
+        </>
+      ) : (
         <ErrorBoundary>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.12 }}
-            >
-              <TabContent />
-            </motion.div>
-          </AnimatePresence>
+          <LandingPage onLaunch={() => setLandingDismissed(true)} />
         </ErrorBoundary>
-      </main>
-      <BottomTabBar />
-      <FeedbackWidget />
-      <InstallPrompt />
-      <UpdatePrompt />
-      <OfflineIndicator />
-      <RewardToast />
+      )}
     </QueryClientProvider>
   );
 }
