@@ -136,8 +136,9 @@ function HeroSection({ onLaunch, headlineIdx }) {
           <SparkleIcon size={48} />
         </motion.div>
 
-        {/* Auto-rotating headline */}
-        <div className="relative min-h-[140px] md:min-h-[230px] lg:min-h-[280px] flex items-center justify-center">
+        {/* Auto-rotating headline — fixed width + height container so longer
+            variants don't wrap word-by-word or push into the subhead */}
+        <div className="relative w-full max-w-[900px] mx-auto min-h-[180px] md:min-h-[260px] lg:min-h-[300px] flex items-center justify-center">
           <AnimatePresence mode="wait">
             <motion.div
               key={headline.id}
@@ -149,7 +150,7 @@ function HeroSection({ onLaunch, headlineIdx }) {
             >
               <GradientText
                 as="h1"
-                className="text-[2.4rem] md:text-[4.5rem] lg:text-[5.5rem] font-black font-headline leading-[1.05] whitespace-pre-line tracking-tight text-center"
+                className="text-[2rem] md:text-[3.4rem] lg:text-[4.2rem] font-black font-headline leading-[1.08] whitespace-pre-line tracking-tight text-center px-4"
               >
                 {headline.text}
               </GradientText>
