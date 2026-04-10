@@ -4,6 +4,7 @@ import GradientText from '../ui/GradientText';
 import GlassCard from '../ui/GlassCard';
 import LiquidMetalButton from '../ui/LiquidMetalButton';
 import WaitlistModal from '../WaitlistModal';
+import { CAPITAL_MARKET_LAYERS } from '../../data/capitalMarkets';
 import {
   SOCIAL_LINKS,
   HEADLINES,
@@ -284,6 +285,124 @@ function ShowcaseSection() {
 
 /* ─────────────────────────── Section 3: Community ─────────────────────────── */
 
+/* ─────────────────────── Section 2.5: Capital Markets ─────────────────────── */
+
+function CapitalMarketsSection() {
+  return (
+    <section className="relative py-20 md:py-28 px-6 md:px-12">
+      <div className="relative z-10 max-w-6xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-100px' }}
+          transition={{ duration: 0.7 }}
+          className="text-center mb-14"
+        >
+          <div
+            className="inline-block text-[.65rem] text-sea uppercase tracking-[0.25em] font-mono font-bold mb-4"
+          >
+            Local · Regional · Global
+          </div>
+          <h2 className="text-[1.8rem] md:text-[3rem] font-headline font-black text-txt leading-tight max-w-4xl mx-auto">
+            Local stocks. Regional markets.{' '}
+            <span className="text-sea">Global access.</span>
+          </h2>
+          <p className="mt-5 text-base md:text-lg text-txt-2 font-body max-w-2xl mx-auto leading-relaxed">
+            From your home exchange to every market on Earth — all through one wallet on Solana.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {CAPITAL_MARKET_LAYERS.map((layer, i) => (
+            <motion.div
+              key={layer.id}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-50px' }}
+              transition={{ duration: 0.6, delay: 0.1 + i * 0.15 }}
+            >
+              <GlassCard
+                variant="elevated"
+                animate={false}
+                className="p-6 h-full flex flex-col"
+              >
+                {/* Top accent line */}
+                <div
+                  className="w-full h-1 rounded-full mb-5"
+                  style={{ background: layer.color }}
+                />
+
+                <div className="flex items-center gap-2 mb-2">
+                  <span
+                    className="font-mono text-[.7rem] font-bold px-2 py-0.5 rounded"
+                    style={{ background: `${layer.color}20`, color: layer.color }}
+                  >
+                    {layer.num}
+                  </span>
+                  <span
+                    className="font-headline font-bold text-lg"
+                    style={{ color: layer.color }}
+                  >
+                    {layer.title}
+                  </span>
+                </div>
+
+                <p className="text-[.82rem] text-txt font-body font-medium mb-3">
+                  {layer.tagline}
+                </p>
+
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-[.65rem] text-muted font-mono">
+                    {layer.stocks}
+                  </span>
+                  <span
+                    className="text-[.6rem] font-mono px-2 py-0.5 rounded-full border"
+                    style={{
+                      color: layer.color,
+                      borderColor: `${layer.color}40`,
+                      background: `${layer.color}10`,
+                    }}
+                  >
+                    {layer.status}
+                  </span>
+                </div>
+
+                <ul className="space-y-2 mt-auto">
+                  {layer.features.map((f, j) => (
+                    <li
+                      key={j}
+                      className="flex items-start gap-2 text-[.75rem] text-txt-2 leading-relaxed"
+                    >
+                      <span
+                        className="w-1 h-1 rounded-full mt-1.5 flex-shrink-0"
+                        style={{ background: layer.color }}
+                      />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+              </GlassCard>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Bottom tagline */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className="text-center mt-10 text-[.85rem] text-sea font-body italic"
+        >
+          Ondo brings US stocks to global users via Solana. Limer's brings Caribbean stocks to global users via Solana.
+        </motion.p>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────────────────── Section 3: Community ─────────────────────────── */
+
 function CommunitySection({ onJoinWaitlist }) {
   return (
     <section
@@ -390,6 +509,7 @@ export default function LandingPage({ onLaunch }) {
     <div className="relative min-h-screen text-txt overflow-x-hidden">
       <HeroSection onLaunch={onLaunch} headlineIdx={headlineIdx} />
       <ShowcaseSection />
+      <CapitalMarketsSection />
       <CommunitySection onJoinWaitlist={() => setWaitlistOpen(true)} />
       <Footer />
 

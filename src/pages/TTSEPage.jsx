@@ -2,7 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchTTSEData, getTTSEMarketStatus, SECTOR_META, TTD_RATE } from '../api/ttse';
 import useStore from '../store/useStore';
 import GlowCard from '../components/ui/GlowCard';
+import GlassCard from '../components/ui/GlassCard';
 import FinancialTable, { PerfPill } from '../components/ui/FinancialTable';
+import { PE_COMPARISON, TTSE_DISCOUNTS, UNDERVALUATION_CAUSES, GLOBAL_LOCAL_COMPARISONS } from '../data/capitalMarkets';
 
 function fmtTTD(n) {
   if (n == null) return '—';
@@ -101,6 +103,91 @@ export default function TTSEPage() {
           <div className="font-headline text-[1.3rem] font-black text-sea">Solana RWA Token</div>
           <div className="text-[.75rem] text-txt-2 leading-relaxed">On-chain 24/7. No broker needed. Fractional ownership.</div>
         </div>
+      </div>
+
+      {/* ── Why Are These Stocks Undervalued? ── */}
+      <GlassCard variant="elevated" className="p-6 md:p-7 mb-6">
+        <div className="flex items-start gap-3 mb-5">
+          <span className="text-xl">📊</span>
+          <div>
+            <h2 className="font-headline text-[1.05rem] font-bold text-txt">Why Are Caribbean Stocks Undervalued?</h2>
+            <p className="text-[.78rem] text-txt-2 mt-1 leading-relaxed">
+              The TTSE trades at a <strong className="text-sea">9.9× PE</strong> — a{' '}
+              <strong className="text-sea">26% discount</strong> to Jamaica,{' '}
+              <strong className="text-sun">42% below</strong> emerging markets, and{' '}
+              <strong className="text-coral">53% below</strong> the US. This isn't a quality problem — it's a plumbing problem.
+            </p>
+          </div>
+        </div>
+
+        {/* PE Comparison Bar Chart */}
+        <div className="space-y-2.5 mb-5">
+          {PE_COMPARISON.map((ex) => {
+            if (!ex.pe) return null;
+            const barWidth = Math.min((ex.pe / 25) * 100, 100);
+            return (
+              <div key={ex.id} className="flex items-center gap-3">
+                <span className="w-6 text-center text-sm">{ex.flag}</span>
+                <span className="w-[130px] md:w-[160px] text-[.75rem] text-txt-2 font-body truncate">{ex.name}</span>
+                <div className="flex-1 h-5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{
+                      width: `${barWidth}%`,
+                      background: ex.id === 'ttse'
+                        ? 'linear-gradient(90deg, #FF4D6D, #FF4D6D)'
+                        : `linear-gradient(90deg, ${ex.color}88, ${ex.color})`,
+                    }}
+                  />
+                </div>
+                <span className="w-[44px] text-right font-mono text-[.78rem] font-bold" style={{ color: ex.color }}>
+                  {ex.pe}×
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 5 Causes — compact */}
+        <div className="flex flex-wrap gap-2">
+          {UNDERVALUATION_CAUSES.map((c) => (
+            <div key={c.id} className="flex items-center gap-1.5 bg-white/4 border border-white/8 rounded-lg px-3 py-1.5">
+              <span className="text-sm">{c.icon}</span>
+              <span className="text-[.68rem] text-txt font-medium">{c.cause}</span>
+              <span className="text-[.6rem] text-muted">({c.impact})</span>
+            </div>
+          ))}
+        </div>
+
+        <p className="text-[.72rem] text-sea italic mt-4">
+          Tokenizing these securities on Solana addresses all 5 causes — unlocking 30-70% potential upside.
+        </p>
+      </GlassCard>
+
+      {/* ── Global vs Local Comparisons ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        {GLOBAL_LOCAL_COMPARISONS.slice(0, 2).map((comp, i) => (
+          <GlassCard key={i} variant="default" delay={0.1 * i} className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-[.65rem] text-muted uppercase tracking-wider font-mono">Global vs Local</div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mb-3">
+              <div>
+                <div className="text-[.68rem] text-txt-2 mb-0.5">{comp.global.label}</div>
+                <div className="font-headline font-bold text-txt text-[.88rem]">{comp.global.name}</div>
+                <div className="font-mono text-coral text-[1.3rem] font-bold">{comp.global.pe}× PE</div>
+                <div className="text-[.65rem] text-muted">{comp.global.divYield}% dividend</div>
+              </div>
+              <div>
+                <div className="text-[.68rem] text-txt-2 mb-0.5">{comp.local.label}</div>
+                <div className="font-headline font-bold text-txt text-[.88rem]">{comp.local.name}</div>
+                <div className="font-mono text-sea text-[1.3rem] font-bold">{comp.local.pe}× PE</div>
+                <div className="text-[.65rem] text-muted">{comp.local.divYield}% dividend</div>
+              </div>
+            </div>
+            <p className="text-[.72rem] text-sun italic">{comp.insight}</p>
+          </GlassCard>
+        ))}
       </div>
 
       {/* Data source label */}

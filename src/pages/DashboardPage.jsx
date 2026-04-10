@@ -12,6 +12,7 @@ import LiquidMetalButton from '../components/ui/LiquidMetalButton';
 import GradientDots from '../components/ui/GradientDots';
 import HeroSection from '../components/dashboard/HeroSection';
 import GlassCard from '../components/ui/GlassCard';
+import { PE_COMPARISON, VALUE_UNLOCK } from '../data/capitalMarkets';
 import CommunityFeed from '../components/CommunityFeed';
 import Tooltip from '../components/ui/Tooltip';
 import DailyKnowledgeCard from '../components/DailyKnowledgeCard';
@@ -208,6 +209,25 @@ export default function DashboardPage() {
         <QuickStat icon="📚" label={t('dashboard.modules')} value={`${modulesCompleted.length}/4`} color="#2D9B56" onClick={() => setActiveTab('learn')} />
         <QuickStat icon="💰" label={t('dashboard.usdBalance')} value={fmtUSD(balanceUSD)} color="#9945FF" onClick={() => setActiveTab('portfolio')} />
       </div>
+
+      {/* ── Invest in Your Region ── */}
+      <GlassCard variant="highlight" className="p-5 mb-6 cursor-pointer press-scale" onClick={() => setActiveTab('ttse')}>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <div className="text-[.65rem] text-sea uppercase tracking-widest font-mono font-bold mb-1.5">Caribbean Capital Markets</div>
+            <h3 className="font-headline font-bold text-[1.05rem] text-txt mb-1.5">Invest in Your Region</h3>
+            <p className="text-[.78rem] text-txt-2 leading-relaxed">
+              TTSE stocks trade at <strong className="text-sea">9.9× PE</strong> — 42% below emerging market averages.
+              Caribbean companies are structurally undervalued, not fundamentally weak.
+            </p>
+          </div>
+          <div className="flex-shrink-0 text-right">
+            <div className="text-[2rem] font-headline font-black text-sea leading-none">{VALUE_UNLOCK.combinedCaribMktCap}</div>
+            <div className="text-[.65rem] text-muted mt-1">Combined Caribbean equities</div>
+            <div className="text-[.72rem] text-sun font-mono font-bold mt-2">+{VALUE_UNLOCK.upsidePercent}% potential upside →</div>
+          </div>
+        </div>
+      </GlassCard>
 
       {/* ── Two-column grid: Market Pulse + Next Action ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
