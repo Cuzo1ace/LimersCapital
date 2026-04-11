@@ -166,13 +166,13 @@ export default function App() {
                 </motion.div>
               </AnimatePresence>
             </ErrorBoundary>
+            <div className="text-center pt-6 pb-2">
+              <a href="https://docs.limerscapital.com" target="_blank" rel="noopener noreferrer"
+                 className="text-[.6rem] text-muted hover:text-sea transition-colors font-mono tracking-wider">
+                docs ↗
+              </a>
+            </div>
           </main>
-          <div className="text-center py-2">
-            <a href="https://docs.limerscapital.com" target="_blank" rel="noopener noreferrer"
-               className="text-[.6rem] text-muted hover:text-sea transition-colors font-mono tracking-wider">
-              docs ↗
-            </a>
-          </div>
           <BottomTabBar />
           <FeedbackWidget />
           <InstallPrompt />
