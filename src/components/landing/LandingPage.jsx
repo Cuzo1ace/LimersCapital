@@ -109,6 +109,7 @@ function HeroSection({ onLaunch, headlineIdx }) {
         <div className="hidden md:flex items-center gap-8 text-sm font-body text-txt-2">
           <a href="#showcase" className="hover:text-txt transition-colors">Product</a>
           <a href="#community" className="hover:text-txt transition-colors">Community</a>
+          <a href={SOCIAL_LINKS.docs} target="_blank" rel="noopener noreferrer" className="hover:text-sea transition-colors">Docs</a>
           <a href={SOCIAL_LINKS.x} target="_blank" rel="noopener noreferrer" className="hover:text-txt transition-colors">Articles</a>
         </div>
         <button
@@ -458,6 +459,18 @@ function CommunitySection({ onJoinWaitlist }) {
             Join the Waitlist
             <span className="group-hover:translate-x-0.5 transition-transform">↗</span>
           </button>
+
+          <a
+            href={SOCIAL_LINKS.docs}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg
+              border border-coral/30 bg-coral/5 hover:bg-coral/10 hover:border-coral/50
+              text-coral font-body font-medium text-sm
+              transition-all duration-300 press-scale"
+          >
+            Read the Docs ↗
+          </a>
         </motion.div>
 
         <motion.div
@@ -480,7 +493,8 @@ function Footer() {
   return (
     <footer className="relative py-10 text-center">
       <p className="text-xs md:text-sm text-muted font-body tracking-wider">
-        Built on Solana ◎
+        Built on Solana ◎ ·{' '}
+        <a href={SOCIAL_LINKS.docs} target="_blank" rel="noopener noreferrer" className="text-sea hover:underline">Docs</a>
       </p>
     </footer>
   );

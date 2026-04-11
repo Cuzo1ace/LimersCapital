@@ -8,6 +8,7 @@ export const SOCIAL_LINKS = {
   x: 'https://x.com/limerscapital',
   instagram: 'https://instagram.com/limerscapital',
   tiktok: 'https://tiktok.com/@limerscapital',
+  docs: 'https://docs.limerscapital.com',
 };
 
 // Headline variants — cycle through with the ↻ button on the live page to preview
