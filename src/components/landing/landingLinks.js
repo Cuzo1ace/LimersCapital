@@ -8,6 +8,7 @@ export const SOCIAL_LINKS = {
   x: 'https://x.com/limerscapital',
   instagram: 'https://instagram.com/limerscapital',
   tiktok: 'https://tiktok.com/@limerscapital',
+  youtube: 'https://youtube.com/@limerscapital',
   docs: 'https://docs.limerscapital.com',
 };
 
