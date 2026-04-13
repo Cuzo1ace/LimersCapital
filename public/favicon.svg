@@ -1,5 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" rx="6" fill="#0d0e10"/>
-  <text x="16" y="24" text-anchor="middle" font-family="'Space Grotesk',system-ui,sans-serif" font-weight="700" font-size="22" fill="#00ffa3">L</text>
-  <circle cx="22" cy="23" r="2" fill="#bf81ff"/>
+  <!-- Gold chevron "V" mark -->
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#E8C547"/>
+      <stop offset="50%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#B8962E"/>
+    </linearGradient>
+  </defs>
+  <path d="M8 8 L8 18 L16 26 L24 18 L24 8 L20 8 L20 16 L16 20 L12 16 L12 8 Z" fill="url(#gold)"/>
+  <!-- Lime accent -->
+  <circle cx="16" cy="13" r="2.5" fill="#6DBF4A"/>
+  <line x1="16" y1="13" x2="16" y2="10.5" stroke="#6DBF4A" stroke-width="0.8"/>
 </svg>

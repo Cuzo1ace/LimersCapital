@@ -108,7 +108,7 @@ export default function Header() {
           {/* Logo — click to go to Dashboard */}
           <div onClick={() => setActiveTab('dashboard')}
             className="font-headline text-[1.2rem] md:text-[1.45rem] font-black italic tracking-tight whitespace-nowrap text-txt select-none cursor-pointer hover:opacity-80 transition-opacity">
-            Limer's&nbsp;<span className="text-sun">Capital</span>
+            Limer's&nbsp;<span className="text-gold">Capital</span>
           </div>
 
           {/* ── Desktop nav ── hidden on mobile */}

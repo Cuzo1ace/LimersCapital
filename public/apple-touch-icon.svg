@@ -1,12 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
   <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="gold" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#E8C547"/>
+      <stop offset="50%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#B8962E"/>
+    </linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#0d0e10"/>
       <stop offset="100%" stop-color="#121316"/>
     </linearGradient>
   </defs>
   <rect width="180" height="180" rx="36" fill="url(#bg)"/>
-  <circle cx="90" cy="90" r="64" fill="none" stroke="#00ffa3" stroke-width="2.5" opacity="0.3"/>
-  <text x="90" y="112" text-anchor="middle" font-family="'Space Grotesk',system-ui,sans-serif" font-weight="700" font-size="92" fill="#00ffa3">L</text>
-  <circle cx="120" cy="118" r="5.5" fill="#bf81ff"/>
+  <!-- Gold chevron -->
+  <path d="M45 42 L45 102 L90 147 L135 102 L135 42 L112 42 L112 93 L90 115 L68 93 L68 42 Z" fill="url(#gold)"/>
+  <!-- Lime accent -->
+  <g transform="translate(90, 70)">
+    <ellipse cx="0" cy="0" rx="10" ry="8.5" fill="#6DBF4A"/>
+    <path d="M-7 0 L0 -6.5 L7 0 Z" fill="#7DD95A" opacity="0.6"/>
+    <line x1="0" y1="-1" x2="0" y2="-12" stroke="#6DBF4A" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
 </svg>
