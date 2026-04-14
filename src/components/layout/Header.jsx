@@ -23,10 +23,10 @@ const TABS = [
   { id: 'regulation', labelKey: 'nav.regulation', icon: '\u{1F5FA}\uFE0F' },
   { id: 'faq',        label: 'New to Digital Assets?', icon: '\u{1F195}' },
   { id: 'learn',      labelKey: 'nav.learn',      icon: '\u{1F4DA}' },
+  { id: 'trade',      labelKey: 'nav.trade',      icon: '\u{1F4B9}' },
   { id: 'ttse',       labelKey: 'nav.ttse',       icon: '\u{1F1F9}\u{1F1F9}', ttse: true },
   { id: 'insights',   labelKey: 'nav.insights',   icon: '\u{1F310}' },
   { id: 'market',     labelKey: 'nav.market',     icon: '\u{1F4CA}' },
-  { id: 'trade',      labelKey: 'nav.trade',      icon: '\u{1F4B9}' },
   { id: 'portfolio',  labelKey: 'nav.portfolio',  icon: '\u{1F392}' },
 ];
 

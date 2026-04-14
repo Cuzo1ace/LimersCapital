@@ -29,17 +29,6 @@ const TABS = [
     ),
   },
   {
-    id: 'market',
-    label: 'Market',
-    icon: (active) => (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="22,7 13.5,15.5 8.5,10.5 2,17" />
-        <polyline points="16,7 22,7 22,13" />
-        {active && <path d="M2 17l6.5-6.5 5 5L22 7v6H16z" fill="currentColor" opacity="0.15" />}
-      </svg>
-    ),
-  },
-  {
     id: 'trade',
     label: 'Trade',
     icon: (active) => (
@@ -50,6 +39,17 @@ const TABS = [
           <path d="M7 10l5-6 5 6z" fill="currentColor" opacity="0.2" />
           <path d="M7 14l5 6 5-6z" fill="currentColor" opacity="0.2" />
         </>}
+      </svg>
+    ),
+  },
+  {
+    id: 'market',
+    label: 'Market',
+    icon: (active) => (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="22,7 13.5,15.5 8.5,10.5 2,17" />
+        <polyline points="16,7 22,7 22,13" />
+        {active && <path d="M2 17l6.5-6.5 5 5L22 7v6H16z" fill="currentColor" opacity="0.15" />}
       </svg>
     ),
   },
