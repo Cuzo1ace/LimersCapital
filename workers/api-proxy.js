@@ -661,10 +661,13 @@ const ROUTES = {
     cacheTtl: 300,
   },
 
-  // ── Jupiter Price API (proxy to avoid CORS) ──
+  // ── Jupiter Price API v3 (proxy to avoid CORS) ──
+  // Note: v2 on api.jup.ag was deprecated and now returns 404/503. Use v3 on
+  // the free-tier host. Response shape also changed: flat { [mint]: {...} }
+  // with `usdPrice` instead of the old { data: { [mint]: { price } } }.
   '/jupiter/price': {
     method: 'GET',
-    buildUrl: () => 'https://api.jup.ag/price/v2',
+    buildUrl: () => 'https://lite-api.jup.ag/price/v3',
     cacheTtl: 30,
     passQuery: true,
   },

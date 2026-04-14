@@ -28,8 +28,10 @@ const FMP_PROXY_URL = API_PROXY_URL ? `${API_PROXY_URL}/fmp` : null;
 // Helius — dedicated RPC + DAS API for on-chain token metadata / logos
 // API key is stored server-side in the Cloudflare Worker (limer-api-proxy).
 // The frontend NEVER sees the Helius key — all requests route through the proxy.
-// Jupiter Price API v2 — routed through API proxy to avoid CORS
-const JUPITER_BASE = API_PROXY_URL ? `${API_PROXY_URL}/jupiter/price` : 'https://api.jup.ag/price/v2';
+// Jupiter Price API v3 — routed through API proxy to avoid CORS.
+// v2 on api.jup.ag was deprecated and returns 404. The worker now proxies
+// lite-api.jup.ag/price/v3; the local-dev fallback points at the same host.
+const JUPITER_BASE = API_PROXY_URL ? `${API_PROXY_URL}/jupiter/price` : 'https://lite-api.jup.ag/price/v3';
 const HELIUS_RPC_URL_DIRECT = import.meta.env.VITE_SOLANA_RPC_URL || '';
 export const HELIUS_RPC_URL = API_PROXY_URL
   ? `${API_PROXY_URL}/rpc`           // Proxied — key stays server-side
@@ -272,16 +274,19 @@ export async function fetchDexScreenerPrices(mints) {
   return result;
 }
 
-// ─── Layer 3: Jupiter v2 (fallback only) ─────────────────────────────────────
+// ─── Layer 3: Jupiter v3 (fallback only) ─────────────────────────────────────
+// v3 returns a flat { [mint]: {...} } map; v2 returned { data: { [mint]: {...} } }.
+// The `json.data ?? json` pattern keeps us working through edge-cache transitions.
 export async function fetchJupiterPrices() {
   const ids = Object.values(SOL_TOKENS).join(',');
   const res = await fetch(`${JUPITER_BASE}?ids=${ids}`);
   if (!res.ok) throw new Error(`Jupiter API error: ${res.status}`);
   const json = await res.json();
+  const root = json?.data ?? json ?? {};
 
   const prices = {};
   for (const [symbol, mint] of Object.entries(SOL_TOKENS)) {
-    const validated = validateJupiterPrice(json.data?.[mint]);
+    const validated = validateJupiterPrice(root[mint]);
     if (validated) prices[symbol] = { ...validated, mint };
   }
   return prices;
@@ -307,7 +312,7 @@ export async function fetchTradePrices() {
     console.warn('DexScreener failed:', e.message);
   }
 
-  // Layer 3: Jupiter v2 — last resort for any symbol still missing
+  // Layer 3: Jupiter v3 — last resort for any symbol still missing
   const missingSymbols = Object.keys(TOKEN_INFO)
     .filter(sym => !pythPrices[sym] && !dexPrices[sym]);
   let jupPrices = {};
@@ -317,9 +322,10 @@ export async function fetchTradePrices() {
       const res = await fetch(`${JUPITER_BASE}?ids=${mints}`);
       if (res.ok) {
         const json = await res.json();
+        const root = json?.data ?? json ?? {};
         for (const sym of missingSymbols) {
           const mint = SOL_TOKENS[sym];
-          const validated = validateJupiterPrice(json.data?.[mint]);
+          const validated = validateJupiterPrice(root[mint]);
           if (validated) jupPrices[sym] = validated;
         }
       }

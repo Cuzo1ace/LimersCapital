@@ -88,12 +88,14 @@ export function validateCGMarketItem(item) {
 }
 
 /**
- * Validate Jupiter v2 price entry for a mint.
+ * Validate a Jupiter price entry for a mint. Supports v3 (`usdPrice`, flat
+ * response) and falls back to the legacy v2 shape (`price`) during cache
+ * transitions so an edge-cached v2 body doesn't break the page.
  * Returns { price } or null.
  */
 export function validateJupiterPrice(data) {
   if (!data) return null;
-  const price = safeFloat(data.price);
+  const price = safeFloat(data.usdPrice ?? data.price);
   return (price != null && price > 0) ? { price } : null;
 }
 
