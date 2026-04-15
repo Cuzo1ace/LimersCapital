@@ -786,6 +786,34 @@ const ROUTES = {
     cacheTtl: 600,
     passQuery: true,
   },
+  // ── Finnhub real-time quote for a single ticker ──
+  // NOTE: requires FINNHUB_API_KEY secret to be set on the worker. If not set
+  // the endpoint returns 401 "Invalid API key." and the frontend gracefully
+  // hides the basis-spread widget. Kept as an optional fallback data source.
+  '/finnhub/quote': {
+    method: 'GET',
+    buildUrl: (env) => `https://finnhub.io/api/v1/quote?token=${env.FINNHUB_API_KEY}`,
+    cacheTtl: 60,
+    passQuery: true,
+  },
+  // ── FMP real-time stable quote for a single ticker ──
+  // Used by the basis-spread widget to show NASDAQ/NYSE underlying prices
+  // next to the on-chain Solana prices of Backed xStocks and Ondo Global
+  // Markets tokens. FMP migrated to /stable/ in Aug 2025; the legacy /api/v3
+  // endpoints return 403. `?symbol=AAPL` replaces the old path-based form.
+  // Example: /fmp/quote?symbol=AAPL → {symbol,price,change,changePercentage,...}
+  // FMP free tier: 250 req/day; 60s cache + ~10 tickers = ~144 req/day, safe.
+  // The FMP_API_KEY is already set on the worker (same secret that powers
+  // /fmp/cryptocurrency-list), so this route is live immediately.
+  '/fmp/quote': {
+    method: 'GET',
+    buildUrl: (env, url) => {
+      const symbol = (url.searchParams.get('symbol') || '').replace(/[^A-Z0-9.^-]/gi, '');
+      return `https://financialmodelingprep.com/stable/quote?symbol=${symbol}&apikey=${env.FMP_API_KEY}`;
+    },
+    cacheTtl: 60,
+    passQuery: false, // symbol already baked into the upstream URL
+  },
   '/finnhub/earnings': {
     method: 'GET',
     buildUrl: (env) => `https://finnhub.io/api/v1/calendar/earnings?token=${env.FINNHUB_API_KEY}`,
@@ -959,8 +987,10 @@ export default {
     const circuitEligible = route.method === 'GET';
 
     try {
-      // Build upstream URL
-      let upstreamUrl = route.buildUrl(env);
+      // Build upstream URL. Pass `url` as a second arg so routes with
+      // dynamic upstream paths (e.g. FMP's /quote/{symbols}) can read query
+      // params without needing passQuery.
+      let upstreamUrl = route.buildUrl(env, url);
 
       // Pass query parameters for GET requests
       if (route.passQuery && url.search) {

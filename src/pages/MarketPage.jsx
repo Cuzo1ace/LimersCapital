@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchSolanaMarketData, fetchSolPrice, fetchSolanaTVL, fetchFMPCryptoList, fmtSupply } from '../api/prices';
+import { fetchSolanaMarketData, fetchSolPrice, fetchSolanaTVL, fetchFMPCryptoList, fmtSupply, fetchUnderlyingStockPrices } from '../api/prices';
 import { fetchSolanaProtocols, fetchSolanaDexVolume, fetchSolanaStablecoins, fetchSolanaYields } from '../api/insights';
-import { CATEGORIES, LEGACY_CAT_LABEL } from '../data/tokenCatalog';
+import { CATEGORIES, LEGACY_CAT_LABEL, TOKEN_CATALOG, getTokensWithUnderlyingExchange } from '../data/tokenCatalog';
 import { SkeletonRows } from '../components/ui/Skeleton';
 import GlowCard from '../components/ui/GlowCard';
 import GradientDots from '../components/ui/GradientDots';
 import FinancialTable, { PerfPill, Sparkline, fmtCurrency } from '../components/ui/FinancialTable';
+import BasisSpreadBadge from '../components/BasisSpreadBadge';
 import { TradingViewScreener } from '../components/charts';
 
 function fmt(n, decimals = 2) {
@@ -80,6 +81,40 @@ export default function MarketPage() {
   const yieldsQ = useQuery({ queryKey: ['sol-yields'], queryFn: fetchSolanaYields, staleTime: 300000 });
   const [birdeyeToken, setBirdeyeToken] = useState('So11111111111111111111111111111111111111112');
   const [activeCategory, setActiveCategory] = useState('all');
+
+  // Tickers whose underlying we fetch from FMP for the basis-spread widget.
+  // Driven by the catalog — adding a stock/ETF there automatically picks it up.
+  const underlyingTickers = useMemo(() => {
+    const set = new Set();
+    for (const t of getTokensWithUnderlyingExchange()) {
+      if (t.underlying) set.add(t.underlying);
+    }
+    return [...set];
+  }, []);
+
+  // Fetch real NASDAQ/NYSE prices for every xStock / ETF underlying.
+  // 60s staleTime + worker-level 60s cache = FMP gets hit at most once per
+  // ticker per minute, keeping us well inside the 250 req/day free-tier limit.
+  // Gracefully returns {} on failure — basis badges simply hide.
+  const underlyingQ = useQuery({
+    queryKey: ['underlying-stock-prices', underlyingTickers.join(',')],
+    queryFn: () => fetchUnderlyingStockPrices(underlyingTickers),
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+    retry: 1,
+    enabled: underlyingTickers.length > 0,
+  });
+
+  // Index by symbol for fast per-row lookup
+  const underlyingByTicker = underlyingQ.data || {};
+  // Map on-chain symbol → underlying ticker for the table's render function
+  const symbolToUnderlying = useMemo(() => {
+    const map = {};
+    for (const t of TOKEN_CATALOG) {
+      if (t.underlying) map[t.symbol] = { underlying: t.underlying, exchange: t.underlyingExchange };
+    }
+    return map;
+  }, []);
 
   // Filter the market-table rows by category. The CoinGecko rows carry their
   // category via TOKEN_META; catalog-added rows carry `_cat` directly.
@@ -408,10 +443,14 @@ export default function MarketPage() {
             {
               key: 'token',
               label: 'Token',
-              width: '2.2fr',
+              width: '2.6fr',
               render: (token) => {
                 const meta = TOKEN_META[token.id] || { sym: token.symbol.toUpperCase(), cat: token._cat || '—' };
                 const col = token._col || '#5B7A9A';
+                // Basis-spread info (only for tokens with an `underlying` field)
+                const sym = meta.sym.toUpperCase();
+                const underlyingRef = symbolToUnderlying[sym];
+                const underlyingData = underlyingRef ? underlyingByTicker[underlyingRef.underlying] : null;
                 return (
                   <div className="flex items-center gap-3 min-w-0">
                     {token.image
@@ -419,8 +458,19 @@ export default function MarketPage() {
                       : <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-[.6rem] font-extrabold"
                           style={{ background: col + '22', color: col }}>{meta.sym.slice(0, 3)}</div>
                     }
-                    <div className="min-w-0">
-                      <div className="font-body font-bold text-[.85rem] text-txt">{meta.sym}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-body font-bold text-[.85rem] text-txt">{meta.sym}</span>
+                        {underlyingData && (
+                          <BasisSpreadBadge
+                            onChainPrice={token.current_price}
+                            underlyingPrice={underlyingData.price}
+                            underlyingTicker={underlyingRef.underlying}
+                            exchange={underlyingRef.exchange}
+                            size="xs"
+                          />
+                        )}
+                      </div>
                       <div className="text-[.65rem] text-muted truncate">{token.name}</div>
                     </div>
                   </div>

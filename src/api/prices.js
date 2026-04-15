@@ -123,6 +123,57 @@ export async function fetchHeliusTokenLogos(mints) {
 
 // `HELIUS_LOGO_MINTS` is re-exported from the catalog module above — no local definition needed.
 
+// ─── Underlying stock prices (FMP /stable/quote) ─────────────────────────────
+// Fetches real NASDAQ/NYSE prices for xStock + ETF underlyings so the UI can
+// show the basis-spread between the on-chain tokenized price (from Jupiter)
+// and the real market price (from FMP). Educational differentiator — this is
+// what tokens.xyz and the issuer pages don't show.
+//
+// FMP's /stable/quote takes one symbol per request, so we fan out in parallel.
+// The worker caches each symbol for 60s, keeping us well inside the 250 req/day
+// free-tier limit (10 underlyings × 24h × 1/60s refresh = ~240 req/day worst case).
+//
+// Returns: { [ticker]: { price, change24h, name, exchange, timestamp } }
+// Gracefully returns {} on any failure so the UI can hide the widget.
+export async function fetchUnderlyingStockPrices(tickers) {
+  if (!Array.isArray(tickers) || tickers.length === 0) return {};
+  const base = API_PROXY_URL ? `${API_PROXY_URL}/fmp/quote` : null;
+  if (!base) return {};
+
+  // Parallel fan-out, one request per ticker.
+  const results = await Promise.allSettled(
+    tickers.map(async (ticker) => {
+      const clean = String(ticker || '').replace(/[^A-Z0-9.^-]/gi, '');
+      if (!clean) return null;
+      try {
+        const res = await fetch(`${base}?symbol=${clean}`);
+        if (!res.ok) return null;
+        const json = await res.json();
+        const row = Array.isArray(json) ? json[0] : json;
+        if (!row || typeof row.price !== 'number' || row.price <= 0) return null;
+        return [clean, {
+          price: row.price,
+          change24h: typeof row.changePercentage === 'number' ? row.changePercentage : null,
+          name: row.name || null,
+          exchange: row.exchange || null,
+          timestamp: row.timestamp || null,
+        }];
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  const out = {};
+  for (const r of results) {
+    if (r.status === 'fulfilled' && r.value) {
+      const [ticker, data] = r.value;
+      out[ticker] = data;
+    }
+  }
+  return out;
+}
+
 // ─── Jupiter batch chunking ─────────────────────────────────────────────────
 // Jupiter's v3 /price endpoint accepts up to ~100 mint ids per call. Chunk to
 // be safe as the catalog grows. 80 leaves comfortable headroom.
