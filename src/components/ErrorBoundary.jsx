@@ -1,4 +1,5 @@
 import { Component } from 'react';
+import { captureException } from '../sentry';
 
 /**
  * Sanitize error messages for display — strip sensitive data like
@@ -35,6 +36,13 @@ export default class ErrorBoundary extends Component {
   componentDidCatch(error, errorInfo) {
     // Log full error to console for debugging (never shown to user)
     console.error('ErrorBoundary caught:', error, errorInfo);
+    // Forward to Sentry if configured — no-op if VITE_SENTRY_DSN isn't set.
+    captureException(error, {
+      contexts: {
+        react: { componentStack: errorInfo?.componentStack || '' },
+      },
+      tags: { source: 'react-error-boundary' },
+    });
   }
 
   render() {

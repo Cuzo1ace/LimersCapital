@@ -39,11 +39,23 @@ import UpdatePrompt from './components/pwa/UpdatePrompt';
 import OfflineIndicator from './components/pwa/OfflineIndicator';
 import { initAnalytics, track } from './analytics/track';
 
+// ── React Query defaults ──────────────────────────────────────────────
+// Retry hardening after the Jupiter Price API v2 outage (Apr 2026):
+// `retry: 2` with aggressive refetchIntervals compounded into a DoS-yourself
+// storm when any upstream died. We now retry at most once, with exponential
+// backoff capped at 30s, and skip retries entirely on 4xx responses
+// (client errors aren't going to fix themselves by retrying).
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2,
+      retry: (failureCount, error) => {
+        const status = error?.status ?? error?.response?.status;
+        if (status >= 400 && status < 500) return false; // don't retry client errors
+        return failureCount < 1; // at most 1 retry (so 2 attempts total)
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30_000),
       refetchOnWindowFocus: false,
+      staleTime: 10_000,
     },
   },
 });

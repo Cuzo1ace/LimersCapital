@@ -98,6 +98,113 @@ function checkRateLimit(ip) {
   return true;
 }
 
+// ── Circuit-breaker fallback cache ────────────────────────────────────
+// When an upstream API returns 4xx/5xx or throws, we serve the last-known-good
+// successful response from the Workers Cache API with a 1-hour TTL. This
+// decouples the site from transient upstream failures (e.g., the Jupiter
+// Price API v2 deprecation incident in April 2026). POST/RPC routes are
+// never fallback-cached — state-changing requests must never replay stale data.
+const FALLBACK_CACHE_TTL = 3600; // 1 hour
+const FALLBACK_CACHE_HOST = 'https://limer-fallback.internal';
+
+function fallbackCacheKey(path, search) {
+  return new Request(`${FALLBACK_CACHE_HOST}${path}${search || ''}`, { method: 'GET' });
+}
+
+async function readFallback(path, search) {
+  try {
+    const key = fallbackCacheKey(path, search);
+    const hit = await caches.default.match(key);
+    if (!hit) return null;
+    return await hit.text();
+  } catch {
+    return null;
+  }
+}
+
+async function writeFallback(ctx, path, search, body) {
+  try {
+    const key = fallbackCacheKey(path, search);
+    const resp = new Response(body, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': `public, max-age=${FALLBACK_CACHE_TTL}`,
+      },
+    });
+    // Fire-and-forget so we don't block the response to the caller
+    ctx.waitUntil(caches.default.put(key, resp));
+  } catch {
+    // never block the request path on cache write failures
+  }
+}
+
+// ── Minimal Sentry reporter (zero deps) ───────────────────────────────
+// Posts errors to the Sentry ingestion API via fetch. Active only when
+// SENTRY_DSN is set in the worker env. Parsing: https://<key>@<host>/<project>
+function parseSentryDsn(dsn) {
+  const m = typeof dsn === 'string' && dsn.match(/^https:\/\/([^@]+)@([^/]+)\/(\d+)$/);
+  if (!m) return null;
+  return { publicKey: m[1], host: m[2], projectId: m[3] };
+}
+
+function sanitizeForSentry(text) {
+  if (typeof text !== 'string') return text;
+  return text
+    .replace(/(api[_-]?key|token|secret|password|authorization)[=:\s]+\S+/gi, '$1=[REDACTED]')
+    .replace(/\b[A-Fa-f0-9]{40,}\b/g, '[addr]')
+    .replace(/\b[1-9A-HJ-NP-Za-km-z]{32,44}\b/g, '[addr]')
+    .slice(0, 500);
+}
+
+async function reportToSentry(ctx, env, error, extra) {
+  try {
+    const dsn = env?.SENTRY_DSN;
+    if (!dsn) return;
+    const parsed = parseSentryDsn(dsn);
+    if (!parsed) return;
+    const { publicKey, host, projectId } = parsed;
+    const url = `https://${host}/api/${projectId}/store/`;
+    const payload = {
+      event_id: crypto.randomUUID().replace(/-/g, ''),
+      timestamp: new Date().toISOString(),
+      platform: 'javascript',
+      level: 'error',
+      environment: env.ENVIRONMENT || 'production',
+      release: env.RELEASE || 'limer-api-proxy',
+      server_name: 'limer-api-proxy',
+      tags: {
+        source: 'cloudflare-worker',
+        worker: 'limer-api-proxy',
+      },
+      exception: {
+        values: [
+          {
+            type: (error && error.name) || 'Error',
+            value: sanitizeForSentry(String((error && error.message) || error || 'unknown')),
+          },
+        ],
+      },
+      extra: Object.fromEntries(
+        Object.entries(extra || {}).map(([k, v]) => [
+          k,
+          typeof v === 'string' ? sanitizeForSentry(v) : v,
+        ]),
+      ),
+    };
+    const req = fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Sentry-Auth': `Sentry sentry_version=7, sentry_key=${publicKey}, sentry_client=limer-worker/1.0`,
+      },
+      body: JSON.stringify(payload),
+    }).catch(() => {});
+    if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(req);
+  } catch {
+    // Sentry reporting must never take down a request
+  }
+}
+
 // ── Quiz answer keys (server-side only — NEVER sent to client) ──
 const QUIZ_ANSWERS = {
   'quiz-1': {
@@ -780,7 +887,7 @@ async function validateRpcBody(body, maxSize) {
 
 // ── Main handler ──
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     // CORS preflight
     const origin = getAllowedOrigin(request, env);
 
@@ -847,6 +954,10 @@ export default {
       });
     }
 
+    // Circuit breaker applies ONLY to safe GET routes. POST/RPC must never
+    // replay stale data (state-changing operations).
+    const circuitEligible = route.method === 'GET';
+
     try {
       // Build upstream URL
       let upstreamUrl = route.buildUrl(env);
@@ -881,6 +992,40 @@ export default {
       const upstream = await fetch(upstreamUrl, fetchOpts);
       const responseBody = await upstream.text();
 
+      // ── Circuit breaker ─────────────────────────────────────
+      // On a healthy 2xx GET response, record it as the last-known-good
+      // fallback. On a 5xx (or the 404/4xx shapes that Cloudflare sometimes
+      // wraps upstream timeouts in), try to serve the previous good body.
+      if (circuitEligible && upstream.ok) {
+        writeFallback(ctx, path, url.search, responseBody);
+      } else if (circuitEligible && !upstream.ok) {
+        const fallbackBody = await readFallback(path, url.search);
+        if (fallbackBody) {
+          // Fire-and-forget Sentry breadcrumb so we know the breaker engaged
+          reportToSentry(ctx, env, new Error('upstream-failure-served-stale'), {
+            path,
+            upstream_status: upstream.status,
+            stale: true,
+          });
+          return new Response(fallbackBody, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-store',
+              'X-Limer-Circuit': 'open',
+              'X-Upstream-Status': String(upstream.status),
+              ...corsHeaders(origin),
+            },
+          });
+        }
+        // No fallback available — report the raw upstream failure
+        reportToSentry(ctx, env, new Error('upstream-failure-no-fallback'), {
+          path,
+          upstream_status: upstream.status,
+          body_preview: responseBody?.slice(0, 200),
+        });
+      }
+
       return new Response(responseBody, {
         status: upstream.status,
         headers: {
@@ -893,6 +1038,25 @@ export default {
         },
       });
     } catch (err) {
+      // Network error / fetch threw / validation failure.
+      // For GET routes, try to serve the last-known-good body before giving up.
+      if (circuitEligible) {
+        const fallbackBody = await readFallback(path, url.search);
+        if (fallbackBody) {
+          reportToSentry(ctx, env, err, { path, stale: true, error_type: 'fetch_threw' });
+          return new Response(fallbackBody, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-store',
+              'X-Limer-Circuit': 'open',
+              'X-Upstream-Status': 'fetch-error',
+              ...corsHeaders(origin),
+            },
+          });
+        }
+      }
+      reportToSentry(ctx, env, err, { path, error_type: 'fetch_threw' });
       const status = err.message.includes('not allowed') ? 400 : 500;
       return new Response(JSON.stringify({ error: err.message }), {
         status,

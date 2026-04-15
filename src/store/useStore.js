@@ -1278,12 +1278,30 @@ const useStore = create(
       /**
        * Record a competition trade outcome.
        * Called after executeTrade or closePerpPosition when competition is active.
+       *
+       * Defensive: persisted state from older app versions may be missing some
+       * nested fields (e.g. `dailyReturns` could be `undefined`, which would
+       * throw on spread). We reconstruct the stats object with safe defaults
+       * for every field before mutating so older sessions cannot crash.
        */
       _recordCompetitionTrade: (pnlAmount) => {
         if (!get().competitionRegistered) return;
-        const cs = { ...get().competitionStats };
+        const existing = get().competitionStats || {};
+        const cs = {
+          pnlPct: Number.isFinite(existing.pnlPct) ? existing.pnlPct : 0,
+          trades: Number.isFinite(existing.trades) ? existing.trades : 0,
+          wins: Number.isFinite(existing.wins) ? existing.wins : 0,
+          maxDrawdown: Number.isFinite(existing.maxDrawdown) ? existing.maxDrawdown : 0,
+          dailyReturns: Array.isArray(existing.dailyReturns) ? [...existing.dailyReturns] : [],
+          peakBalance: Number.isFinite(existing.peakBalance) ? existing.peakBalance : INITIAL_USD,
+          _lastDayLogged: existing._lastDayLogged || null,
+          _dayStartBalance: Number.isFinite(existing._dayStartBalance) ? existing._dayStartBalance : INITIAL_USD,
+        };
         const bal = get().balanceUSD;
-        const totalValue = bal + get().perpPositions.filter(p => p.status === 'open').reduce((s, p) => s + p.collateral, 0);
+        const openPerps = Array.isArray(get().perpPositions) ? get().perpPositions : [];
+        const totalValue = bal + openPerps
+          .filter(p => p && p.status === 'open')
+          .reduce((s, p) => s + (Number.isFinite(p.collateral) ? p.collateral : 0), 0);
 
         cs.trades += 1;
         if (pnlAmount > 0) cs.wins += 1;
@@ -1401,6 +1419,43 @@ const useStore = create(
         premiumConversionEvents: state.premiumConversionEvents,
         selectedChain: state.selectedChain,
       }),
+      // ── Hydration safety ───────────────────────────────────────────
+      // Persisted state from older app versions may omit fields we now
+      // depend on. The default Zustand persist merge is shallow, so a
+      // persisted `competitionStats` snapshot missing `dailyReturns` would
+      // replace our defaults and crash `_recordCompetitionTrade`'s spread.
+      // This merge function shallow-merges known-risky nested objects with
+      // the current initial state so every field has a safe default.
+      merge: (persisted, current) => {
+        if (!persisted || typeof persisted !== 'object') return current;
+        const merged = { ...current, ...persisted };
+        // Nested: competitionStats — backfill missing fields with current defaults
+        if (current.competitionStats) {
+          const cur = current.competitionStats;
+          const per = (persisted.competitionStats && typeof persisted.competitionStats === 'object')
+            ? persisted.competitionStats
+            : {};
+          merged.competitionStats = {
+            ...cur,
+            ...per,
+            dailyReturns: Array.isArray(per.dailyReturns) ? per.dailyReturns : cur.dailyReturns,
+          };
+        }
+        // Array fields — if persisted value is not an array, fall back to current default
+        const arrayFields = [
+          'holdings', 'trades', 'lpHistory', 'lpReferrals', 'lpSimPositions',
+          'listingApplications', 'limitOrders', 'perpPositions', 'watchlist',
+          'priceAlerts', 'modulesCompleted', 'earnedBadges', 'unlockedFeatures',
+          'viewedGlossaryTerms', 'teachingMomentsViewed', 'viewedMicroLessons',
+          'tradeJournal', 'completedPracticeChallenges', 'premiumConversionEvents',
+        ];
+        for (const field of arrayFields) {
+          if (field in persisted && !Array.isArray(persisted[field])) {
+            merged[field] = Array.isArray(current[field]) ? current[field] : [];
+          }
+        }
+        return merged;
+      },
     }
   )
 );

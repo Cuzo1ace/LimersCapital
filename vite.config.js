@@ -206,6 +206,24 @@ export default defineConfig({
         // Don't precache source maps
         globIgnores: ['**/*.map'],
 
+        // ── SPA navigation fallback ────────────────────────────────────
+        // When the SW intercepts a navigation request (e.g. /trade, /learn)
+        // and the request fails (offline, slow network, etc.), serve the
+        // cached index.html so the client-side router can handle it.
+        // Without this, users on flaky networks hit the SW's default offline
+        // response instead of the app shell.
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [
+          // Same-origin paths that are NOT SPA routes
+          /^\/assets\//,
+          /^\/sw\.js/,
+          /^\/workbox-/,
+          /^\/manifest/,
+          /^\/robots\.txt/,
+          /^\/sitemap/,
+          /^\/.*\.(png|jpg|jpeg|svg|gif|webp|ico|woff2?)$/,
+        ],
+
         // Skip waiting — activate new SW immediately
         skipWaiting: true,
         clientsClaim: true,
