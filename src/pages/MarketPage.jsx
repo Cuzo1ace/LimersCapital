@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchSolanaMarketData, fetchSolPrice, fetchSolanaTVL, fetchFMPCryptoList, fmtSupply } from '../api/prices';
 import { fetchSolanaProtocols, fetchSolanaDexVolume, fetchSolanaStablecoins, fetchSolanaYields } from '../api/insights';
+import { CATEGORIES, LEGACY_CAT_LABEL } from '../data/tokenCatalog';
 import { SkeletonRows } from '../components/ui/Skeleton';
 import GlowCard from '../components/ui/GlowCard';
 import GradientDots from '../components/ui/GradientDots';
@@ -27,14 +28,26 @@ function ChgPill({ value }) {
 }
 
 const CAT_CLS = {
-  L1:     'text-sea border-border bg-sea/7',
-  Stable: 'text-palm border-palm/30 bg-palm/7',
-  RWA:    'text-sun border-sun/30 bg-sun/7',
-  DeFi:   'text-sea border-border bg-sea/7',
-  Meme:   'text-coral border-coral/30 bg-coral/7',
-  Infra:  'text-coral border-coral/30 bg-coral/7',
-  Stock:  'text-[#76B900] border-[#76B900]/30 bg-[#76B900]/7',
+  L1:       'text-sea border-border bg-sea/7',
+  Stable:   'text-palm border-palm/30 bg-palm/7',
+  RWA:      'text-sun border-sun/30 bg-sun/7',
+  DeFi:     'text-sea border-border bg-sea/7',
+  Meme:     'text-coral border-coral/30 bg-coral/7',
+  Infra:    'text-coral border-coral/30 bg-coral/7',
+  Stock:    'text-[#76B900] border-[#76B900]/30 bg-[#76B900]/7',
+  ETF:      'text-[#6DBF4A] border-[#6DBF4A]/30 bg-[#6DBF4A]/7',
+  Yield:    'text-[#FFD700] border-[#FFD700]/30 bg-[#FFD700]/7',
+  Metal:    'text-[#C0C0C0] border-[#C0C0C0]/30 bg-[#C0C0C0]/7',
+  Currency: 'text-[#627EEA] border-[#627EEA]/30 bg-[#627EEA]/7',
 };
+
+// Map a market-table row to the canonical category key used by the filter bar.
+// CoinGecko rows carry their symbol via TOKEN_META; catalog-added rows carry
+// `_cat` directly as the TitleCase legacy label.
+function getRowCategory(row) {
+  const meta = TOKEN_META[row.id];
+  return meta?.cat || row._cat || null;
+}
 
 const TOKEN_META = {
   solana: { sym: 'SOL', cat: 'L1' },
@@ -66,6 +79,32 @@ export default function MarketPage() {
   const stableQ = useQuery({ queryKey: ['sol-stables'], queryFn: fetchSolanaStablecoins, staleTime: 300000 });
   const yieldsQ = useQuery({ queryKey: ['sol-yields'], queryFn: fetchSolanaYields, staleTime: 300000 });
   const [birdeyeToken, setBirdeyeToken] = useState('So11111111111111111111111111111111111111112');
+  const [activeCategory, setActiveCategory] = useState('all');
+
+  // Filter the market-table rows by category. The CoinGecko rows carry their
+  // category via TOKEN_META; catalog-added rows carry `_cat` directly.
+  const filteredMarketData = useMemo(() => {
+    const rows = marketQ.data || [];
+    if (activeCategory === 'all') return rows;
+    const legacyLabel = LEGACY_CAT_LABEL[activeCategory];
+    if (!legacyLabel) return rows;
+    return rows.filter(r => getRowCategory(r) === legacyLabel);
+  }, [marketQ.data, activeCategory]);
+
+  // Count per category for the tab badges (so users can see at-a-glance
+  // how much each category has without clicking).
+  const categoryCounts = useMemo(() => {
+    const rows = marketQ.data || [];
+    const counts = { all: rows.length };
+    for (const row of rows) {
+      const cat = getRowCategory(row);
+      if (!cat) continue;
+      // Find the lowercase key for this TitleCase label
+      const key = Object.keys(LEGACY_CAT_LABEL).find(k => LEGACY_CAT_LABEL[k] === cat);
+      if (key) counts[key] = (counts[key] || 0) + 1;
+    }
+    return counts;
+  }, [marketQ.data]);
 
   const BIRDEYE_TOKENS = [
     { addr: 'So11111111111111111111111111111111111111112', sym: 'SOL' },
@@ -305,8 +344,8 @@ export default function MarketPage() {
 
       {/* Token Table */}
       <SectionHead
-        title="RWA & Solana Tokens"
-        label="CoinGecko API"
+        title="Global Capital Markets on Solana"
+        label="CoinGecko · Jupiter · DexScreener"
         action={
           <button
             onClick={() => marketQ.refetch()}
@@ -316,6 +355,33 @@ export default function MarketPage() {
           </button>
         }
       />
+
+      {/* ── Category filter bar ─────────────────────────────────────── */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-3 mb-2 no-scrollbar">
+        {Object.entries(CATEGORIES).map(([key, cat]) => {
+          const isActive = activeCategory === key;
+          const count = categoryCounts[key] || 0;
+          // Hide categories with zero rows (prevents empty tabs cluttering the UI)
+          if (key !== 'all' && count === 0) return null;
+          return (
+            <button
+              key={key}
+              onClick={() => setActiveCategory(key)}
+              title={cat.description}
+              className={`flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-[.72rem] font-headline uppercase tracking-widest cursor-pointer border transition-all
+                ${isActive
+                  ? 'text-sea bg-sea/12 border-sea/40'
+                  : 'text-muted bg-transparent border-border hover:text-txt hover:border-white/20'
+                }`}
+            >
+              <span>{cat.label}</span>
+              <span className={`font-mono text-[.6rem] px-1.5 py-0.5 rounded-md ${isActive ? 'bg-sea/20 text-sea' : 'bg-white/5 text-muted'}`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
       {marketQ.isLoading && (
         <div className="flex flex-col gap-0.5 px-1">
@@ -327,11 +393,17 @@ export default function MarketPage() {
           Failed to load: {marketQ.error.message}. <button onClick={() => marketQ.refetch()} className="text-sea underline cursor-pointer bg-transparent border-none font-mono">Retry</button>
         </div>
       )}
-      {marketQ.data && (
+      {marketQ.data && filteredMarketData.length === 0 && (
+        <div className="text-muted text-[.82rem] text-center py-9 border border-border rounded-xl">
+          No tokens in <span className="text-txt font-bold">{CATEGORIES[activeCategory]?.label || activeCategory}</span> yet.
+          <div className="text-[.65rem] mt-1 opacity-70">Try another category or check back after the next deploy.</div>
+        </div>
+      )}
+      {marketQ.data && filteredMarketData.length > 0 && (
         <FinancialTable
           title="Token"
           getRowId={(r) => r.id}
-          rows={marketQ.data}
+          rows={filteredMarketData}
           columns={[
             {
               key: 'token',

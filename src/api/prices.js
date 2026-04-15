@@ -2,6 +2,16 @@ import {
   safeFloat, validatePythFeed, validateDexPair,
   validateCGSimplePrice, validateCGMarketItem, validateJupiterPrice, validateDeFiLlamaTVL,
 } from '../utils/validate';
+import {
+  SOL_TOKENS,
+  TOKEN_INFO,
+  HELIUS_LOGO_MINTS,
+  JUPITER_ONLY_MINTS,
+} from '../data/tokenCatalog';
+
+// Re-export so existing consumers (TradePage, InsightsPage, MarketPage, etc.)
+// keep working with `import { SOL_TOKENS, TOKEN_INFO, HELIUS_LOGO_MINTS } from '../api/prices'`.
+export { SOL_TOKENS, TOKEN_INFO, HELIUS_LOGO_MINTS };
 
 // API proxy URL — must be declared before any const that references it.
 // Default to the production Worker so the site works without build-time env
@@ -55,57 +65,9 @@ const PYTH_ID_TO_SYMBOL = Object.fromEntries(
   Object.entries(PYTH_FEEDS).map(([sym, id]) => [id.replace('0x', ''), sym])
 );
 
-// Solana token mint addresses — core + new CAs
-export const SOL_TOKENS = {
-  SOL:    'So11111111111111111111111111111111111111112',
-  USDC:   'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-  ONDO:   'FoNprxYzYmwnYzhM964CxEHchhj17YWvSvwUafXvQFKo',
-  JUP:    'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN',
-  RAY:    '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R',
-  BONK:   'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
-  RENDER: 'rndrizKT3MK1iimdxRdWabcF7Zg7AR5T4nud4EkHBof',
-  HNT:    'hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux',
-  // New CAs
-  GOLD:   'GoLDppdjB1vDTPSGxyMJFqdnj134yH6Prg9eqsGDiw6A',
-  zBTC:   'zBTCug3er3tLyffELcvDNrKkCymbPWysGcWihESYfLg',
-  WETH:   '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs',
-  BILL:   '98sMhvDwXj1RQi5c5Mndm3vPe9cBqPrbLaufMXFNMh5g',
-  PERP:   '7C56WnJ94iEP7YeH2iKiYpvsS5zkcpP9rJBBEBoUGdzj',
-  PREN:   'Pren1FvFX6J3E4kXhJuCiAD5aDmGEb7qJRncwA8Lkhw',
-  NVDAX:  'Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh',
-};
-
-// 7 tokens not on CoinGecko — use DexScreener / Pyth for prices
-const JUPITER_ONLY_MINTS = [
-  SOL_TOKENS.GOLD, SOL_TOKENS.zBTC, SOL_TOKENS.WETH,
-  SOL_TOKENS.BILL, SOL_TOKENS.PERP, SOL_TOKENS.PREN, SOL_TOKENS.NVDAX,
-];
-
-// Token logo CDNs (verified CORS-safe):
-// - CoinGecko CDN: used for the 8 major tokens it lists
-// - Solana token list (raw GitHub): used for everything else by mint
-const CG = (id, file) => `https://assets.coingecko.com/coins/images/${id}/small/${file}`;
-const SL = (mint)    => `https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/${mint}/logo.png`;
-
-// Token metadata for the order book / market page
-export const TOKEN_INFO = {
-  SOL:    { name: 'Solana',            cat: 'L1',     col: '#9945FF', img: CG('4128',  'solana.png') },
-  USDC:   { name: 'USD Coin',          cat: 'Stable', col: '#2D9B56', img: CG('6319',  'usdc.png') },
-  ONDO:   { name: 'Ondo Finance',      cat: 'RWA',    col: '#FFCA3A', img: CG('26580', 'ONDO.png') },
-  JUP:    { name: 'Jupiter',           cat: 'DeFi',   col: '#00C8B4', img: CG('34188', 'jup.png') },
-  RAY:    { name: 'Raydium',           cat: 'DeFi',   col: '#FF5C4D', img: CG('13928', 'PSigc4ie_400x400.jpg') },
-  BONK:   { name: 'Bonk',             cat: 'Meme',   col: '#FFCA3A', img: CG('28600', 'bonk.jpg') },
-  RENDER: { name: 'Render',           cat: 'Infra',  col: '#FF5C4D', img: CG('11636', 'rndr.png') },
-  HNT:    { name: 'Helium',           cat: 'Infra',  col: '#00C8B4', img: CG('4284',  'Helium_HNT.png') },
-  // Representative logos for custom Solana tokens — verified via Helius DAS getAssetBatch
-  GOLD:   { name: 'Gold (Tokenized)',     cat: 'RWA',    col: '#FFD700', img: CG('9519',  'paxgold.png') },       // PAX Gold icon
-  zBTC:   { name: 'Zeus Bitcoin',         cat: 'RWA',    col: '#F7931A', img: CG('1',     'bitcoin.png') },       // BTC icon
-  WETH:   { name: 'Ether (Portal)',       cat: 'L1',     col: '#627EEA', img: SL('7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs') },
-  BILL:   { name: 'HYPE',                cat: 'DeFi',   col: '#00C8B4', img: 'https://arweave.net/QBRdRop8wI4PpScSRTKyibv-fQuYBua-WOvC7tuJyJo' },
-  PERP:   { name: 'Silver rStock',        cat: 'RWA',    col: '#C0C0C0', img: null },                             // S3 SVG has CORS — colored circle fallback
-  PREN:   { name: 'Anthropic PreStocks', cat: 'Stock',  col: '#D97706', img: 'https://prestocks.com/logos/anthropic.png' },
-  NVDAX:  { name: 'NVIDIA xStock',       cat: 'Stock',  col: '#76B900', img: 'https://xstocks-metadata.backed.fi/logos/tokens/NVDAx.png' },
-};
+// `SOL_TOKENS`, `TOKEN_INFO`, `HELIUS_LOGO_MINTS`, and `JUPITER_ONLY_MINTS` are
+// now generated from the canonical catalog at `src/data/tokenCatalog.js`.
+// To add/remove/rename a token, edit that file — nothing here needs to change.
 
 // Reverse lookup: mint address → symbol
 const MINT_TO_SYMBOL = Object.fromEntries(
@@ -159,11 +121,35 @@ export async function fetchHeliusTokenLogos(mints) {
   return result; // { '98sMh...': 'https://...logo.png', ... }
 }
 
-// Mints that don't have a hardcoded CDN logo — fetched via Helius DAS on load
-export const HELIUS_LOGO_MINTS = Object.entries(TOKEN_INFO)
-  .filter(([, info]) => !info.img)
-  .map(([sym]) => SOL_TOKENS[sym])
-  .filter(Boolean);
+// `HELIUS_LOGO_MINTS` is re-exported from the catalog module above — no local definition needed.
+
+// ─── Jupiter batch chunking ─────────────────────────────────────────────────
+// Jupiter's v3 /price endpoint accepts up to ~100 mint ids per call. Chunk to
+// be safe as the catalog grows. 80 leaves comfortable headroom.
+const JUPITER_BATCH_SIZE = 80;
+
+function chunkMints(mints, size = JUPITER_BATCH_SIZE) {
+  const chunks = [];
+  for (let i = 0; i < mints.length; i += size) {
+    chunks.push(mints.slice(i, i + size));
+  }
+  return chunks;
+}
+
+async function fetchJupiterPriceChunk(mints) {
+  const ids = mints.join(',');
+  const res = await fetch(`${JUPITER_BASE}?ids=${ids}`);
+  if (!res.ok) throw new Error(`Jupiter API error: ${res.status}`);
+  const json = await res.json();
+  return json?.data ?? json ?? {};
+}
+
+async function fetchJupiterPriceMap(mints) {
+  if (!mints.length) return {};
+  const chunks = chunkMints(mints);
+  const results = await Promise.all(chunks.map(fetchJupiterPriceChunk));
+  return Object.assign({}, ...results);
+}
 
 // ─── DexScreener OHLCV ───────────────────────────────────────────────────────
 // Two-step: get best pair address for a mint, then fetch candle data.
@@ -276,13 +262,11 @@ export async function fetchDexScreenerPrices(mints) {
 
 // ─── Layer 3: Jupiter v3 (fallback only) ─────────────────────────────────────
 // v3 returns a flat { [mint]: {...} } map; v2 returned { data: { [mint]: {...} } }.
-// The `json.data ?? json` pattern keeps us working through edge-cache transitions.
+// `fetchJupiterPriceMap` handles both shapes AND chunks large token lists so
+// the catalog can grow past Jupiter's ~100 id-per-request limit.
 export async function fetchJupiterPrices() {
-  const ids = Object.values(SOL_TOKENS).join(',');
-  const res = await fetch(`${JUPITER_BASE}?ids=${ids}`);
-  if (!res.ok) throw new Error(`Jupiter API error: ${res.status}`);
-  const json = await res.json();
-  const root = json?.data ?? json ?? {};
+  const mints = Object.values(SOL_TOKENS);
+  const root = await fetchJupiterPriceMap(mints);
 
   const prices = {};
   for (const [symbol, mint] of Object.entries(SOL_TOKENS)) {
@@ -312,22 +296,19 @@ export async function fetchTradePrices() {
     console.warn('DexScreener failed:', e.message);
   }
 
-  // Layer 3: Jupiter v3 — last resort for any symbol still missing
+  // Layer 3: Jupiter v3 — last resort for any symbol still missing.
+  // Chunked to handle catalogs larger than Jupiter's ~100 id-per-request cap.
   const missingSymbols = Object.keys(TOKEN_INFO)
     .filter(sym => !pythPrices[sym] && !dexPrices[sym]);
   let jupPrices = {};
   if (missingSymbols.length > 0) {
     try {
-      const mints = missingSymbols.map(s => SOL_TOKENS[s]).filter(Boolean).join(',');
-      const res = await fetch(`${JUPITER_BASE}?ids=${mints}`);
-      if (res.ok) {
-        const json = await res.json();
-        const root = json?.data ?? json ?? {};
-        for (const sym of missingSymbols) {
-          const mint = SOL_TOKENS[sym];
-          const validated = validateJupiterPrice(root[mint]);
-          if (validated) jupPrices[sym] = validated;
-        }
+      const mints = missingSymbols.map(s => SOL_TOKENS[s]).filter(Boolean);
+      const root = await fetchJupiterPriceMap(mints);
+      for (const sym of missingSymbols) {
+        const mint = SOL_TOKENS[sym];
+        const validated = validateJupiterPrice(root[mint]);
+        if (validated) jupPrices[sym] = validated;
       }
     } catch (e) {
       console.warn('Jupiter fallback failed:', e.message);
