@@ -255,7 +255,7 @@ export const TOKEN_CATALOG = [
     decimals: 8,
     tags: ['xstock', 'equity', 'us-market', 'big-tech'],
     disclaimer: 'Backed 1:1 by Apple shares custodied at Clearstream. Swiss-regulated.',
-    logoUrl: null,
+    logoUrl: 'https://xstocks-metadata.backed.fi/logos/tokens/AAPLx.png',
     jupiterOnly: true,
   },
   {
@@ -271,7 +271,7 @@ export const TOKEN_CATALOG = [
     decimals: 8,
     tags: ['xstock', 'equity', 'us-market', 'big-tech'],
     disclaimer: 'Backed 1:1 by Amazon shares custodied at Clearstream. Swiss-regulated.',
-    logoUrl: null,
+    logoUrl: 'https://xstocks-metadata.backed.fi/logos/tokens/AMZNx.png',
     jupiterOnly: true,
   },
   {
@@ -287,7 +287,7 @@ export const TOKEN_CATALOG = [
     decimals: 8,
     tags: ['xstock', 'equity', 'us-market'],
     disclaimer: 'Backed 1:1 by Tesla shares custodied at Clearstream. Swiss-regulated.',
-    logoUrl: null,
+    logoUrl: 'https://xstocks-metadata.backed.fi/logos/tokens/TSLAx.png',
     jupiterOnly: true,
   },
   {
@@ -321,7 +321,7 @@ export const TOKEN_CATALOG = [
     decimals: 8,
     tags: ['ondo-gm', 'equity', 'us-market', 'big-tech'],
     disclaimer: 'Issued by Ondo Global Markets on Solana.',
-    logoUrl: null,
+    logoUrl: 'https://xstocks-metadata.backed.fi/logos/tokens/MSFTx.png',
     jupiterOnly: true,
   },
   {
@@ -337,7 +337,7 @@ export const TOKEN_CATALOG = [
     decimals: 8,
     tags: ['ondo-gm', 'equity', 'us-market', 'big-tech'],
     disclaimer: 'Issued by Ondo Global Markets on Solana.',
-    logoUrl: null,
+    logoUrl: 'https://xstocks-metadata.backed.fi/logos/tokens/GOOGLx.png',
     jupiterOnly: true,
   },
 
@@ -402,7 +402,7 @@ export const TOKEN_CATALOG = [
     decimals: 8,
     tags: ['etf', 'sp500', 'us-market', 'broad-market'],
     disclaimer: 'Tokenized S&P 500 exposure via Ondo Global Markets.',
-    logoUrl: null,
+    logoUrl: 'https://xstocks-metadata.backed.fi/logos/tokens/SPYx.png',
     jupiterOnly: true,
   },
   {
@@ -418,7 +418,7 @@ export const TOKEN_CATALOG = [
     decimals: 8,
     tags: ['etf', 'nasdaq100', 'us-market', 'tech'],
     disclaimer: 'Tokenized Nasdaq-100 exposure via Ondo Global Markets.',
-    logoUrl: null,
+    logoUrl: 'https://xstocks-metadata.backed.fi/logos/tokens/QQQx.png',
     jupiterOnly: true,
   },
   {
@@ -434,7 +434,7 @@ export const TOKEN_CATALOG = [
     decimals: 8,
     tags: ['etf', 'broad-market', 'us-market'],
     disclaimer: 'Tokenized Total US Stock Market exposure via Ondo Global Markets.',
-    logoUrl: null,
+    logoUrl: 'https://xstocks-metadata.backed.fi/logos/tokens/VTIx.png',
     jupiterOnly: true,
   },
   {
@@ -450,7 +450,7 @@ export const TOKEN_CATALOG = [
     decimals: 8,
     tags: ['etf', 'small-cap', 'us-market'],
     disclaimer: 'Tokenized US small-cap exposure via Ondo Global Markets.',
-    logoUrl: null,
+    logoUrl: 'https://xstocks-metadata.backed.fi/logos/tokens/IWMx.png',
     jupiterOnly: true,
   },
 

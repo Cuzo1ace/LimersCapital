@@ -20,7 +20,8 @@ function TokenLogo({ src, symbol, col }) {
   );
 }
 import { useQuery } from '@tanstack/react-query';
-import { fetchTradePrices, fetchHeliusTokenLogos, HELIUS_LOGO_MINTS, SOL_TOKENS, fetchCandleData, fetchFMPCryptoList, fmtSupply } from '../api/prices';
+import { fetchTradePrices, fetchHeliusTokenLogos, HELIUS_LOGO_MINTS, SOL_TOKENS, TOKEN_INFO, fetchCandleData, fetchFMPCryptoList, fmtSupply } from '../api/prices';
+import { CATEGORIES, LEGACY_CAT_LABEL } from '../data/tokenCatalog';
 import { TTSE_FALLBACK } from '../api/ttse';
 import { fetchTTSEData } from '../api/ttse';
 import StockChart from '../components/StockChart';
@@ -259,26 +260,55 @@ export default function TradePage() {
     return solTokens.map(t => {
       const sym = t.symbol.toUpperCase();
       const mint = SOL_TOKENS[sym];
-      // Use CDN image if available, otherwise try Helius DAS on-chain logo
-      const image = t.image || (mint ? heliusLogos[mint] : null) || null;
+      // Logo priority: (1) catalog-provided CDN URL on TOKEN_INFO.img,
+      // (2) CoinGecko image from marketQ, (3) Helius DAS on-chain logo,
+      // (4) null → fallback to colored initials circle in TokenLogo
+      const info = TOKEN_INFO[sym] || null;
+      const image = info?.img || t.image || (mint ? heliusLogos[mint] : null) || null;
+      // Category key for the new picker filter. Prefer the lowercase structured
+      // key from the catalog; fall back to the row's _cat (TitleCase legacy).
+      const catKey = info?.category
+        || (t._cat && Object.keys(LEGACY_CAT_LABEL).find(k => LEGACY_CAT_LABEL[k] === t._cat))
+        || null;
       return {
         id: t.id, symbol: sym, name: t.name, price: t.current_price,
         change: t.price_change_percentage_24h, volume: t.total_volume,
         image, col: t._col,
+        category: catKey,
       };
     });
   }, [isTTSE, solTokens, ttseStocks, heliusLogos]);
 
   const visibleAssets = useMemo(() => {
-    const list = assetFilter === 'watchlist'
-      ? assets.filter(a => watchlist.includes(a.symbol))
-      : [...assets].sort((a, b) => {
-          const aw = watchlist.includes(a.symbol) ? 0 : 1;
-          const bw = watchlist.includes(b.symbol) ? 0 : 1;
-          return aw - bw;
-        });
-    return list;
+    // Watchlist takes precedence over category filter
+    if (assetFilter === 'watchlist') {
+      return assets.filter(a => watchlist.includes(a.symbol));
+    }
+    // Category filter: if assetFilter matches a lowercase CATEGORIES key, filter on asset.category
+    const categoryKeys = Object.keys(CATEGORIES).filter(k => k !== 'all');
+    const isCategoryFilter = categoryKeys.includes(assetFilter);
+    const base = isCategoryFilter
+      ? assets.filter(a => a.category === assetFilter)
+      : assets;
+    // Sort watchlisted first within the filtered subset
+    return [...base].sort((a, b) => {
+      const aw = watchlist.includes(a.symbol) ? 0 : 1;
+      const bw = watchlist.includes(b.symbol) ? 0 : 1;
+      return aw - bw;
+    });
   }, [assets, watchlist, assetFilter]);
+
+  // Per-category counts for the filter chip badges. Only Solana mode shows them;
+  // TTSE stocks have their own (sector) taxonomy and are left untouched.
+  const assetCategoryCounts = useMemo(() => {
+    if (isTTSE) return {};
+    const counts = { all: assets.length };
+    for (const a of assets) {
+      if (!a.category) continue;
+      counts[a.category] = (counts[a.category] || 0) + 1;
+    }
+    return counts;
+  }, [assets, isTTSE]);
 
   const selected = assets.find(a => a.id === selectedId);
   const price = selected?.price ?? null;
@@ -525,11 +555,20 @@ export default function TradePage() {
       )}
 
       {/* Market Toggle */}
+      {/* Tab order groups paper-trading tabs first (Solana Tokens + Perpetuals Paper)
+          so users practice with simulated balances before touching live options
+          (TTSE and Real Swap). */}
       <div className="flex gap-2 mb-5 flex-wrap">
         <button onClick={() => { setMarket('solana'); setSelectedId(''); }}
           className={`px-4 py-2 rounded-lg text-[.75rem] font-headline cursor-pointer border transition-all
             ${market === 'solana' ? 'bg-sea/12 border-sea/35 text-sea' : 'bg-transparent border-border text-muted hover:text-txt'}`}>
           📊 {t('trade.solanaTokens')}
+        </button>
+        <button onClick={() => { setMarket('perpetuals'); setSelectedId(''); }}
+          className={`px-4 py-2 rounded-lg text-[.75rem] font-headline cursor-pointer border transition-all flex items-center gap-1.5
+            ${market === 'perpetuals' ? 'bg-[rgba(255,165,0,.1)] border-[#FFA500]/35 text-[#FFA500]' : 'bg-transparent border-border text-muted hover:text-txt'}`}>
+          📈 Perpetuals
+          <span className="text-[.55rem] bg-[#FFA500]/15 text-[#FFA500] rounded px-1.5 py-0.5 font-bold uppercase">Paper</span>
         </button>
         <FeatureLock featureKey="ttse_trading" hint="Complete Module 2 (Caribbean Markets) in Learn to unlock TTSE trading">
           <button onClick={() => { setMarket('ttse'); setSelectedId(''); }}
@@ -543,12 +582,6 @@ export default function TradePage() {
             ${market === 'jupiter' ? 'bg-[rgba(196,108,255,.1)] border-[#C46CFF]/35 text-[#C46CFF]' : 'bg-transparent border-border text-muted hover:text-txt'}`}>
           ⚡ {t('trade.realSwap')}
           <span className="text-[.55rem] bg-up/15 text-up rounded px-1.5 py-0.5 font-bold uppercase">{t('trade.live')}</span>
-        </button>
-        <button onClick={() => { setMarket('perpetuals'); setSelectedId(''); }}
-          className={`px-4 py-2 rounded-lg text-[.75rem] font-headline cursor-pointer border transition-all flex items-center gap-1.5
-            ${market === 'perpetuals' ? 'bg-[rgba(255,165,0,.1)] border-[#FFA500]/35 text-[#FFA500]' : 'bg-transparent border-border text-muted hover:text-txt'}`}>
-          📈 Perpetuals
-          <span className="text-[.55rem] bg-[#FFA500]/15 text-[#FFA500] rounded px-1.5 py-0.5 font-bold uppercase">Paper</span>
         </button>
       </div>
 
@@ -1492,20 +1525,38 @@ export default function TradePage() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px]">
             {/* Left: Order Book + Chart */}
             <div className="border-r border-border min-h-[420px] overflow-y-auto">
-              {/* Watchlist filter */}
-              <div className="flex gap-1.5 px-4 pt-3 pb-2">
+              {/* Asset filter bar — watchlist + category chips (Solana mode only) */}
+              <div className="flex items-center gap-1.5 px-4 pt-3 pb-2 overflow-x-auto no-scrollbar">
                 <button onClick={() => setAssetFilter('all')}
-                  className={`px-3 py-1 rounded text-[.65rem] font-bold cursor-pointer border transition-all
+                  className={`flex-shrink-0 px-3 py-1 rounded text-[.65rem] font-bold cursor-pointer border transition-all
                     ${assetFilter === 'all' ? 'border-border bg-white/5 text-txt' : 'border-transparent bg-transparent text-muted hover:text-txt'}`}>
                   All
+                  {!isTTSE && assetCategoryCounts.all > 0 && (
+                    <span className="ml-1.5 text-[.55rem] opacity-60 font-mono">{assetCategoryCounts.all}</span>
+                  )}
                 </button>
                 {watchlist.length > 0 && (
                   <button onClick={() => setAssetFilter('watchlist')}
-                    className={`px-3 py-1 rounded text-[.65rem] font-bold cursor-pointer border transition-all flex items-center gap-1
+                    className={`flex-shrink-0 px-3 py-1 rounded text-[.65rem] font-bold cursor-pointer border transition-all flex items-center gap-1
                       ${assetFilter === 'watchlist' ? 'border-border bg-white/5 text-txt' : 'border-transparent bg-transparent text-muted hover:text-txt'}`}>
                     ★ Watchlist ({watchlist.length})
                   </button>
                 )}
+                {/* Category chips — Solana mode only */}
+                {!isTTSE && Object.entries(CATEGORIES).filter(([k]) => k !== 'all').map(([key, cat]) => {
+                  const count = assetCategoryCounts[key] || 0;
+                  if (count === 0) return null; // hide empty categories
+                  const isActive = assetFilter === key;
+                  return (
+                    <button key={key} onClick={() => setAssetFilter(key)}
+                      title={cat.description}
+                      className={`flex-shrink-0 px-3 py-1 rounded text-[.65rem] font-bold cursor-pointer border transition-all flex items-center gap-1.5
+                        ${isActive ? 'border-border bg-white/5 text-txt' : 'border-transparent bg-transparent text-muted hover:text-txt'}`}>
+                      <span>{cat.label}</span>
+                      <span className="text-[.55rem] opacity-60 font-mono">{count}</span>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Asset list */}
