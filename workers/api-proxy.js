@@ -778,6 +778,24 @@ const ROUTES = {
     cacheTtl: 30,
     passQuery: true,
   },
+  // ── Jupiter Token List (proxy to avoid CORS + long edge cache) ──
+  // Used by src/data/tokenCatalog.js fetchDynamicCatalog to auto-discover
+  // new xStocks / RWAs / ETFs / tokens without requiring a redeploy. The
+  // catalog falls back to the static seed if this route errors out (the
+  // circuit breaker deployed in 8868d18 serves last-known-good automatically).
+  //
+  // Jupiter migrated the token list API from tokens.jup.ag → lite-api.jup.ag
+  // (same host migration as the price API fix in 200fb09). The v2 endpoint
+  // takes a `query` param for the tag filter:
+  //   /jupiter/token-list?query=verified        → ~6 MB verified token set
+  //   /jupiter/token-list?query=lst             → liquid staking tokens
+  //   /jupiter/token-list?query=xstocks         → (if tagged) xStocks
+  '/jupiter/token-list': {
+    method: 'GET',
+    buildUrl: () => 'https://lite-api.jup.ag/tokens/v2/tag',
+    cacheTtl: 3600, // 1 hour — token list changes slowly
+    passQuery: true,
+  },
 
   // ── Finnhub Financial Data (API key injected server-side) ──
   '/finnhub/economic-calendar': {

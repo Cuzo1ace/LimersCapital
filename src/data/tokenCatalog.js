@@ -644,3 +644,152 @@ export function getTokenByMint(mint) {
 export function getTokensWithUnderlyingExchange() {
   return TOKEN_CATALOG.filter(t => t.underlyingExchange && t.underlying);
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// Dynamic catalog — fetched at runtime from Jupiter's verified token list
+// ──────────────────────────────────────────────────────────────────────────
+//
+// The static TOKEN_CATALOG above is the canonical seed. It ships in the bundle
+// so the app works offline and never depends on Jupiter being up. The dynamic
+// catalog ADDS to it: any token from Jupiter's verified list that carries a
+// tag we care about (xstocks, lst, token-2022, stable, major) becomes a first-
+// class citizen without requiring a code change.
+//
+// Rules:
+//   - Static seed always wins on mint conflicts. We curate the Caribbean-
+//     facing metadata (issuer, disclaimer, underlying ticker for basis spread,
+//     Caribbean-specific colors) and don't want it overwritten.
+//   - Dynamic entries fall into categories based on their Jupiter tags:
+//     xstocks → stock,  lst → yield,  stable → stable,  token-2022 → rwa
+//   - The fetch is fire-and-forget. If it fails, the app works fine with the
+//     seed (this is exactly the graceful-degradation story the circuit
+//     breaker in 8868d18 is designed for).
+
+// Jupiter tags → our catalog category. Order matters: first matching tag wins.
+const JUPITER_TAG_TO_CATEGORY = [
+  ['xstocks', 'stock'],
+  ['lst',      'yield'],
+  ['stable',   'stable'],
+  ['major',    'l1'],
+  ['token-2022', 'rwa'],
+];
+
+// Curated overrides applied AFTER dynamic fetch. Key is mint address.
+// Anything present here wins over whatever Jupiter returns. The static
+// TOKEN_CATALOG seed is automatically merged as an override too — no need
+// to double-maintain.
+export const CURATED_OVERRIDES = {};
+
+/**
+ * Normalize a Jupiter token list record into our internal catalog shape.
+ * Returns null if the record is missing critical fields.
+ */
+function normalizeJupiterToken(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const mint = raw.id || raw.address;
+  const symbol = raw.symbol;
+  if (!mint || !symbol) return null;
+  // Skip any mint we already have in the static seed — seed wins
+  if (SOL_TOKENS[symbol] === mint) return null;
+
+  const tags = Array.isArray(raw.tags) ? raw.tags : [];
+  // Pick the first matching category based on the Jupiter tag ordering
+  let category = null;
+  let subcategory = null;
+  for (const [jTag, ourCat] of JUPITER_TAG_TO_CATEGORY) {
+    if (tags.includes(jTag)) {
+      category = ourCat;
+      subcategory = jTag;
+      break;
+    }
+  }
+  if (!category) return null; // Only keep tokens whose tags match a category we surface
+
+  return {
+    symbol,
+    mint,
+    name: raw.name || symbol,
+    category,
+    subcategory,
+    issuer: 'Jupiter-verified',
+    color: '#5B7A9A',
+    decimals: typeof raw.decimals === 'number' ? raw.decimals : 9,
+    tags,
+    disclaimer: null,
+    logoUrl: raw.icon || raw.logoURI || null,
+    jupiterOnly: true,
+    dynamic: true, // flag so consumers can distinguish seed vs dynamic
+  };
+}
+
+/**
+ * Fetch the live verified token list from Jupiter via the api-proxy worker
+ * and merge with the static seed. Fire-and-forget — safe to call during app
+ * boot. Returns the merged catalog (or the seed alone if the fetch fails).
+ *
+ * Pass a list of Jupiter tags to keep. Defaults to the set we surface in the
+ * UI. Any tag not in JUPITER_TAG_TO_CATEGORY is ignored.
+ */
+export async function fetchDynamicCatalog({
+  apiProxyUrl = null,
+  keepTags = ['xstocks', 'lst', 'stable', 'major'],
+} = {}) {
+  const base = apiProxyUrl
+    || (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_PROXY_URL)
+    || 'https://limer-api-proxy.solanacaribbean-team.workers.dev';
+  const url = `${base}/jupiter/token-list?query=verified`;
+
+  let raw;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`token-list ${res.status}`);
+    raw = await res.json();
+  } catch (err) {
+    // Silent failure — caller works with the static seed
+    return { entries: TOKEN_CATALOG.slice(), dynamicAdded: 0, error: err.message };
+  }
+
+  if (!Array.isArray(raw)) {
+    return { entries: TOKEN_CATALOG.slice(), dynamicAdded: 0, error: 'not-an-array' };
+  }
+
+  // Filter and normalize
+  const keepSet = new Set(keepTags);
+  const dynamicEntries = [];
+  const seenMints = new Set(TOKEN_CATALOG.map(t => t.mint));
+
+  for (const raw_entry of raw) {
+    const tags = Array.isArray(raw_entry.tags) ? raw_entry.tags : [];
+    // Must carry at least one tag we care about
+    if (!tags.some(t => keepSet.has(t))) continue;
+    const normalized = normalizeJupiterToken(raw_entry);
+    if (!normalized) continue;
+    // Skip mint collisions with the static seed (seed wins)
+    if (seenMints.has(normalized.mint)) continue;
+    // Skip symbol collisions (avoid two tokens sharing a key in SOL_TOKENS)
+    if (SOL_TOKENS[normalized.symbol]) continue;
+    // Apply curated overrides if we have any
+    const override = CURATED_OVERRIDES[normalized.mint];
+    dynamicEntries.push(override ? { ...normalized, ...override } : normalized);
+    seenMints.add(normalized.mint);
+  }
+
+  const merged = [...TOKEN_CATALOG, ...dynamicEntries];
+  return { entries: merged, dynamicAdded: dynamicEntries.length, error: null };
+}
+
+// Memoized singleton promise. Call `getDynamicCatalog()` multiple times and
+// you get the same in-flight fetch — safe for fire-and-forget boot + later
+// consumers.
+let _dynamicCatalogPromise = null;
+
+export function getDynamicCatalog(opts) {
+  if (_dynamicCatalogPromise) return _dynamicCatalogPromise;
+  _dynamicCatalogPromise = fetchDynamicCatalog(opts);
+  return _dynamicCatalogPromise;
+}
+
+// For tests: reset the memoized promise
+export function _resetDynamicCatalog() {
+  _dynamicCatalogPromise = null;
+}
