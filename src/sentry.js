@@ -93,6 +93,11 @@ export function initSentry() {
         return event;
       },
     });
+    // Tag every frontend event so the Sentry UI can distinguish browser
+    // errors from the Cloudflare Worker's events (which already set
+    // `source: cloudflare-worker` in workers/api-proxy.js:reportToSentry).
+    // Filter the Issues view by `source:frontend` to see only browser errors.
+    Sentry.setTag('source', 'frontend');
     initialised = true;
     return true;
   } catch (err) {

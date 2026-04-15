@@ -170,7 +170,7 @@ async function reportToSentry(ctx, env, error, extra) {
       platform: 'javascript',
       level: 'error',
       environment: env.ENVIRONMENT || 'production',
-      release: env.RELEASE || 'limer-api-proxy',
+      release: env.RELEASE || `limer-api-proxy@${env.ENVIRONMENT || 'unknown'}`,
       server_name: 'limer-api-proxy',
       tags: {
         source: 'cloudflare-worker',
@@ -698,6 +698,30 @@ Return ONLY valid JSON in this exact format (no markdown, no code fences):
   });
 }
 
+// ── FMP ticker whitelist (audit finding M-06) ──
+// These are the exact underlying symbols used by the basis-spread widget in
+// src/pages/MarketPage.jsx, driven by `underlying:` fields in the token
+// catalog at src/data/tokenCatalog.js. Keep this list in sync when adding a
+// new tokenized stock / ETF / commodity / currency. Any symbol not in this
+// set is rejected at the worker before the upstream fetch, defending the
+// FMP free-tier 250 req/day budget against random-symbol DoS.
+//
+// To extend: add the `underlying` string from tokenCatalog.js and deploy the
+// worker.  Unknown tickers return HTTP 400 with a clear error so callers can
+// distinguish a whitelist miss from an upstream outage.
+const FMP_SYMBOL_WHITELIST = new Set([
+  // US equities — Backed xStocks
+  'AAPL', 'AMZN', 'TSLA', 'NVDA', 'MSFT', 'GOOGL',
+  // US equity ETFs
+  'SPY', 'QQQ', 'VTI', 'IWM',
+  // Short-duration treasuries (Ondo Global Markets)
+  'OUSG', 'USTB', 'TBILL',
+  // Precious metals
+  'XAG',
+  // Forex (settled as USD pairs on FMP /stable/quote)
+  'EUR', 'GBP',
+]);
+
 // ── Allowed upstream routes ──
 const ROUTES = {
   // Helius RPC (standard JSON-RPC calls)
@@ -823,8 +847,24 @@ const ROUTES = {
   // FMP free tier: 250 req/day; 60s cache + ~10 tickers = ~144 req/day, safe.
   // The FMP_API_KEY is already set on the worker (same secret that powers
   // /fmp/cryptocurrency-list), so this route is live immediately.
+  //
+  // Audit finding M-06 — the free-tier budget is undefended against abuse:
+  // an adversary sending random `?symbol=XYZ` requests could exhaust 250
+  // req/day at near-zero cost. Mitigation: whitelist only the exact tickers
+  // present in `src/data/tokenCatalog.js` (see FMP_SYMBOL_WHITELIST below).
+  // Any request for an unknown symbol is rejected upstream of the fetch.
   '/fmp/quote': {
     method: 'GET',
+    validate: (url) => {
+      const symbol = (url.searchParams.get('symbol') || '').replace(/[^A-Z0-9.^-]/gi, '');
+      if (!symbol) {
+        return { status: 400, error: 'symbol query parameter required' };
+      }
+      if (!FMP_SYMBOL_WHITELIST.has(symbol)) {
+        return { status: 400, error: `symbol not in whitelist: ${symbol}` };
+      }
+      return null;
+    },
     buildUrl: (env, url) => {
       const symbol = (url.searchParams.get('symbol') || '').replace(/[^A-Z0-9.^-]/gi, '');
       return `https://financialmodelingprep.com/stable/quote?symbol=${symbol}&apikey=${env.FMP_API_KEY}`;
@@ -998,6 +1038,18 @@ export default {
         status: 405,
         headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
       });
+    }
+
+    // Optional per-route validation hook (audit M-06 FMP whitelist, etc).
+    // Runs before any upstream fetch so we can reject abuse at near-zero cost.
+    if (typeof route.validate === 'function') {
+      const validation = route.validate(url);
+      if (validation) {
+        return new Response(JSON.stringify({ error: validation.error }), {
+          status: validation.status || 400,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+        });
+      }
     }
 
     // Circuit breaker applies ONLY to safe GET routes. POST/RPC must never

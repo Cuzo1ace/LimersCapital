@@ -3,11 +3,20 @@
 #   cd workers
 #   wrangler deploy api-proxy.js -c wrangler-api.toml
 #
-# Set secrets (one-time):
-#   wrangler secret put HELIUS_API_KEY -c wrangler-api.toml
+# Set secrets (one-time, all required for full functionality):
+#   wrangler secret put HELIUS_API_KEY     -c wrangler-api.toml   # Helius RPC + DAS
+#   wrangler secret put FMP_API_KEY        -c wrangler-api.toml   # Financial Modeling Prep
+#   wrangler secret put FINNHUB_API_KEY    -c wrangler-api.toml   # Finnhub market data
+#   wrangler secret put ANTHROPIC_API_KEY  -c wrangler-api.toml   # Claude API (AI briefs)
+#   wrangler secret put SENTRY_DSN         -c wrangler-api.toml   # Worker error telemetry
 #
-# The HELIUS_API_KEY is NEVER exposed to the browser.
-# All Helius calls route through this worker.
+# None of these are exposed to the browser. All upstream API calls route
+# through this worker so the keys stay on the edge.
+#
+# SENTRY_DSN closes audit finding C-02 (Sentry wired but inactive). The
+# worker's reportToSentry() helper in api-proxy.js is a zero-dependency
+# ingestion-API client; events tagged as `environment: worker` land in the
+# same Sentry project as the frontend (VITE_SENTRY_DSN in Cloudflare Pages).
 
 name = "limer-api-proxy"
 main = "api-proxy.js"

@@ -19,6 +19,20 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
+      # Audit finding L-02: fail CI on high-severity dependency vulnerabilities
+      # so supply-chain issues cannot silently ship to production. `--omit=dev`
+      # scopes the check to the runtime dependency tree (dev tooling can lag
+      # without blocking a release). Adjust to `--audit-level=critical` only
+      # as a temporary unblock — never disable entirely.
+      - name: Audit dependencies
+        run: npm audit --audit-level=high --omit=dev
+
+      # Capture 7-char commit SHA so Sentry release tracking can attribute
+      # every event to a specific deploy. `src/sentry.js` reads this as
+      # `import.meta.env.VITE_GIT_SHA` and sets it as the Sentry `release`.
+      - name: Capture commit SHA for Sentry release tag
+        run: echo "VITE_GIT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
       - name: Build
         run: npm run build
         env:
@@ -28,6 +42,11 @@ jobs:
           VITE_TTSE_PROXY_URL: ${{ secrets.VITE_TTSE_PROXY_URL }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # Sentry frontend DSN (audit C-02). Public-safe — ships in the
+          # client bundle. If unset, initSentry() is a no-op and the app
+          # builds cleanly with no telemetry.
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_GIT_SHA: ${{ env.VITE_GIT_SHA }}
 
       - name: Deploy to Cloudflare Pages
         run: npx wrangler pages deploy dist --project-name caribcryptomap
