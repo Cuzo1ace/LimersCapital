@@ -120,7 +120,8 @@ html.light ::selection {
   to   { transform: translateX(-50%); }
 }
 .ticker-scroll {
-  animation: ticker 45s linear infinite;
+  /* Slowed from 45s → 90s so users can actually read tickers as they pass. */
+  animation: ticker 90s linear infinite;
   width: max-content;
 }
 .ticker-scroll:hover { animation-play-state: paused; }
@@ -130,7 +131,8 @@ html.light ::selection {
   to   { transform: translateX(0); }
 }
 .ticker-scroll-rev {
-  animation: ticker-rev 60s linear infinite;
+  /* Slowed from 60s → 120s. */
+  animation: ticker-rev 120s linear infinite;
   width: max-content;
 }
 .ticker-scroll-rev:hover { animation-play-state: paused; }
