@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import Header from './components/layout/Header';
 import PriceTicker from './components/PriceTicker';
+import PageTransition, { NavigationDirectionProvider } from './components/layout/PageTransition';
 import BackgroundGradient from './components/ui/BackgroundGradient';
 import BottomTabBar from './components/layout/BottomTabBar';
 import LandingPage from './components/landing/LandingPage';
@@ -150,6 +151,7 @@ export default function App() {
   const setLandingDismissed = useStore(s => s.setLandingDismissed);
   return (
     <QueryClientProvider client={queryClient}>
+      <NavigationDirectionProvider>
       <BackgroundGradient />
       <NetworkStatus />
       <StreakCheck />
@@ -167,15 +169,9 @@ export default function App() {
             <AnnouncementBanner />
             <ErrorBoundary>
               <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeTab}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.12 }}
-                >
+                <PageTransition key={activeTab}>
                   <TabContent />
-                </motion.div>
+                </PageTransition>
               </AnimatePresence>
             </ErrorBoundary>
             <div className="text-center pt-6 pb-2">
@@ -197,6 +193,7 @@ export default function App() {
           <LandingPage onLaunch={() => setLandingDismissed(true)} />
         </ErrorBoundary>
       )}
+    </NavigationDirectionProvider>
     </QueryClientProvider>
   );
 }

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { fetchSolanaMarketData, fetchSolPrice } from '../api/prices';
 import { fetchTTSEData, TTSE_FALLBACK, TTD_RATE } from '../api/ttse';
@@ -16,6 +17,9 @@ import { useLimerActions } from '../solana/bridge';
 import Tooltip from '../components/ui/Tooltip';
 import ContextualHelp from '../components/ContextualHelp';
 import TradeJournalView from '../components/TradeJournalView';
+import AnimatedCounter from '../components/ui/AnimatedCounter';
+import useScrollReveal from '../hooks/useScrollReveal';
+import { useCelebration } from '../components/fx/CelebrationBurst';
 
 const fmtUSD = n => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtTTD = n => n == null ? '—' : 'TT$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -86,8 +90,24 @@ export default function PortfolioPage() {
   // On-chain actions (initialize profile, etc.)
   const limerActions = useLimerActions();
 
+  // ── UX polish: scroll-reveal for sections + celebration on gains ──
+  const { childVariants: statsChildV, ...statsReveal } = useScrollReveal({ stagger: 0.08 });
+  const { childVariants: _chartCV, ...chartReveal } = useScrollReveal({ delay: 0.1 });
+  const { childVariants: holdingsChildV, ...holdingsReveal } = useScrollReveal({ stagger: 0.06, delay: 0.15 });
+  const { fire: fireCelebration, CelebrationPortal } = useCelebration();
+  const prevPnlRef = useRef(totalPnl);
+
+  // Fire celebration when P&L increases by >1% of starting balance
+  useEffect(() => {
+    if (totalPnl > prevPnlRef.current && (totalPnl - prevPnlRef.current) > startUSD * 0.01) {
+      fireCelebration('profit');
+    }
+    prevPnlRef.current = totalPnl;
+  }, [totalPnl]);
+
   return (
     <div>
+      <CelebrationPortal />
       {/* ── Risk Disclosure Banner ──────────────────────────── */}
       <div className="flex items-start gap-2.5 rounded-xl px-4 py-3 mb-5 border border-[rgba(251,146,60,.25)] bg-[rgba(251,146,60,.06)] text-[.76rem] text-[#FB923C] font-body">
         <span className="flex-shrink-0 mt-0.5">&#9888;&#65039;</span>
@@ -219,18 +239,29 @@ export default function PortfolioPage() {
         </div>
       )}
 
-      {/* Dashboard cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-6">
-        <DashCard label="USD Cash" value={fmtUSD(balanceUSD)} sub="Solana balance" />
-        <DashCard label="TTD Cash" value={fmtTTD(balanceTTD)} sub="TTSE balance" color="text-[#FF4D6D]" />
-        <DashCard label="Holdings (USD)" value={fmtUSD(solValue + ttseValue / TTD_RATE)} sub={`${solHoldings.length + ttseHoldings.length} positions`} />
-        <DashCard
-          label={<span className="flex items-center gap-1.5">Total P&L <Tooltip term="P&L" def="Profit & Loss — shows how much your investments have grown or shrunk since you bought them. Green (+) means profit, red (-) means loss." inline={false} /></span>}
-          value={`${totalPnl >= 0 ? '+' : ''}${fmtUSD(totalPnl)}`}
-          sub={`${totalPnlPct >= 0 ? '+' : ''}${totalPnlPct.toFixed(2)}%`}
-          color={totalPnl >= 0 ? 'text-up' : 'text-down'}
-        />
-      </div>
+      {/* Dashboard cards — scroll-reveal with stagger + AnimatedCounter */}
+      <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-6" {...statsReveal}>
+        <motion.div variants={statsChildV}>
+          <DashCard label="USD Cash" numericValue={balanceUSD} prefix="$" format="number" sub="Solana balance" />
+        </motion.div>
+        <motion.div variants={statsChildV}>
+          <DashCard label="TTD Cash" numericValue={balanceTTD} prefix="TT$" format="number" sub="TTSE balance" color="text-[#FF4D6D]" />
+        </motion.div>
+        <motion.div variants={statsChildV}>
+          <DashCard label="Holdings (USD)" numericValue={solValue + ttseValue / TTD_RATE} prefix="$" format="number" sub={`${solHoldings.length + ttseHoldings.length} positions`} />
+        </motion.div>
+        <motion.div variants={statsChildV}>
+          <DashCard
+            label={<span className="flex items-center gap-1.5">Total P&L <Tooltip term="P&L" def="Profit & Loss — shows how much your investments have grown or shrunk since you bought them. Green (+) means profit, red (-) means loss." inline={false} /></span>}
+            numericValue={totalPnl}
+            prefix={totalPnl >= 0 ? '+$' : '-$'}
+            format="number"
+            sub={`${totalPnlPct >= 0 ? '+' : ''}${totalPnlPct.toFixed(2)}%`}
+            color={totalPnl >= 0 ? 'text-up' : 'text-down'}
+            useAbsValue
+          />
+        </motion.div>
+      </motion.div>
 
       {/* P&L Explainer for new users */}
       {trades.length === 0 && (
@@ -248,15 +279,15 @@ export default function PortfolioPage() {
         </div>
       )}
 
-      {/* Portfolio Value Chart */}
-      <div className="mb-6">
+      {/* Portfolio Value Chart — scroll-reveal */}
+      <motion.div className="mb-6" {...chartReveal}>
         <PortfolioValueChart
           trades={trades}
           holdings={holdings}
           solTokens={tokens}
           ttseStocks={stocks}
         />
-      </div>
+      </motion.div>
 
       {/* Price Chart */}
       <div className="mb-6">
@@ -405,11 +436,23 @@ export default function PortfolioPage() {
   );
 }
 
-function DashCard({ label, value, sub, color }) {
+function DashCard({ label, value, numericValue, prefix = '', format = 'number', sub, color, useAbsValue }) {
+  const displayValue = useAbsValue ? Math.abs(numericValue ?? 0) : (numericValue ?? 0);
   return (
-    <div className="rounded-[14px] p-5 border border-border" style={{ background: 'var(--color-card)' }}>
+    <div className="rounded-[14px] p-5 border border-border gpu-accelerated" style={{ background: 'var(--color-card)' }}>
       <div className="text-[.66rem] text-muted uppercase tracking-widest mb-1.5">{label}</div>
-      <div className={`font-headline text-[1.6rem] font-black ${color || 'text-txt'}`}>{value}</div>
+      <div className={`font-headline text-[1.6rem] font-black ${color || 'text-txt'}`}>
+        {typeof numericValue === 'number' ? (
+          <AnimatedCounter
+            value={displayValue}
+            format={format}
+            prefix={prefix}
+            className={color || 'text-txt'}
+          />
+        ) : (
+          value
+        )}
+      </div>
       {sub && <div className={`text-[.7rem] mt-0.5 ${color || 'text-txt-2'}`}>{sub}</div>}
     </div>
   );

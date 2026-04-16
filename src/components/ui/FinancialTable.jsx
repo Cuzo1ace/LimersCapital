@@ -121,9 +121,9 @@ export default function FinancialTable({
   const rowVariants = {
     hidden: {
       opacity: 0,
-      y: 16,
-      scale: 0.98,
-      filter: shouldReduceMotion ? 'none' : 'blur(3px)',
+      y: 12,
+      scale: 0.99,
+      filter: shouldReduceMotion ? 'none' : 'blur(2px)',
     },
     visible: {
       opacity: 1,

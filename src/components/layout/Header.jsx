@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useStore from '../../store/useStore';
+import { useNavigationDirection } from './PageTransition';
 import { useSelectedWalletAccount } from '@solana/react';
 import { useWallets, useConnect, useDisconnect } from '@wallet-standard/react';
 import { useCluster } from '../../solana/provider';
@@ -38,8 +39,15 @@ function shortenAddress(addr) {
 export default function Header() {
   const { t, i18n } = useTranslation();
   const { activeTab, setActiveTab, connectWallet, disconnectWallet, theme, setTheme } = useStore();
+  const { setTabIndex } = useNavigationDirection();
   const [showWalletMenu, setShowWalletMenu] = useState(false);
   const [showLimeMenu, setShowLimeMenu] = useState(false);
+
+  const handleTabNav = (tabId) => {
+    const idx = TABS.findIndex(t => t.id === tabId);
+    if (idx >= 0) setTabIndex(idx);
+    setActiveTab(tabId);
+  };
   const [showWalletPicker, setShowWalletPicker] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -106,7 +114,7 @@ export default function Header() {
         <div className="max-w-[1440px] mx-auto px-4 md:px-7 h-14 md:h-16 flex items-center gap-3 md:gap-4">
 
           {/* Logo — click to go to Dashboard */}
-          <div onClick={() => setActiveTab('dashboard')}
+          <div onClick={() => handleTabNav('dashboard')}
             className="font-headline text-[1.2rem] md:text-[1.45rem] font-black italic tracking-tight whitespace-nowrap text-txt select-none cursor-pointer hover:opacity-80 transition-opacity">
             Limer's&nbsp;<span className="text-gold">Capital</span>
           </div>
@@ -116,7 +124,7 @@ export default function Header() {
             {TABS.map(tab => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabNav(tab.id)}
                 className={`
                   px-3.5 py-1.5 rounded-md text-[.72rem] uppercase tracking-widest
                   font-headline transition-all cursor-pointer border-none
@@ -143,7 +151,7 @@ export default function Header() {
                 style={{ background: 'var(--color-night-2)', boxShadow: '0 8px 28px rgba(0,0,0,.5)' }}>
                 {LIME_TABS.map(t => (
                   <button key={t.id}
-                    onClick={() => { setActiveTab(t.id); setShowLimeMenu(false); }}
+                    onClick={() => { handleTabNav(t.id); setShowLimeMenu(false); }}
                     className={`w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg text-[.75rem] font-headline cursor-pointer border-none transition-all
                       ${activeTab === t.id ? 'text-[#2D9B56] bg-[rgba(45,155,86,.12)]' : 'text-txt-2 bg-transparent hover:text-txt hover:bg-white/5'}`}>
                     <span>{t.icon}</span> {t.label}

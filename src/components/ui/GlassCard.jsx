@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import ParallaxCard from './ParallaxCard';
 
 const VARIANTS = {
   default: 'backdrop-blur-xl bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)]',
@@ -11,6 +12,8 @@ export default function GlassCard({
   variant = 'default',
   animate = true,
   hoverLift = true,
+  parallax = false,
+  parallaxDepth = 0.03,
   className = '',
   children,
   delay = 0,
@@ -28,7 +31,7 @@ export default function GlassCard({
     transition: { type: 'spring', stiffness: 300, damping: 24, delay },
   } : {};
 
-  return (
+  const card = (
     <Component
       className={`rounded-xl transition-all duration-300 ${base} ${hover} ${className}`}
       {...motionProps}
@@ -37,4 +40,10 @@ export default function GlassCard({
       {children}
     </Component>
   );
+
+  if (parallax) {
+    return <ParallaxCard depth={parallaxDepth}>{card}</ParallaxCard>;
+  }
+
+  return card;
 }

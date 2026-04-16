@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import useStore from '../store/useStore';
@@ -19,6 +20,8 @@ import DailyKnowledgeCard from '../components/DailyKnowledgeCard';
 import SkillMap from '../components/gamification/SkillMap';
 import SocialProofBar from '../components/SocialProofBar';
 import WaitlistModal from '../components/WaitlistModal';
+import AnimatedCounter from '../components/ui/AnimatedCounter';
+import useScrollReveal from '../hooks/useScrollReveal';
 
 export default function DashboardPage() {
   const { t } = useTranslation();
@@ -84,6 +87,11 @@ export default function DashboardPage() {
 
   const [showWaitlist, setShowWaitlist] = useState(false);
 
+  // ── UX polish: scroll-reveal for Dashboard sections ──
+  const { childVariants: statsChildV, ...statsReveal } = useScrollReveal({ stagger: 0.08 });
+  const { childVariants: _tierCV, ...tierReveal } = useScrollReveal({ delay: 0.05 });
+  const { childVariants: moversChildV, ...moversReveal } = useScrollReveal({ stagger: 0.06, delay: 0.1 });
+
   return (
     <div>
       {/* Social Proof */}
@@ -146,8 +154,8 @@ export default function DashboardPage() {
       {/* ── Hero Section ── */}
       <HeroSection />
 
-      {/* ── Tier & Progress Card ── */}
-      <GlassCard variant="elevated" className="p-5 md:p-6 mb-6">
+      {/* ── Tier & Progress Card — parallax for premium feel ── */}
+      <GlassCard variant="elevated" parallax parallaxDepth={0.02} className="p-5 md:p-6 mb-6">
         <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
           <div>
             <div className="text-[.66rem] text-muted uppercase tracking-widest mb-1 font-headline">{t('dashboard.yourStatus')}</div>
@@ -163,7 +171,7 @@ export default function DashboardPage() {
           </div>
           <div className="text-right flex-shrink-0">
             <div className="font-headline text-[1.9rem] font-black" style={{ color: '#2D9B56' }}>
-              {fmtNum(limerPoints)}
+              <AnimatedCounter value={limerPoints} format="number" />
               <Tooltip term="LP" def="Limer Points — loyalty points earned from learning, trading, and daily activity. LP will convert to $LIMER tokens during the airdrop." inline>
                 <span className="text-[.88rem] ml-1 font-body font-bold text-muted">LP</span>
               </Tooltip>
@@ -203,12 +211,20 @@ export default function DashboardPage() {
           <SkillMap compact />
         </div>
       )}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <QuickStat icon="💹" label={t('dashboard.trades')} value={fmtNum(trades.length)} color="#00ffa3" onClick={() => setActiveTab('trade')} />
-        <QuickStat icon="🎖️" label={t('dashboard.badges')} value={`${earnedBadges.length}/25`} color="#FFCA3A" onClick={() => setActiveTab('learn')} />
-        <QuickStat icon="📚" label={t('dashboard.modules')} value={`${modulesCompleted.length}/4`} color="#2D9B56" onClick={() => setActiveTab('learn')} />
-        <QuickStat icon="💰" label={t('dashboard.usdBalance')} value={fmtUSD(balanceUSD)} color="#9945FF" onClick={() => setActiveTab('portfolio')} />
-      </div>
+      <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6" {...statsReveal}>
+        <motion.div variants={statsChildV}>
+          <QuickStat icon="💹" label={t('dashboard.trades')} numericValue={trades.length} color="#00ffa3" onClick={() => setActiveTab('trade')} />
+        </motion.div>
+        <motion.div variants={statsChildV}>
+          <QuickStat icon="🎖️" label={t('dashboard.badges')} value={`${earnedBadges.length}/25`} color="#FFCA3A" onClick={() => setActiveTab('learn')} />
+        </motion.div>
+        <motion.div variants={statsChildV}>
+          <QuickStat icon="📚" label={t('dashboard.modules')} value={`${modulesCompleted.length}/4`} color="#2D9B56" onClick={() => setActiveTab('learn')} />
+        </motion.div>
+        <motion.div variants={statsChildV}>
+          <QuickStat icon="💰" label={t('dashboard.usdBalance')} numericValue={balanceUSD} prefix="$" color="#9945FF" onClick={() => setActiveTab('portfolio')} />
+        </motion.div>
+      </motion.div>
 
       {/* ── Invest in Your Region ── */}
       <GlassCard variant="highlight" className="p-5 mb-6 cursor-pointer press-scale" onClick={() => setActiveTab('ttse')}>
@@ -424,22 +440,28 @@ export default function DashboardPage() {
   );
 }
 
-function QuickStat({ icon, label, value, color, onClick }) {
+function QuickStat({ icon, label, value, numericValue, prefix = '', color, onClick }) {
   return (
     <GlowCard
       as="button"
       onClick={onClick}
-      className="rounded-[14px] p-4 border border-border text-left w-full cursor-pointer transition-all hover:-translate-y-0.5 bg-transparent"
+      className="rounded-[14px] p-4 border border-border text-left w-full cursor-pointer transition-all hover:-translate-y-0.5 bg-transparent gpu-accelerated"
       style={{ background: 'var(--color-card)' }}
       proximity={80}
       spread={40}
       blur={0}
-      aria-label={`${label}: ${value}`}>
+      aria-label={`${label}: ${typeof numericValue === 'number' ? numericValue : value}`}>
       <div className="flex items-center gap-1.5 mb-2">
         <span className="text-base" aria-hidden="true">{icon}</span>
         <span className="text-[.62rem] text-muted uppercase tracking-widest font-headline">{label}</span>
       </div>
-      <div className="font-headline text-[1.35rem] font-black" style={{ color }}>{value}</div>
+      <div className="font-headline text-[1.35rem] font-black" style={{ color }}>
+        {typeof numericValue === 'number' ? (
+          <AnimatedCounter value={numericValue} prefix={prefix} format="number" />
+        ) : (
+          value
+        )}
+      </div>
     </GlowCard>
   );
 }

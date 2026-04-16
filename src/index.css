@@ -139,6 +139,22 @@ html.light ::selection {
 ::-webkit-scrollbar { width: 4px; background: var(--color-night-2); }
 ::-webkit-scrollbar-thumb { background: var(--color-night-3); border-radius: 99px; }
 
+/* ── GPU acceleration utility ── */
+/* Apply to elements with spring/transform animations to hint the compositor.
+   For one-shot animations (scroll reveals), remove via onAnimationComplete
+   to avoid permanent layer promotion bloat. Always-animated elements
+   (tab bar, background dots, parallax cards) keep it permanent. */
+@utility gpu-accelerated {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+/* Active press feedback — 0.97 scale on :active for interactive elements */
+@utility press-scale {
+  transition: transform 0.15s ease;
+  &:active { transform: scale(0.97); }
+}
+
 /* ── Veridian glow utilities ── */
 .neon-glow-primary {
   box-shadow: 0 0 15px rgba(0,255,163,0.2);

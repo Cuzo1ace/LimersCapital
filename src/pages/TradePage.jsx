@@ -1,5 +1,10 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import AnimatedCounter from '../components/ui/AnimatedCounter';
+import useScrollReveal from '../hooks/useScrollReveal';
+import { useCelebration } from '../components/fx/CelebrationBurst';
+import ShatterButton from '../components/ui/ShatterButton';
 // GlowCard and LiquidMetalButton kept as files but no longer used in TradePage
 // import GlowCard from '../components/ui/GlowCard';
 // import LiquidMetalButton from '../components/ui/LiquidMetalButton';
@@ -176,6 +181,10 @@ export default function TradePage() {
   const [perpTrailingStop, setPerpTrailingStop] = useState('');
   const [editingSLTP, setEditingSLTP] = useState(null); // positionId being edited
   const [marginAdjust, setMarginAdjust] = useState(null); // { posId, amount }
+
+  // ── UX polish: celebration on profitable trades + scroll-reveal ──
+  const { fire: fireCelebration, CelebrationPortal } = useCelebration();
+  const { childVariants: _tradeCV, ...tokenListReveal } = useScrollReveal({ stagger: 0.04, distance: 20 });
   const [closePartial, setClosePartial] = useState(null); // positionId showing partial close
   const [limitPrice, setLimitPrice] = useState('');
   const [paperTab, setPaperTab] = useState('holdings');
@@ -348,7 +357,15 @@ export default function TradePage() {
     const result = executeTrade(s, symbol, q, p, c, market);
     setConfirmPending(null);
     if (result.error) { flash('error', result.error); }
-    else { flash('success', `${s === 'buy' ? 'Bought' : 'Sold'} ${q} ${symbol} @ ${fmtPrice(p)}`); setQty(''); }
+    else {
+      flash('success', `${s === 'buy' ? 'Bought' : 'Sold'} ${q} ${symbol} @ ${fmtPrice(p)}`);
+      setQty('');
+      // Celebrate sells at a profit (the user locked in gains)
+      if (s === 'sell') {
+        const holding = holdings.find(h => h.symbol === symbol);
+        if (holding && p > holding.avgPrice) fireCelebration('profit');
+      }
+    }
   };
 
   function flash(type, text) {
@@ -377,6 +394,7 @@ export default function TradePage() {
 
   return (
     <div className="overflow-x-hidden">
+      <CelebrationPortal />
       {/* Post-Trade Teaching Moments */}
       <PostTradeInsight />
       {/* Trade Journal Prompt — appears after trade execution */}
@@ -449,11 +467,13 @@ export default function TradePage() {
                 className="flex-1 py-2.5 rounded border border-border bg-transparent text-muted text-[.76rem] font-bold cursor-pointer hover:text-txt transition-all">
                 Cancel
               </button>
-              <button onClick={handleConfirm}
-                className={`flex-1 py-2.5 rounded border-none text-[.78rem] font-bold cursor-pointer transition-all hover:brightness-90
-                  ${confirmPending.side === 'buy' ? 'bg-up text-night' : 'bg-down text-white'}`}>
+              <ShatterButton
+                onClick={handleConfirm}
+                shatterColor={confirmPending.side === 'buy' ? '#00ffa3' : '#ff716c'}
+                shardCount={18}
+              >
                 Confirm {confirmPending.side === 'buy' ? 'Buy' : 'Sell'}
-              </button>
+              </ShatterButton>
             </div>
           </div>
         </div>
@@ -1458,11 +1478,13 @@ export default function TradePage() {
                   </div>
                   <div className="flex gap-3">
                     <button onClick={() => setPerpConfirm(null)} className="flex-1 py-2.5 rounded border border-border bg-transparent text-muted text-[.76rem] font-bold cursor-pointer hover:text-txt transition-all">Cancel</button>
-                    <button onClick={handleConfirmPerp}
-                      className={`flex-1 py-2.5 rounded border-none text-[.78rem] font-bold cursor-pointer transition-all hover:brightness-90
-                        ${perpConfirm.side === 'long' ? 'bg-up text-night' : 'bg-down text-white'}`}>
+                    <ShatterButton
+                      onClick={handleConfirmPerp}
+                      shatterColor={perpConfirm.side === 'long' ? '#00ffa3' : '#ff716c'}
+                      shardCount={22}
+                    >
                       Open {perpConfirm.side === 'long' ? 'Long' : 'Short'}
-                    </button>
+                    </ShatterButton>
                   </div>
                 </div>
               </div>

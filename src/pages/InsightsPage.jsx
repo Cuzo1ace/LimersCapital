@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { fetchSolanaTVL, fetchFMPCryptoList, fmtSupply, TOKEN_INFO } from '../api/prices';
+import useScrollReveal from '../hooks/useScrollReveal';
 import {
   fetchSolanaProtocols, fetchCryptoMarket, fetchRWATokens, fetchL1Tokens,
   fetchDeFiMarket, fetchTrending, fetchGlobalMarket,
@@ -121,10 +123,14 @@ export default function InsightsPage() {
     { mint: '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R', label: 'RAY' },
   ];
 
+  // ── UX polish: scroll-reveal for Insights sections ──
+  const { childVariants: _iHeroCV, ...heroReveal } = useScrollReveal({ distance: 30 });
+  const { childVariants: _iSectionCV, ...sectionReveal } = useScrollReveal({ stagger: 0.06, delay: 0.1 });
+
   return (
     <div>
-      {/* Hero with Global Stats */}
-      <div className="rounded-xl p-9 mb-7 grid grid-cols-1 md:grid-cols-2 gap-9 items-center border border-border"
+      {/* Hero with Global Stats — scroll-reveal */}
+      <motion.div {...heroReveal} className="rounded-xl p-9 mb-7 grid grid-cols-1 md:grid-cols-2 gap-9 items-center border border-border"
         style={{ background: 'linear-gradient(135deg, var(--color-night-2) 0%, rgba(0,255,163,.05) 100%)' }}>
         <div>
           <div className="inline-block bg-sea/12 border border-sea/30 rounded-full text-[.68rem] text-sea px-3 py-0.5 tracking-widest uppercase mb-3.5">
@@ -147,7 +153,7 @@ export default function InsightsPage() {
           <HeroStat label="24h Volume" value={g ? fmt(g.totalVolume) : '—'} sub={g ? `${g.activeCryptos.toLocaleString()} assets` : ''}
             info="How much crypto was traded in the last 24 hours across all exchanges. High volume means lots of buying and selling activity." />
         </div>
-      </div>
+      </motion.div>
 
       <div className="flex justify-end mb-5">
         <button onClick={refetchAll}

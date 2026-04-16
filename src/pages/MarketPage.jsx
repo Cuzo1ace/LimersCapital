@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { fetchSolanaMarketData, fetchSolPrice, fetchSolanaTVL, fetchFMPCryptoList, fmtSupply, fetchUnderlyingStockPrices } from '../api/prices';
 import { fetchSolanaProtocols, fetchSolanaDexVolume, fetchSolanaStablecoins, fetchSolanaYields } from '../api/insights';
@@ -9,6 +10,8 @@ import GradientDots from '../components/ui/GradientDots';
 import FinancialTable, { PerfPill, Sparkline, fmtCurrency } from '../components/ui/FinancialTable';
 import BasisSpreadBadge from '../components/BasisSpreadBadge';
 import { TradingViewScreener } from '../components/charts';
+import useScrollReveal from '../hooks/useScrollReveal';
+import ParallaxCard from '../components/ui/ParallaxCard';
 
 function fmt(n, decimals = 2) {
   if (n == null) return '—';
@@ -155,10 +158,16 @@ export default function MarketPage() {
     return fmp[sym] || null;
   };
 
+  // ── UX polish: scroll-reveal for Market sections ──
+  const { childVariants: _heroCV, ...heroReveal } = useScrollReveal({ distance: 30 });
+  const { childVariants: statsChildV, ...statsReveal } = useScrollReveal({ stagger: 0.1, delay: 0.1 });
+  const { childVariants: _analyticsCV, ...analyticsReveal } = useScrollReveal({ stagger: 0.08, delay: 0.15 });
+  const { childVariants: _tableCV, ...tableReveal } = useScrollReveal({ distance: 25, delay: 0.05 });
+
   return (
     <div>
-      {/* Hero */}
-      <div className="rounded-xl p-9 mb-7 grid grid-cols-1 md:grid-cols-2 gap-9 items-center overflow-hidden relative border border-border"
+      {/* Hero — scroll-reveal entrance */}
+      <motion.div {...heroReveal} className="rounded-xl p-9 mb-7 grid grid-cols-1 md:grid-cols-2 gap-9 items-center overflow-hidden relative border border-border"
         style={{ background: 'linear-gradient(135deg, var(--color-night-2) 0%, rgba(0,255,163,.05) 100%)' }}>
         <GradientDots
           dotSize={6}
@@ -180,22 +189,26 @@ export default function MarketPage() {
             No broker, no minimum. Start paper trading today.
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-3.5">
-          <StatCard label="Solana TVL" value={tvlQ.data ? fmt(tvlQ.data) : '—'} sub={tvlQ.isLoading ? 'Loading...' : null} up />
-          <StatCard
-            label="SOL Price"
-            value={solQ.data ? fmt(solQ.data.price) : '—'}
-            change={solQ.data?.change24h}
-          />
-          <StatCard label="RWA Tokens" value="345+" sub="Active on-chain" up />
-          <StatCard label="30D Volume" value="$2.27B" sub="+43%" up />
-        </div>
-      </div>
+        <motion.div className="grid grid-cols-2 gap-3.5" {...statsReveal}>
+          <motion.div variants={statsChildV}><ParallaxCard depth={0.025}>
+            <StatCard label="Solana TVL" value={tvlQ.data ? fmt(tvlQ.data) : '—'} sub={tvlQ.isLoading ? 'Loading...' : null} up />
+          </ParallaxCard></motion.div>
+          <motion.div variants={statsChildV}><ParallaxCard depth={0.025}>
+            <StatCard label="SOL Price" value={solQ.data ? fmt(solQ.data.price) : '—'} change={solQ.data?.change24h} />
+          </ParallaxCard></motion.div>
+          <motion.div variants={statsChildV}><ParallaxCard depth={0.025}>
+            <StatCard label="RWA Tokens" value="345+" sub="Active on-chain" up />
+          </ParallaxCard></motion.div>
+          <motion.div variants={statsChildV}><ParallaxCard depth={0.025}>
+            <StatCard label="30D Volume" value="$2.27B" sub="+43%" up />
+          </ParallaxCard></motion.div>
+        </motion.div>
+      </motion.div>
 
       {/* ── Solana DeFi Analytics (native cards) ─────────────────────── */}
       <SectionHead title="Solana DeFi Analytics" label="DeFiLlama · Live" />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-7">
+      <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-7" {...analyticsReveal}>
 
         {/* Protocol Leaderboard */}
         <div className="rounded-xl border border-border p-5" style={{ background: 'var(--color-card)' }}>
@@ -345,7 +358,7 @@ export default function MarketPage() {
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* ── Birdeye Price Chart ─────────────────────────────────────── */}
       <div className="mb-7">
@@ -377,7 +390,8 @@ export default function MarketPage() {
         </div>
       </div>
 
-      {/* Token Table */}
+      {/* Token Table — scroll-reveal */}
+      <motion.div {...tableReveal}>
       <SectionHead
         title="Global Capital Markets on Solana"
         label="CoinGecko · Jupiter · DexScreener"
@@ -587,6 +601,8 @@ export default function MarketPage() {
           ]}
         />
       )}
+
+      </motion.div>
 
       {/* TradingView Crypto Screener */}
       <div className="mt-8">

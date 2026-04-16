@@ -1,9 +1,52 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+
+// ── Holographic 3D tilt constants ─────────────────────────────────────
+const IDENTITY = '1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1';
+const MAX_ROTATE = 0.18;
+const MIN_ROTATE = -0.18;
+const MAX_SCALE = 1;
+const MIN_SCALE = 0.97;
+
+// Rainbow overlay hue stops for the holographic shimmer
+const OVERLAY_HUES = [
+  'hsl(160, 100%, 60%)',   // sea green
+  'hsl(280, 85%, 55%)',    // purple
+  'hsl(45, 100%, 55%)',    // gold
+  'hsl(10, 100%, 62%)',    // coral
+  'hsl(200, 100%, 60%)',   // blue
+  'hsl(320, 80%, 50%)',    // magenta
+];
+
+function getMatrix(el, clientX, clientY) {
+  const { left, right, top, bottom } = el.getBoundingClientRect();
+  const xC = (left + right) / 2;
+  const yC = (top + bottom) / 2;
+  const xW = xC - left;
+  const yH = yC - top;
+
+  const s0 = MAX_SCALE - (MAX_SCALE - MIN_SCALE) * Math.abs(xC - clientX) / xW;
+  const s1 = MAX_SCALE - (MAX_SCALE - MIN_SCALE) * Math.abs(yC - clientY) / yH;
+  const s2 = MAX_SCALE - (MAX_SCALE - MIN_SCALE) * (Math.abs(xC - clientX) + Math.abs(yC - clientY)) / (xW + yH);
+
+  const rz0 = -(MAX_ROTATE - (MAX_ROTATE - MIN_ROTATE) * Math.abs(right - clientX) / (right - left));
+  const rx1 = 0.2 * ((yC - clientY) / yC - (xC - clientX) / xC);
+  const rx2 = MAX_ROTATE - (MAX_ROTATE - MIN_ROTATE) * Math.abs(right - clientX) / (right - left);
+  const ry2 = MAX_ROTATE - (MAX_ROTATE - MIN_ROTATE) * (top - clientY) / (top - bottom);
+  const rz1 = 0.15 - (0.15 + 0.45) * (top - clientY) / (top - bottom);
+
+  return `${s0},0,${rz0},0,${rx1},${s1},${rz1},0,${rx2},${ry2},${s2},0,0,0,0,1`;
+}
 
 // Draws a 600×300 share card on canvas and provides download + Twitter share
+// Now wrapped in a holographic 3D tilt effect for premium feel
 export default function ShareCard({ type, title, icon, color, onClose }) {
   const canvasRef = useRef(null);
+  const cardRef = useRef(null);
+  const [matrix, setMatrix] = useState(IDENTITY);
+  const [overlayAngle, setOverlayAngle] = useState(0);
+  const [isHovering, setIsHovering] = useState(false);
 
+  // ── Canvas drawing (unchanged from original) ───────────────────────
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -76,6 +119,27 @@ export default function ShareCard({ type, title, icon, color, onClose }) {
     ctx.textAlign = 'left';
   }, [type, title, icon, color]);
 
+  // ── Holographic 3D tilt handlers ───────────────────────────────────
+  const handleMouseMove = useCallback((e) => {
+    if (!cardRef.current) return;
+    const m = getMatrix(cardRef.current, e.clientX, e.clientY);
+    setMatrix(m);
+
+    // Rotate the holographic overlay based on cursor position
+    const rect = cardRef.current.getBoundingClientRect();
+    const xPct = (e.clientX - rect.left) / rect.width;
+    const yPct = (e.clientY - rect.top) / rect.height;
+    setOverlayAngle((xPct + yPct) * 180);
+  }, []);
+
+  const handleMouseEnter = useCallback(() => setIsHovering(true), []);
+
+  const handleMouseLeave = useCallback(() => {
+    setIsHovering(false);
+    setMatrix(IDENTITY);
+    setOverlayAngle(0);
+  }, []);
+
   function handleDownload() {
     const canvas = canvasRef.current;
     const link = document.createElement('a');
@@ -95,14 +159,64 @@ export default function ShareCard({ type, title, icon, color, onClose }) {
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,.75)', backdropFilter: 'blur(6px)' }}
       onClick={onClose}>
-      <div className="rounded-2xl overflow-hidden shadow-2xl max-w-[640px] w-full"
+
+      {/* Holographic 3D card wrapper */}
+      <div
+        ref={cardRef}
+        className="rounded-2xl overflow-hidden shadow-2xl max-w-[640px] w-full gpu-accelerated relative"
         onClick={e => e.stopPropagation()}
-        style={{ border: `1px solid ${color}44`, background: 'var(--color-night-2)' }}>
-        {/* Canvas */}
-        <canvas ref={canvasRef} className="w-full block" style={{ aspectRatio: '600/300' }} />
+        onMouseMove={handleMouseMove}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        style={{
+          border: `1px solid ${color}44`,
+          background: 'var(--color-night-2)',
+          transform: `perspective(800px) matrix3d(${matrix})`,
+          transformOrigin: 'center center',
+          transition: 'transform 200ms ease-out',
+        }}
+      >
+        {/* Holographic rainbow overlay — visible on hover */}
+        <div
+          className="absolute inset-0 pointer-events-none z-20 rounded-2xl overflow-hidden"
+          style={{
+            opacity: isHovering ? 0.35 : 0,
+            transition: 'opacity 300ms ease',
+            mixBlendMode: 'overlay',
+          }}
+        >
+          <svg width="100%" height="100%" className="absolute inset-0">
+            <defs>
+              <filter id="holo-blur">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="4" />
+              </filter>
+            </defs>
+            {OVERLAY_HUES.map((hue, i) => (
+              <g
+                key={i}
+                style={{
+                  transform: `rotate(${overlayAngle + i * 30}deg)`,
+                  transformOrigin: 'center center',
+                  transition: 'transform 150ms ease-out',
+                  willChange: 'transform',
+                }}
+              >
+                <polygon
+                  points="0,0 640,300 640,0 0,300"
+                  fill={hue}
+                  filter="url(#holo-blur)"
+                  opacity="0.5"
+                />
+              </g>
+            ))}
+          </svg>
+        </div>
+
+        {/* Canvas card image */}
+        <canvas ref={canvasRef} className="w-full block relative z-10" style={{ aspectRatio: '600/300' }} />
 
         {/* Actions */}
-        <div className="p-4 flex gap-3 justify-between items-center">
+        <div className="p-4 flex gap-3 justify-between items-center relative z-10">
           <button onClick={onClose}
             className="text-muted text-[.75rem] font-mono bg-transparent border-none cursor-pointer hover:text-txt-2">
             ✕ Close

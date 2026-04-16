@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import useStore from '../store/useStore';
 import { MODULES, LEVELS, LEVEL_ORDER } from '../data/modules';
 import { LESSONS } from '../data/lessons';
@@ -9,6 +10,8 @@ import BadgeGrid from '../components/gamification/BadgeGrid';
 import SkillMap from '../components/gamification/SkillMap';
 import DisclaimerBar from '../components/DisclaimerBar';
 import { submitQuizToServer } from '../api/game';
+import GlowTrackCard from '../components/ui/GlowTrackCard';
+import useScrollReveal from '../hooks/useScrollReveal';
 
 /**
  * Check if a module is accessible within a level.
@@ -449,14 +452,18 @@ function LevelOverview({ levelModules, lessonsRead, quizResults, modulesComplete
               </div>
             </div>
 
-            {/* Lessons */}
+            {/* Lessons — GlowTrackCard for premium feel */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-2.5 mb-3">
               {lessonsInMod.map(l => {
                 const isRead = !!lessonsRead[l.id];
                 return (
-                  <button key={l.id} onClick={() => setActiveLesson(l.id)}
-                    className={`text-left rounded-xl px-4 py-3 border cursor-pointer transition-all hover:-translate-y-0.5
-                      ${isRead ? 'border-up/25 bg-up/5' : 'border-border bg-black/20 hover:border-sea/30'}`}>
+                  <GlowTrackCard
+                    key={l.id}
+                    glowColor={isRead ? 'green' : 'sea'}
+                    onClick={() => setActiveLesson(l.id)}
+                    className={`p-4 transition-all hover:-translate-y-0.5
+                      ${isRead ? 'border-up/25 bg-up/5' : ''}`}
+                  >
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm">{l.emoji}</span>
                       <span className="font-body font-bold text-[.78rem] text-txt flex-1">{l.title}</span>
@@ -464,7 +471,7 @@ function LevelOverview({ levelModules, lessonsRead, quizResults, modulesComplete
                     </div>
                     <div className="text-[.68rem] text-muted line-clamp-2">{l.summary}</div>
                     <div className="text-[.58rem] text-muted mt-1">{l.readTime} min read</div>
-                  </button>
+                  </GlowTrackCard>
                 );
               })}
             </div>
@@ -493,26 +500,29 @@ function LevelOverview({ levelModules, lessonsRead, quizResults, modulesComplete
 
 // ─── Glossary Section ─────────────────────────────────────────────────────────
 function GlossarySection({ glossary, viewedTerms, onView }) {
+  const { childVariants: glossaryChildV, ...glossaryReveal } = useScrollReveal({ stagger: 0.04, distance: 16 });
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3" {...glossaryReveal}>
       {glossary.map(g => {
         const viewed = viewedTerms.includes(g.term);
         return (
-          <div key={g.term}
-            onClick={() => onView(g.term)}
-            className={`rounded-xl p-4 border cursor-pointer transition-all
-              ${viewed ? 'border-sea/20 bg-sea/3' : 'border-border hover:border-sea/20'}`}
-            style={{ background: viewed ? undefined : 'var(--color-card)' }}>
-            <div className="flex items-center gap-2">
-              <div className="font-body font-bold text-[.84rem] text-sea">{g.term}</div>
-              {!viewed && <span className="text-[.55rem] text-sea">+5 XP</span>}
-              {viewed && <span className="text-up text-[.7rem]">✓</span>}
-            </div>
-            <div className="text-[.76rem] text-txt-2 leading-relaxed mt-1">{g.def}</div>
-          </div>
+          <motion.div key={g.term} variants={glossaryChildV}>
+            <GlowTrackCard
+              glowColor={viewed ? 'green' : 'purple'}
+              onClick={() => onView(g.term)}
+              className={`p-4 transition-all ${viewed ? 'bg-sea/3' : ''}`}
+            >
+              <div className="flex items-center gap-2">
+                <div className="font-body font-bold text-[.84rem] text-sea">{g.term}</div>
+                {!viewed && <span className="text-[.55rem] text-sea">+5 XP</span>}
+                {viewed && <span className="text-up text-[.7rem]">✓</span>}
+              </div>
+              <div className="text-[.76rem] text-txt-2 leading-relaxed mt-1">{g.def}</div>
+            </GlowTrackCard>
+          </motion.div>
         );
       })}
-    </div>
+    </motion.div>
   );
 }
 
