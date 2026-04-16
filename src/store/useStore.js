@@ -212,6 +212,27 @@ const useStore = create(
       modulesCompleted: [],
       pendingToasts: [],
 
+      // ── News & Feed (retention) ────────────────────────────
+      // Timestamp (ISO) of last time user opened the /news tab.
+      // Drives the unread dot in nav and personalization freshness.
+      newsLastSeenAt: null,
+      // Per-day read-deduplication: { '2026-04-16': ['uuid1','uuid2'] }
+      // Only today's entry is ever written; older entries are pruned on read.
+      newsReadToday: { date: null, ids: [] },
+      // Persisted filter chip on the News page.
+      newsFilterChip: 'all',
+      // News-specific streak — counts days the user opened News at least once.
+      newsStreak: 0,
+      newsStreakLastDate: null,
+      // Weekly digest modal tracking (Monday pop-up).
+      weeklyDigestLastShown: null,
+      // Morning Brief — shown once per UTC day at top of News page.
+      // Value is 'YYYY-MM-DD' of the day last dismissed / auto-expired.
+      morningBriefSeenFor: null,
+      // Personalization signal — populated from completed lessons + watchlist.
+      interestedTickers: [],
+      userCountry: null,
+
       // ── Teaching Moments ───────────────────────────────────
       pendingTeachingMoment: null,
       teachingMomentsViewed: [],
@@ -498,6 +519,71 @@ const useStore = create(
         }
         get()._checkBadges();
       },
+
+      // ── News & Feed actions ──────────────────────────────
+      /**
+       * Called when the user opens the News tab.
+       * Marks unread dot cleared, increments daily news streak (once per day),
+       * awards first-open XP.
+       */
+      openNewsTab: () => {
+        const state = get();
+        const today = new Date().toISOString().split('T')[0];
+        const nowIso = new Date().toISOString();
+
+        // Always update "last seen" for unread badge
+        set({ newsLastSeenAt: nowIso });
+
+        // One-per-day streak + XP
+        if (state.newsStreakLastDate === today) return;
+
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        const consecutive = state.newsStreakLastDate === yesterday;
+        const newStreak = consecutive ? state.newsStreak + 1 : 1;
+        set({ newsStreak: newStreak, newsStreakLastDate: today });
+        try { get().awardXP(10, '📰 Daily news check-in'); } catch {}
+      },
+
+      /**
+       * Record that the user read a specific news item today.
+       * Deduplicates to one LP/XP reward per item per day.
+       * Returns true if this was a newly-counted read (caller can then
+       * trigger logActivity to Supabase).
+       */
+      markNewsRead: (newsItemId) => {
+        if (!newsItemId) return false;
+        const today = new Date().toISOString().split('T')[0];
+        const state = get();
+        const rollover = state.newsReadToday?.date !== today;
+        const todayIds = rollover ? [] : (state.newsReadToday?.ids || []);
+        if (todayIds.includes(newsItemId)) return false;  // already counted today
+
+        const nextIds = [...todayIds, newsItemId];
+        set({ newsReadToday: { date: today, ids: nextIds } });
+        try { get().awardXP(2, '📖 Read a news item'); } catch {}
+        // Milestone: 3 reads in one day → +5 LP
+        if (nextIds.length === 3) {
+          try { get().awardLP(5, '📚 Read 3 items today', 'news'); } catch {}
+        }
+        return true;
+      },
+
+      setNewsFilterChip: (chip) => set({ newsFilterChip: chip }),
+
+      setInterestedTickers: (tickers) => set({
+        interestedTickers: Array.isArray(tickers) ? tickers : [],
+      }),
+
+      setUserCountry: (country) => set({ userCountry: country || null }),
+
+      markWeeklyDigestShown: () => set({
+        weeklyDigestLastShown: new Date().toISOString(),
+      }),
+
+      /** Dismiss the Morning Brief for today (UTC). */
+      dismissMorningBrief: () => set({
+        morningBriefSeenFor: new Date().toISOString().slice(0, 10),
+      }),
 
       markGlossaryViewed: (term) => {
         const state = get();
@@ -1418,6 +1504,16 @@ const useStore = create(
         streakFeeCredits: state.streakFeeCredits,
         premiumConversionEvents: state.premiumConversionEvents,
         selectedChain: state.selectedChain,
+        // News & Feed retention
+        newsLastSeenAt: state.newsLastSeenAt,
+        newsReadToday: state.newsReadToday,
+        newsFilterChip: state.newsFilterChip,
+        newsStreak: state.newsStreak,
+        newsStreakLastDate: state.newsStreakLastDate,
+        weeklyDigestLastShown: state.weeklyDigestLastShown,
+        morningBriefSeenFor: state.morningBriefSeenFor,
+        interestedTickers: state.interestedTickers,
+        userCountry: state.userCountry,
       }),
       // ── Hydration safety ───────────────────────────────────────────
       // Persisted state from older app versions may omit fields we now

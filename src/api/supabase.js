@@ -450,3 +450,72 @@ export function subscribeAnnouncements(callback) {
     return () => {};
   }
 }
+
+// ── NEWS & EVENTS ────────────────────────────────────────────
+
+/**
+ * Fetch active news items. Filters server-side by source_type when provided.
+ * Client re-ranks using freshness × priority × personalization.
+ *
+ * @param {object} opts
+ * @param {'all'|'curated'|'rss'|'ai_summary'|'event'} [opts.sourceType='all']
+ * @param {number} [opts.limit=40]
+ */
+export async function fetchNews({ sourceType = 'all', limit = 40 } = {}) {
+  if (!isSupabaseReady()) return [];
+
+  const nowIso = new Date().toISOString();
+  let q = supabase
+    .from('news_items')
+    .select('id, source_type, source_name, source_url, title, summary, body_md, hero_image, tags, tickers, countries, priority, published_at, event_at, expires_at, ai_model')
+    .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+    .order('published_at', { ascending: false })
+    .limit(limit);
+
+  if (sourceType !== 'all') {
+    q = q.eq('source_type', sourceType);
+  }
+
+  const { data, error } = await q;
+  if (error) {
+    console.warn('[Supabase] fetchNews failed:', error.message);
+    return [];
+  }
+  return data || [];
+}
+
+/**
+ * Fetch upcoming events (source_type='event' with event_at in the future).
+ */
+export async function fetchEvents({ limit = 10 } = {}) {
+  if (!isSupabaseReady()) return [];
+
+  const nowIso = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('news_items')
+    .select('id, source_name, source_url, title, summary, hero_image, tags, countries, event_at, expires_at')
+    .eq('source_type', 'event')
+    .gt('event_at', nowIso)
+    .order('event_at', { ascending: true })
+    .limit(limit);
+
+  if (error) {
+    console.warn('[Supabase] fetchEvents failed:', error.message);
+    return [];
+  }
+  return data || [];
+}
+
+/**
+ * Log a news-read event — reuses activity_feed (no new table).
+ * Deduplication (one read per item per day) is enforced client-side via store.
+ */
+export async function logNewsRead({ walletAddress, newsItemId, title }) {
+  return logActivity({
+    walletAddress: walletAddress || 'anon',
+    eventType: 'news_read',
+    icon: '📰',
+    description: title ? `Read: ${title.slice(0, 80)}` : 'Read a news item',
+    metadata: { news_item_id: newsItemId },
+  });
+}

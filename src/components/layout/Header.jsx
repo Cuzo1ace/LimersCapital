@@ -10,6 +10,8 @@ import { isValidSolanaAddress } from '../../solana/validation';
 import XPBar from '../gamification/XPBar';
 import LPBar from '../gamification/LPBar';
 import MobileNav from './MobileNav';
+import UnreadDot from '../news/UnreadDot';
+import { useHasUnreadNews } from '../../hooks/useNewsFeed';
 
 const SOLFLARE_LINK = 'https://www.solflare.com/?af_qr=true&shortlink=carribean&c=Carribean&pid=Solana%20Carribean&af_xp=qr&source_caller=ui';
 const WAM_LINK = 'https://wam.money/';
@@ -24,6 +26,7 @@ const TABS = [
   { id: 'regulation', labelKey: 'nav.regulation', icon: '\u{1F5FA}\uFE0F' },
   { id: 'faq',        label: 'New to Digital Assets?', icon: '\u{1F195}' },
   { id: 'learn',      labelKey: 'nav.learn',      icon: '\u{1F4DA}' },
+  { id: 'news',       labelKey: 'nav.news',       icon: '\u{1F4F0}' },
   { id: 'trade',      labelKey: 'nav.trade',      icon: '\u{1F4B9}' },
   { id: 'ttse',       labelKey: 'nav.ttse',       icon: '\u{1F1F9}\u{1F1F9}', ttse: true },
   { id: 'insights',   labelKey: 'nav.insights',   icon: '\u{1F310}' },
@@ -40,6 +43,7 @@ export default function Header() {
   const { t, i18n } = useTranslation();
   const { activeTab, setActiveTab, connectWallet, disconnectWallet, theme, setTheme } = useStore();
   const { setTabIndex } = useNavigationDirection();
+  const hasUnreadNews = useHasUnreadNews();
   const [showWalletMenu, setShowWalletMenu] = useState(false);
   const [showLimeMenu, setShowLimeMenu] = useState(false);
 
@@ -135,6 +139,9 @@ export default function Header() {
                 `}
               >
                 {tab.icon} {tab.label || t(tab.labelKey)}
+                {tab.id === 'news' && hasUnreadNews && activeTab !== 'news' && (
+                  <UnreadDot size={6} className="ml-1.5" />
+                )}
               </button>
             ))}
           </nav>

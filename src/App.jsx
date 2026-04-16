@@ -28,6 +28,8 @@ import FlywheelPage from './pages/FlywheelPage';
 import LegalPage from './pages/LegalPage';
 import AboutPage from './pages/AboutPage';
 import FAQPage from './pages/FAQPage';
+import NewsPage from './pages/NewsPage';
+import WeeklyDigestModal from './components/news/WeeklyDigestModal';
 import useStore from './store/useStore';
 import LimerBridge from './components/solana/LimerBridge';
 import PriceAlertChecker from './components/PriceAlertChecker';
@@ -89,6 +91,7 @@ function TabContent() {
     case 'legal': return <RegulationPage />; // Legal merged into Regulation
     case 'about': return <AboutPage />;
     case 'faq': return <FAQPage />;
+    case 'news': return <NewsPage />;
     default: return <DashboardPage />;
   }
 }
@@ -187,6 +190,7 @@ export default function App() {
           <UpdatePrompt />
           <OfflineIndicator />
           <RewardToast />
+          <WeeklyDigestModal />
         </>
       ) : (
         <ErrorBoundary>

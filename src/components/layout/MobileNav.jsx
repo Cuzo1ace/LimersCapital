@@ -14,6 +14,7 @@ const MAIN_TABS = [
   { id: 'regulation', label: 'Regulation', icon: '🗺️' },
   { id: 'faq',        label: 'New to Digital Assets?', icon: '🆕' },
   { id: 'learn',      label: 'Learn',      icon: '📚' },
+  { id: 'news',       label: 'News',       icon: '📰' },
   { id: 'trade',      label: 'Trade',      icon: '💹' },
   { id: 'ttse',       label: 'TTSE',       icon: '🇹🇹', ttse: true },
   { id: 'insights',   label: 'Insights',   icon: '🌐' },

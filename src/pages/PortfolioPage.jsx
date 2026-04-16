@@ -20,6 +20,7 @@ import TradeJournalView from '../components/TradeJournalView';
 import AnimatedCounter from '../components/ui/AnimatedCounter';
 import useScrollReveal from '../hooks/useScrollReveal';
 import { useCelebration } from '../components/fx/CelebrationBurst';
+import PositionGlow, { deriveGlowProps } from '../components/ui/PositionGlow';
 
 const fmtUSD = n => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtTTD = n => n == null ? '—' : 'TT$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -251,15 +252,17 @@ export default function PortfolioPage() {
           <DashCard label="Holdings (USD)" numericValue={solValue + ttseValue / TTD_RATE} prefix="$" format="number" sub={`${solHoldings.length + ttseHoldings.length} positions`} />
         </motion.div>
         <motion.div variants={statsChildV}>
-          <DashCard
-            label={<span className="flex items-center gap-1.5">Total P&L <Tooltip term="P&L" def="Profit & Loss — shows how much your investments have grown or shrunk since you bought them. Green (+) means profit, red (-) means loss." inline={false} /></span>}
-            numericValue={totalPnl}
-            prefix={totalPnl >= 0 ? '+$' : '-$'}
-            format="number"
-            sub={`${totalPnlPct >= 0 ? '+' : ''}${totalPnlPct.toFixed(2)}%`}
-            color={totalPnl >= 0 ? 'text-up' : 'text-down'}
-            useAbsValue
-          />
+          <PositionGlow {...deriveGlowProps({ pnl: totalPnl, pnlPct: totalPnlPct })} radius="xl">
+            <DashCard
+              label={<span className="flex items-center gap-1.5">Total P&L <Tooltip term="P&L" def="Profit & Loss — shows how much your investments have grown or shrunk since you bought them. Green (+) means profit, red (-) means loss." inline={false} /></span>}
+              numericValue={totalPnl}
+              prefix={totalPnl >= 0 ? '+$' : '-$'}
+              format="number"
+              sub={`${totalPnlPct >= 0 ? '+' : ''}${totalPnlPct.toFixed(2)}%`}
+              color={totalPnl >= 0 ? 'text-up' : 'text-down'}
+              useAbsValue
+            />
+          </PositionGlow>
         </motion.div>
       </motion.div>
 

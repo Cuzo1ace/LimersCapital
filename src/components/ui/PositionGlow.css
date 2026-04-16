@@ -1,0 +1,125 @@
+/* PositionGlow — position-aware animated border glow.
+ * Adapted from 21st.dev `glowing-shadow` (hue-rotating rainbow) into a
+ * hue-pinned P&L-reactive frame. Hue is set by React via inline
+ * `--position-hue` CSS variable; this file only defines the animation,
+ * layout, and reduced-motion / perf fallbacks.
+ */
+
+/* Register animatable custom properties — lets the browser smoothly
+ * transition hue / bg-x / bg-y instead of snapping. */
+@property --position-hue {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 140;
+}
+@property --position-bg-x {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 50;
+}
+@property --position-bg-y {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 50;
+}
+
+.position-glow {
+  --position-hue: 140;          /* default green */
+  --position-intensity: 0.5;    /* 0..1 — scales glow strength */
+  --position-border-width: 2px;
+  --position-idle-speed: 8s;    /* slow ambient breathe */
+  --position-radius: 1rem;
+  position: relative;
+  display: block;
+  border-radius: var(--position-radius);
+  isolation: isolate;           /* contain the ::before layer */
+  transition: --position-hue 600ms ease;
+}
+
+.position-glow--radius-lg { --position-radius: 0.75rem; }
+.position-glow--radius-xl { --position-radius: 1rem; }
+.position-glow--radius-2xl { --position-radius: 1.25rem; }
+
+/* Animated border layer */
+.position-glow::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--position-border-width) * -1);
+  border-radius: inherit;
+  padding: var(--position-border-width);
+  background: radial-gradient(
+    60% 60% at calc(var(--position-bg-x) * 1%) calc(var(--position-bg-y) * 1%),
+    hsl(var(--position-hue) 100% 65%) 0%,
+    hsl(var(--position-hue) 100% 55%) 35%,
+    hsl(var(--position-hue) 90% 40% / 0.4) 70%,
+    transparent 100%
+  );
+  opacity: calc(0.35 + 0.5 * var(--position-intensity));
+  /* Mask so only the border ring is visible (keeps interior clean) */
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+          mask-composite: exclude;
+  animation: position-glow-drift var(--position-idle-speed) ease-in-out infinite;
+  z-index: -1;
+  pointer-events: none;
+  transition: --position-hue 600ms ease, opacity 400ms ease;
+}
+
+/* Soft outer halo for intensity feedback */
+.position-glow::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: inherit;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    hsl(var(--position-hue) 90% 55% / calc(0.12 * var(--position-intensity))) 0%,
+    transparent 70%
+  );
+  filter: blur(14px);
+  opacity: calc(0.4 + 0.6 * var(--position-intensity));
+  z-index: -2;
+  pointer-events: none;
+  transition: --position-hue 600ms ease, opacity 400ms ease;
+}
+
+@keyframes position-glow-drift {
+  0%, 100% { --position-bg-x: 30; --position-bg-y: 30; }
+  25%      { --position-bg-x: 70; --position-bg-y: 20; }
+  50%      { --position-bg-x: 70; --position-bg-y: 70; }
+  75%      { --position-bg-x: 30; --position-bg-y: 70; }
+}
+
+/* One-shot pulse when P&L sign flips — triggered by toggling this class */
+.position-glow--pulse::before {
+  animation:
+    position-glow-drift var(--position-idle-speed) ease-in-out infinite,
+    position-glow-pulse 900ms ease-out 1;
+}
+
+@keyframes position-glow-pulse {
+  0%   { opacity: calc(0.35 + 0.5 * var(--position-intensity)); transform: scale(1); }
+  40%  { opacity: 1; transform: scale(1.015); }
+  100% { opacity: calc(0.35 + 0.5 * var(--position-intensity)); transform: scale(1); }
+}
+
+/* Pause animation when tab is hidden or user prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .position-glow::before,
+  .position-glow::after {
+    animation: none;
+  }
+}
+
+/* Firefox < 128 / older Safari fallback: no @property animation support.
+ * Border still colored, just static. */
+@supports not (background: paint(worklet)) {
+  .position-glow::before {
+    animation: none;
+  }
+}
