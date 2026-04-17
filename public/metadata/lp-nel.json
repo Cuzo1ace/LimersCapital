@@ -1,0 +1,22 @@
+{
+  "name": "Limer LP mTTDC/mNEL",
+  "symbol": "LP-NEL",
+  "description": "Liquidity provider token for the mTTDC/mNEL Limer AMM pool. Held by LPs in proportion to their share of pool reserves. Earns 0.30% trading fees via reserve growth. Mint authority: pool_authority PDA (non-rotatable). Freeze authority: PDA (no freeze instruction exists in program — effectively immutable). Burn to withdraw pro-rata pool reserves.",
+  "image": "https://limerscapital.com/favicon.svg",
+  "external_url": "https://limerscapital.com",
+  "attributes": [
+    { "trait_type": "Token Type", "value": "AMM LP Token" },
+    { "trait_type": "Pool", "value": "mTTDC/mNEL" },
+    { "trait_type": "Pool Address", "value": "2ao9zgxmvqwk9VAnq2iKAjScqzb9dixNfgBm6zF4YLHU" },
+    { "trait_type": "Underlying A", "value": "mTTDC" },
+    { "trait_type": "Underlying B", "value": "mNEL (National Enterprises)" },
+    { "trait_type": "Fee Tier (bps)", "value": "30" },
+    { "trait_type": "Network", "value": "Solana Devnet" },
+    { "trait_type": "AMM Program", "value": "FVk7LzdZ976beSEJkdXD5ww1xRxpZpYjxodN9Kq1Bpwo" }
+  ],
+  "properties": {
+    "category": "fungible",
+    "creators": [{ "address": "3wvJe17zVfFm48DHVYGfShNg2p9r8C2ijgyZiXQcPkgd", "share": 100 }]
+  },
+  "tags": ["lp-token", "amm", "limer-capital", "devnet", "kamino-ready"]
+}

@@ -1,0 +1,14 @@
+{
+  "symbol": "mTTDC",
+  "name": "Mock TTDC",
+  "mint": "BScyHpzzSC4UoUysx7XUqCpSaKdcgjqvNMjpZcXFTxUM",
+  "decimals": 6,
+  "initialSupplyHuman": "1000000",
+  "metadataUri": "https://limerscapital.com/metadata/mttdc.json",
+  "network": "devnet",
+  "mintAuthority": "3wvJe17zVfFm48DHVYGfShNg2p9r8C2ijgyZiXQcPkgd",
+  "createdAt": "2026-04-17T16:41:38Z",
+  "createTxSig": "49XWeoMWijjpag3NH59ZeLWtqiU2XmaaN6XC9KuvQykcfPx3Rz7rmw95qbMNrwbs7Z5JakeEsqepkM185EBtK2Qh",
+  "mintTxSig": "3v4jNo6ZMt47txi9MARssiuxUk1QwMMtpox3LHRf9dRqr6FGL8rrWLndGFRuvfKns9mmQqKcBPZmFVLSKyuajEK6",
+  "mintedAt": "2026-04-17T16:43:17.209Z"
+}

@@ -1,0 +1,22 @@
+{
+  "name": "Limer LP mGKC/mTTDC",
+  "symbol": "LP-GKC",
+  "description": "Liquidity provider token for the mGKC/mTTDC Limer AMM pool (canonical order inverted — mGKC is token A because its mint pubkey sorts lexicographically before mTTDC). Held by LPs in proportion to their share of pool reserves. Earns 0.30% trading fees via reserve growth. Mint authority: pool_authority PDA (non-rotatable). Burn to withdraw pro-rata pool reserves.",
+  "image": "https://limerscapital.com/favicon.svg",
+  "external_url": "https://limerscapital.com",
+  "attributes": [
+    { "trait_type": "Token Type", "value": "AMM LP Token" },
+    { "trait_type": "Pool", "value": "mGKC/mTTDC" },
+    { "trait_type": "Pool Address", "value": "gK5buNbjxTC8PzxixLWWqQKrapoVj1c3T1nJnfmmdU9" },
+    { "trait_type": "Underlying A", "value": "mGKC (GraceKennedy)" },
+    { "trait_type": "Underlying B", "value": "mTTDC" },
+    { "trait_type": "Fee Tier (bps)", "value": "30" },
+    { "trait_type": "Network", "value": "Solana Devnet" },
+    { "trait_type": "AMM Program", "value": "FVk7LzdZ976beSEJkdXD5ww1xRxpZpYjxodN9Kq1Bpwo" }
+  ],
+  "properties": {
+    "category": "fungible",
+    "creators": [{ "address": "3wvJe17zVfFm48DHVYGfShNg2p9r8C2ijgyZiXQcPkgd", "share": 100 }]
+  },
+  "tags": ["lp-token", "amm", "limer-capital", "devnet", "kamino-ready"]
+}

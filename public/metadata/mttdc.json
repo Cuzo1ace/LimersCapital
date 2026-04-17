@@ -1,0 +1,25 @@
+{
+  "name": "Mock TTDC",
+  "symbol": "mTTDC",
+  "description": "Mock Trinidad & Tobago Digital Currency — a devnet test token issued by Limer's Capital for platform development, AMM liquidity testing, and integration with Solana DeFi primitives (Kamino, DFlow, Jupiter). Not a claim, promise, or representation of any relationship with the Central Bank of Trinidad & Tobago or any issued CBDC. Holds no monetary value. Cannot be redeemed. For testing only.",
+  "image": "https://limerscapital.com/favicon.svg",
+  "external_url": "https://limerscapital.com",
+  "attributes": [
+    { "trait_type": "Token Type", "value": "Stablecoin (mock)" },
+    { "trait_type": "Peg Reference", "value": "TTD 1:1 (aspirational)" },
+    { "trait_type": "Network", "value": "Solana Devnet" },
+    { "trait_type": "Issuer", "value": "Limer's Capital" },
+    { "trait_type": "Purpose", "value": "Test-net liquidity + AMM pairing" },
+    { "trait_type": "Production Ready", "value": "No — devnet only" }
+  ],
+  "properties": {
+    "category": "fungible",
+    "creators": [
+      {
+        "address": "3wvJe17zVfFm48DHVYGfShNg2p9r8C2ijgyZiXQcPkgd",
+        "share": 100
+      }
+    ]
+  },
+  "tags": ["stablecoin", "devnet", "test", "mock", "limers-capital", "caribbean", "ttdc"]
+}

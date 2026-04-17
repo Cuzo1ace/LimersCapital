@@ -1,0 +1,24 @@
+{
+  "name": "Mock WCO - West Indian Tobacco Company",
+  "symbol": "mWCO",
+  "description": "Mock tokenized representation of West Indian Tobacco Company Limited (TTSE: WCO), a devnet test token issued by Limer's Capital. NOT actual equity, NOT a claim on any shares, NOT registered with TTSEC or any securities regulator. Holds no monetary value. For platform development and Solana DeFi composability testing only.",
+  "image": "https://limerscapital.com/favicon.svg",
+  "external_url": "https://limerscapital.com",
+  "attributes": [
+    { "trait_type": "Token Type", "value": "Tokenized Equity (mock)" },
+    { "trait_type": "TTSE Ticker", "value": "WCO" },
+    { "trait_type": "Issuer Name", "value": "West Indian Tobacco Company Limited" },
+    { "trait_type": "Sector", "value": "Conglomerate" },
+    { "trait_type": "Reference Price (TTD)", "value": "2.41" },
+    { "trait_type": "Network", "value": "Solana Devnet" },
+    { "trait_type": "Issuer (on-chain)", "value": "Limer's Capital" },
+    { "trait_type": "Production Ready", "value": "No — devnet only" }
+  ],
+  "properties": {
+    "category": "fungible",
+    "creators": [
+      { "address": "3wvJe17zVfFm48DHVYGfShNg2p9r8C2ijgyZiXQcPkgd", "share": 100 }
+    ]
+  },
+  "tags": ["equity", "tokenized-stock", "ttse", "devnet", "mock", "limers-capital", "caribbean", "wco"]
+}

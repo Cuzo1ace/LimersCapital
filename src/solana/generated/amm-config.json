@@ -1,0 +1,9 @@
+{
+  "programId": "FVk7LzdZ976beSEJkdXD5ww1xRxpZpYjxodN9Kq1Bpwo",
+  "ammConfig": "2zz2e5cejTKX7WBuE131m2J1v6VKNDwK3YxktogKNwtR",
+  "admin": "3wvJe17zVfFm48DHVYGfShNg2p9r8C2ijgyZiXQcPkgd",
+  "defaultFeeBps": 30,
+  "initTxSig": "2e3rVYZvFjRPAD7JZJDn75icRXXE5W8rud2DARa2ybNmb8GsxAyUbYKyFnJQRJTTYAmw7uHmoZeFKe5MLmceoxFz",
+  "initializedAt": "2026-04-17T20:06:10.862Z",
+  "network": "devnet"
+}
