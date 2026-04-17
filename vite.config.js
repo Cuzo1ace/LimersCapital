@@ -71,6 +71,20 @@ export default defineConfig({
 
         // Runtime caching strategies for API calls
         runtimeCaching: [
+          // ── App-shell navigations: network-first so returning users get fresh
+          // index.html (which references the current JS bundle hashes). Without
+          // this, a post-deploy reload can serve a stale precached index.html
+          // that points to bundle hashes already purged from Cloudflare → 404 → blank.
+          {
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'app-shell',
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 5, maxAgeSeconds: 60 * 60 * 24 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
           // ── Price data: stale-while-revalidate (show cached, refresh in background) ──
           {
             urlPattern: /^https:\/\/hermes\.pyth\.network\/.*/i,
