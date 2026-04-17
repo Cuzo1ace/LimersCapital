@@ -16,6 +16,8 @@ import { buildNewsGraph, neighborIds } from '../../lib/newsGraph';
 import { getSourceBrand } from '../../lib/newsBrand';
 import { getTickerAsset, svgToDataUri } from '../../lib/tickerAssets';
 import NewsPreviewModal from './NewsPreviewModal';
+import BubblePopover from './BubblePopover';
+import { AnimatePresence } from 'framer-motion';
 
 // Lightens a hex (#RRGGBB) color toward white by `amount` (0-1).
 function lighten(hex, amount = 0.5) {
@@ -33,6 +35,13 @@ function lighten(hex, amount = 0.5) {
 function cssId(raw) {
   return String(raw).replace(/[^a-zA-Z0-9_-]/g, '_');
 }
+
+// Keep the popover inside the graph viewport so it never clips off the
+// right or bottom edge. Width/height constants mirror BubblePopover.
+const POPOVER_W = 320;
+const POPOVER_H = 280;
+function clampX(x, w) { return Math.max(8, Math.min(x, w - POPOVER_W - 8)); }
+function clampY(y, h) { return Math.max(8, Math.min(y, h - POPOVER_H - 8)); }
 
 function darken(hex, amount = 0.5) {
   const m = /^#([0-9a-f]{6})$/i.exec(hex || '');
@@ -93,6 +102,15 @@ export default function NewsBubbleMap({ items, onFilterChipChange, onSwitchToGri
   const [query, setQuery] = useState('');
   const [hoverId, setHoverId] = useState(null);
   const [viewport, setViewport] = useState({ x: 0, y: 0, k: 1 });
+  // Popover: the node whose click-card is open, plus its current screen
+  // position. The position follows the bubble while the simulation is
+  // still cooling down; stays fixed after settle (rare user drags break
+  // the link, which is fine — they can click again).
+  const [popoverNode, setPopoverNode] = useState(null);
+  const [popoverPos, setPopoverPos] = useState({ x: 0, y: 0 });
+  // Latest node positions keyed by id — written on every sim tick, read
+  // by the popover-position effect below.
+  const nodePositionsRef = useRef(new Map());
 
   // Build graph data — memoized on items
   const graph = useMemo(() => buildNewsGraph(items), [items]);
@@ -316,14 +334,18 @@ export default function NewsBubbleMap({ items, onFilterChipChange, onSwitchToGri
     nodeG.on('mouseenter', (_event, d) => setHoverId(d.id));
     nodeG.on('mouseleave', () => setHoverId(null));
 
-    // Simulation tick: update positions
+    // Simulation tick: update positions. Also stash current world coords
+    // per-node so the popover-position effect can track a live bubble.
     sim.on('tick', () => {
       linkSel
         .attr('x1', d => d.source.x)
         .attr('y1', d => d.source.y)
         .attr('x2', d => d.target.x)
         .attr('y2', d => d.target.y);
-      nodeG.attr('transform', d => `translate(${d.x},${d.y})`);
+      nodeG.attr('transform', d => {
+        nodePositionsRef.current.set(d.id, { x: d.x, y: d.y, radius: d.radius });
+        return `translate(${d.x},${d.y})`;
+      });
     });
 
     // Cool the sim down after it settles for perf
@@ -352,6 +374,26 @@ export default function NewsBubbleMap({ items, onFilterChipChange, onSwitchToGri
     // Rebuild whenever the graph structure changes or canvas resizes.
   }, [graph, dims.w, dims.h]);
 
+  // Track the popover anchor position as the simulation ticks and the
+  // viewport transform changes. Converts world coords to SVG-local
+  // coords (world.x, world.y) then applies the zoom transform.
+  useEffect(() => {
+    if (!popoverNode) return;
+    let raf = 0;
+    const update = () => {
+      const pos = nodePositionsRef.current.get(popoverNode.id);
+      if (pos) {
+        // Anchor the popover just below and slightly right of the bubble.
+        const x = pos.x * viewport.k + viewport.x + pos.radius * viewport.k + 8;
+        const y = pos.y * viewport.k + viewport.y + pos.radius * viewport.k + 8;
+        setPopoverPos({ x, y });
+      }
+      raf = requestAnimationFrame(update);
+    };
+    update();
+    return () => cancelAnimationFrame(raf);
+  }, [popoverNode, viewport]);
+
   // Apply hover/search highlighting — doesn't need simulation rebuild
   useEffect(() => {
     const world = select(worldRef.current);
@@ -369,30 +411,13 @@ export default function NewsBubbleMap({ items, onFilterChipChange, onSwitchToGri
   }, [activeIds]);
 
   function handleNodeClick(d) {
-    // d3 event listeners run outside React's auto-batched event system in
-    // some React 18 code paths; queueMicrotask defers the setState to a
-    // point where React reliably schedules a re-render.
+    // d3 event listeners run outside React's auto-batched event path in
+    // some React 18 code paths; queueMicrotask defers the setState so
+    // React reliably schedules a re-render.
     queueMicrotask(() => {
-      if (d.kind === 'item') {
-        setSelected(d.item);
-        return;
-      }
-      if (d.kind === 'ticker') {
-        onFilterChipChange?.('solana');
-        onSwitchToGrid?.();
-        return;
-      }
-      if (d.kind === 'tag') {
-        const tag = d.tag;
-        const chip =
-          tag === 'solana' ? 'solana'
-          : tag === 'ttse' ? 'ttse'
-          : tag === 'caribbean' ? 'caribbean'
-          : tag === 'education' || tag === 'learn' ? 'learn'
-          : 'all';
-        onFilterChipChange?.(chip);
-        onSwitchToGrid?.();
-      }
+      // New UX: every click opens the popover card. The card's own
+      // buttons trigger the downstream actions (modal, filter, etc.).
+      setPopoverNode(d);
     });
   }
 
@@ -455,6 +480,13 @@ export default function NewsBubbleMap({ items, onFilterChipChange, onSwitchToGri
           onMouseDown={e => { e.currentTarget.style.cursor = 'grabbing'; }}
           onMouseUp={e => { e.currentTarget.style.cursor = 'grab'; }}
           onMouseLeave={e => { e.currentTarget.style.cursor = 'grab'; }}
+          onClick={e => {
+            // Background click closes the popover (ignore if it originated
+            // inside a bubble group — those are handled by d3's on('click')).
+            if (popoverNode && !e.target.closest('g.bubble')) {
+              setPopoverNode(null);
+            }
+          }}
         >
           <defs>
             <radialGradient id="bubble-bg" cx="50%" cy="50%">
@@ -465,6 +497,36 @@ export default function NewsBubbleMap({ items, onFilterChipChange, onSwitchToGri
           <rect width="100%" height="100%" fill="url(#bubble-bg)" />
           <g ref={worldRef} />
         </svg>
+
+        {/* Popover card anchored to the active bubble */}
+        <AnimatePresence>
+          {popoverNode && (
+            <BubblePopover
+              key={popoverNode.id}
+              node={popoverNode}
+              items={items}
+              style={{
+                left: clampX(popoverPos.x, dims.w),
+                top: clampY(popoverPos.y, dims.h),
+              }}
+              onClose={() => setPopoverNode(null)}
+              onOpenModal={(item) => {
+                setPopoverNode(null);
+                setSelected(item);
+              }}
+              onFilterFeed={(chip) => {
+                setPopoverNode(null);
+                onFilterChipChange?.(chip);
+                onSwitchToGrid?.();
+              }}
+              onOpenItem={(item) => {
+                // Switch popover to the related item so users can hop around
+                const next = graph.nodes.find(n => n.kind === 'item' && n.item?.id === item.id);
+                if (next) setPopoverNode(next);
+              }}
+            />
+          )}
+        </AnimatePresence>
 
         {/* Mini-map */}
         {graphNodeCount > 0 && (
