@@ -89,6 +89,16 @@ export async function handleFaucetMttdc(request, env, ctx, corsHeaders) {
         error: 'Faucet internal error',
         detail: msg,
         stage: 'uncaught',
+        // DIAGNOSTIC — remove once resolved. Surfaces whether required
+        // secrets are actually bound to this Worker's runtime env. The
+        // Helius key is non-negotiable: Solana's public devnet RPC 403s
+        // Cloudflare Worker egress IPs, so we MUST route through Helius.
+        diag: {
+          heliusKeyLen: (env?.HELIUS_API_KEY || '').length,
+          faucetKeyLen: (env?.FAUCET_KEYPAIR_JSON || '').length,
+          sentryKeyLen: (env?.SENTRY_DSN || '').length,
+          rpcHost: (() => { try { return new URL(resolveRpcUrl(env || {})).host; } catch { return '?'; } })(),
+        },
         hint: msg.includes('Buffer') || msg.includes('process')
           ? 'Add compatibility_flags = ["nodejs_compat"] to wrangler-api.toml and redeploy'
           : msg.includes('WebSocket') || msg.includes('ws://') || msg.includes('wss://')
