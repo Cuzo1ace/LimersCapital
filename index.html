@@ -3,7 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <!-- CSP is managed via public/_headers (Cloudflare Pages) -->
+    <!--
+      CSP is managed via public/_headers (Cloudflare Pages).
+      Two policies are emitted:
+        - Content-Security-Policy            (enforced, currently permissive)
+        - Content-Security-Policy-Report-Only (hardened, observed via /csp-report)
+      Violations are forwarded from the Worker to Sentry for triage.
+      Once Report-Only has zero legitimate violations for 7 days, promote the
+      hardened policy to enforced (audit C-03 Phase 2).
+    -->
     <title>Limer's Capital</title>
     <meta name="description" content="Caribbean DeFi education, trading & tokenization on Solana" />
 
@@ -35,54 +43,19 @@
       </div>
       <style>@keyframes boot-spin{to{transform:rotate(360deg)}}</style>
     </div>
-    <script>
-      (function () {
-        // If React hasn't replaced #root's contents within 8s, surface a recovery UI.
-        var STUCK_MS = 8000;
-        var timer = setTimeout(function () {
-          var stuck = document.getElementById('boot-stuck');
-          var spinner = document.getElementById('boot-spinner');
-          if (stuck) stuck.style.display = 'block';
-          if (spinner) spinner.style.display = 'none';
-        }, STUCK_MS);
-        // When React mounts, it swaps #root's children — detect via MutationObserver
-        // on #root and clear the timer as soon as a non-fallback child appears.
-        var root = document.getElementById('root');
-        if (root && typeof MutationObserver === 'function') {
-          var mo = new MutationObserver(function () {
-            if (!document.getElementById('boot-fallback')) {
-              clearTimeout(timer);
-              mo.disconnect();
-            }
-          });
-          mo.observe(root, { childList: true, subtree: false });
-        }
-        // Wire up the recovery button: unregister SWs, clear caches + storage, reload.
-        document.addEventListener('click', function (e) {
-          if (!e.target || e.target.id !== 'boot-recover') return;
-          e.target.textContent = 'Clearing…';
-          e.target.disabled = true;
-          var done = function () { window.location.replace('/?reset=1'); };
-          var tasks = [];
-          try {
-            if ('serviceWorker' in navigator) {
-              tasks.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
-                return Promise.all(rs.map(function (r) { return r.unregister(); }));
-              }));
-            }
-            if (typeof caches !== 'undefined' && caches.keys) {
-              tasks.push(caches.keys().then(function (ks) {
-                return Promise.all(ks.map(function (k) { return caches.delete(k); }));
-              }));
-            }
-            try { localStorage.clear(); } catch (_) {}
-            try { sessionStorage.clear(); } catch (_) {}
-          } catch (_) {}
-          Promise.all(tasks).then(done, done);
-          setTimeout(done, 3000);
-        });
-      })();
-    </script>
+    <!--
+      Boot-recovery script — extracted from inline <script> for CSP hardening
+      (audit C-03, April 2026). SRI hash pins the exact content; any edit to
+      public/boot-recover.js MUST be followed by:
+        openssl dgst -sha384 -binary public/boot-recover.js | openssl base64 -A
+      and updating the integrity= attribute below. Otherwise the browser will
+      refuse to execute the script and the boot-stuck fallback will not work.
+    -->
+    <script
+      src="/boot-recover.js"
+      integrity="sha384-6qe0DfIT+/66438fJVamlrV1M5DnPKbTK9lRwH7vMAfoRPooKO6iaK63VuQDSecf"
+      crossorigin="anonymous"
+    ></script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
