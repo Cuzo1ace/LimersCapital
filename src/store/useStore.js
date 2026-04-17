@@ -221,6 +221,8 @@ const useStore = create(
       newsReadToday: { date: null, ids: [] },
       // Persisted filter chip on the News page.
       newsFilterChip: 'all',
+      // Persisted view mode on the News page: 'grid' (bento) or 'map' (bubble).
+      newsViewMode: 'grid',
       // News-specific streak — counts days the user opened News at least once.
       newsStreak: 0,
       newsStreakLastDate: null,
@@ -569,6 +571,8 @@ const useStore = create(
       },
 
       setNewsFilterChip: (chip) => set({ newsFilterChip: chip }),
+
+      setNewsViewMode: (mode) => set({ newsViewMode: mode === 'map' ? 'map' : 'grid' }),
 
       setInterestedTickers: (tickers) => set({
         interestedTickers: Array.isArray(tickers) ? tickers : [],
@@ -1508,6 +1512,7 @@ const useStore = create(
         newsLastSeenAt: state.newsLastSeenAt,
         newsReadToday: state.newsReadToday,
         newsFilterChip: state.newsFilterChip,
+        newsViewMode: state.newsViewMode,
         newsStreak: state.newsStreak,
         newsStreakLastDate: state.newsStreakLastDate,
         weeklyDigestLastShown: state.weeklyDigestLastShown,
