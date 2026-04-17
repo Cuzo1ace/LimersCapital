@@ -222,7 +222,7 @@ const useStore = create(
       // Persisted filter chip on the News page.
       newsFilterChip: 'all',
       // Persisted view mode on the News page: 'grid' (bento) or 'map' (bubble).
-      newsViewMode: 'grid',
+      newsViewMode: 'map',
       // News-specific streak — counts days the user opened News at least once.
       newsStreak: 0,
       newsStreakLastDate: null,
