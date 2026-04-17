@@ -4,11 +4,14 @@
 #   wrangler deploy api-proxy.js -c wrangler-api.toml
 #
 # Set secrets (one-time, all required for full functionality):
-#   wrangler secret put HELIUS_API_KEY     -c wrangler-api.toml   # Helius RPC + DAS
-#   wrangler secret put FMP_API_KEY        -c wrangler-api.toml   # Financial Modeling Prep
-#   wrangler secret put FINNHUB_API_KEY    -c wrangler-api.toml   # Finnhub market data
-#   wrangler secret put ANTHROPIC_API_KEY  -c wrangler-api.toml   # Claude API (AI briefs)
-#   wrangler secret put SENTRY_DSN         -c wrangler-api.toml   # Worker error telemetry
+#   wrangler secret put HELIUS_API_KEY        -c wrangler-api.toml   # Helius RPC + DAS
+#   wrangler secret put FMP_API_KEY           -c wrangler-api.toml   # Financial Modeling Prep
+#   wrangler secret put FINNHUB_API_KEY       -c wrangler-api.toml   # Finnhub market data
+#   wrangler secret put ANTHROPIC_API_KEY     -c wrangler-api.toml   # Claude API (AI briefs)
+#   wrangler secret put SENTRY_DSN            -c wrangler-api.toml   # Worker error telemetry
+#   wrangler secret put FAUCET_KEYPAIR_JSON   -c wrangler-api.toml   # Devnet mTTDC faucet signer
+#     → paste the full contents of ~/.config/solana/limer-faucet-devnet.json (a
+#       64-element number array). Devnet-only; holds at most 50K mTTDC + 0.1 SOL.
 #
 # None of these are exposed to the browser. All upstream API calls route
 # through this worker so the keys stay on the edge.
@@ -20,7 +23,14 @@
 
 name = "limer-api-proxy"
 main = "api-proxy.js"
-compatibility_date = "2024-01-01"
+compatibility_date = "2024-09-23"
+
+# nodejs_compat is required by @solana/web3.js because it depends on
+# `Buffer` and a few other Node built-ins. Without it the faucet route
+# 500s with a Cloudflare error 1101 ("Worker threw exception") when the
+# Solana libs try to construct a transaction. The 2024-09-23 compat date
+# enables nodejs_compat by default but we set it explicitly for clarity.
+compatibility_flags = ["nodejs_compat"]
 
 [vars]
 ENVIRONMENT = "production"

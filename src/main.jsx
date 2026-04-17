@@ -1,3 +1,7 @@
+// Browser polyfills for Node globals (Buffer, process) — MUST be first so
+// side effects run before Solana libs are imported. See src/polyfills.js.
+import './polyfills';
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';

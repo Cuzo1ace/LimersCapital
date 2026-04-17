@@ -13,16 +13,21 @@
  *   - Caching for price data (30s edge cache)
  *
  * Environment variables (set via wrangler secret):
- *   HELIUS_API_KEY     — Helius RPC + DAS API key
- *   ANTHROPIC_API_KEY  — Claude API key for AI market briefs
- *   FINNHUB_API_KEY    — Finnhub financial data API key
- *   FMP_API_KEY        — Financial Modeling Prep API key
+ *   HELIUS_API_KEY        — Helius RPC + DAS API key
+ *   ANTHROPIC_API_KEY     — Claude API key for AI market briefs
+ *   FINNHUB_API_KEY       — Finnhub financial data API key
+ *   FMP_API_KEY           — Financial Modeling Prep API key
+ *   SENTRY_DSN            — Error telemetry (audit C-02)
+ *   FAUCET_KEYPAIR_JSON   — Devnet faucet signer (64-int JSON array) for
+ *                           /faucet/mttdc. Holds 50K mTTDC + 0.1 SOL; devnet only.
  *
  * Deploy:
  *   cd workers
  *   wrangler secret put HELIUS_API_KEY
  *   wrangler deploy api-proxy.js --name limer-api-proxy
  */
+
+import { handleFaucetMttdc } from './faucet.js';
 
 // ── Allowed origins ──
 const ALLOWED_ORIGINS = [
@@ -31,18 +36,26 @@ const ALLOWED_ORIGINS = [
   'https://caribcryptomap.pages.dev',
 ];
 
-// Dev origins (only in non-production)
+// Dev origins — always allowed (even in production) so devs can hit the
+// deployed Worker from localhost during testing. The risk is bounded: the
+// Worker's KV rate limits still apply, and the faucet only hands out devnet
+// mock tokens. If we ever add a write path that touches real assets, move
+// this back to a strict `env.ENVIRONMENT !== 'production'` gate.
 const DEV_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173',
+  'http://localhost:5199',
   'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5199',
 ];
 
 function getAllowedOrigin(request, env) {
   const origin = request.headers.get('Origin') || '';
-  const allOrigins = env.ENVIRONMENT === 'production'
-    ? ALLOWED_ORIGINS
-    : [...ALLOWED_ORIGINS, ...DEV_ORIGINS];
+  // DEV_ORIGINS are always allowed now so devs can test the deployed Worker
+  // from localhost. Safe because the Worker's write surface (faucet, game
+  // routes) is devnet-only and IP-rate-limited.
+  const allOrigins = [...ALLOWED_ORIGINS, ...DEV_ORIGINS];
   return allOrigins.includes(origin) ? origin : null;
 }
 
@@ -203,6 +216,72 @@ async function reportToSentry(ctx, env, error, extra) {
   } catch {
     // Sentry reporting must never take down a request
   }
+}
+
+// ── CSP violation report handler (audit C-03) ─────────────────────────
+// Accepts POST /csp-report from browsers emitting Content-Security-Policy
+// violations. Supports both CSP v1 (`application/csp-report`) and CSP v3
+// Reporting API (`application/reports+json`) payloads. Forwards each report
+// to Sentry tagged `source: 'csp-report'` so violations surface in the same
+// dashboard as runtime errors.
+//
+// This endpoint intentionally skips the ALLOWED_ORIGINS check because many
+// browsers send CSP reports without an Origin header. IP-level rate limiting
+// still applies to deter abuse. Payloads are capped at 16KB to deter fill
+// attacks on Sentry ingest.
+async function handleCspReport(request, env, ctx) {
+  const MAX_BYTES = 16 * 1024;
+  try {
+    const contentType = (request.headers.get('Content-Type') || '').toLowerCase();
+    const raw = await request.text();
+    if (raw.length > MAX_BYTES) {
+      return new Response(null, { status: 413 });
+    }
+
+    let reports = [];
+    if (contentType.includes('application/reports+json')) {
+      // CSP v3 Reporting API: body is an array of { type, age, url, body: {...} }
+      const parsed = JSON.parse(raw);
+      reports = Array.isArray(parsed) ? parsed : [parsed];
+    } else {
+      // CSP v1: body is { "csp-report": { ... } }
+      const parsed = JSON.parse(raw);
+      const r = parsed && parsed['csp-report'] ? parsed['csp-report'] : parsed;
+      reports = [{ type: 'csp-violation', body: r }];
+    }
+
+    for (const report of reports) {
+      const body = (report && report.body) || report || {};
+      const blockedUri =
+        body['blocked-uri'] || body.blockedURL || body.blockedURI || 'unknown';
+      const violatedDirective =
+        body['violated-directive'] || body.effectiveDirective || body.violatedDirective || 'unknown';
+      const documentUri =
+        body['document-uri'] || body.documentURL || body.documentURI || 'unknown';
+      const sourceFile =
+        body['source-file'] || body.sourceFile || '';
+      const disposition = body.disposition || 'report';
+
+      await reportToSentry(
+        ctx,
+        env,
+        new Error(`CSP ${disposition}: ${violatedDirective}`),
+        {
+          kind: 'csp-report',
+          blockedUri: String(blockedUri).slice(0, 512),
+          violatedDirective: String(violatedDirective).slice(0, 256),
+          documentUri: String(documentUri).slice(0, 512),
+          sourceFile: String(sourceFile).slice(0, 512),
+          disposition,
+          userAgent: (request.headers.get('User-Agent') || '').slice(0, 256),
+          clientIp: request.headers.get('CF-Connecting-IP') || 'unknown',
+        },
+      );
+    }
+  } catch {
+    // Never 500 on malformed reports — browsers retry aggressively.
+  }
+  return new Response(null, { status: 204 });
 }
 
 // ── Quiz answer keys (server-side only — NEVER sent to client) ──
@@ -974,6 +1053,25 @@ async function validateRpcBody(body, maxSize) {
 // ── Main handler ──
 export default {
   async fetch(request, env, ctx) {
+    // Parse URL up-front so routes that bypass the origin check (e.g. CSP
+    // reports — browsers do not send Origin on report POSTs) can match first.
+    const url = new URL(request.url);
+    const path = url.pathname;
+
+    // ── Unauthenticated endpoints ────────────────────────────────────────
+    // /csp-report accepts violation reports from any origin (per audit C-03).
+    // Rate-limit by IP to deter abuse; no Origin allowlist check.
+    if (path === '/csp-report') {
+      if (request.method !== 'POST') {
+        return new Response('Method Not Allowed', { status: 405 });
+      }
+      const reporterIp = request.headers.get('CF-Connecting-IP') || 'unknown';
+      if (!checkRateLimit(reporterIp)) {
+        return new Response(null, { status: 429, headers: { 'Retry-After': '60' } });
+      }
+      return handleCspReport(request, env, ctx);
+    }
+
     // CORS preflight
     const origin = getAllowedOrigin(request, env);
 
@@ -1005,10 +1103,6 @@ export default {
       });
     }
 
-    // Route matching
-    const url = new URL(request.url);
-    const path = url.pathname;
-
     // Handle /game/* routes (quiz validation, LP/XP tracking, leaderboard)
     if (path.startsWith('/game/')) {
       return handleGameRoute(path, request, env, origin);
@@ -1022,6 +1116,11 @@ export default {
     // Handle /actions/* routes (Solana Blinks/Actions)
     if (path.startsWith('/actions/')) {
       return handleActionsRoute(path, request, env);
+    }
+
+    // Handle /faucet/mttdc — devnet mTTDC faucet (Phase B5)
+    if (path === '/faucet/mttdc') {
+      return handleFaucetMttdc(request, env, ctx, corsHeaders(origin));
     }
 
     const route = ROUTES[path];

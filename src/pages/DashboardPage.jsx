@@ -15,6 +15,8 @@ import HeroSection from '../components/dashboard/HeroSection';
 import GlassCard from '../components/ui/GlassCard';
 import { PE_COMPARISON, VALUE_UNLOCK } from '../data/capitalMarkets';
 import CommunityFeed from '../components/CommunityFeed';
+import TokensPanel from '../components/TokensPanel';
+import SwapPanel from '../components/SwapPanel';
 import Tooltip from '../components/ui/Tooltip';
 import DailyKnowledgeCard from '../components/DailyKnowledgeCard';
 import SkillMap from '../components/gamification/SkillMap';
@@ -211,6 +213,13 @@ export default function DashboardPage() {
           <SkillMap compact />
         </div>
       )}
+
+      {/* ── Devnet tokens + AMM swap panels (Phase B5 + Swap UI) ── */}
+      <div className="grid gap-4 md:grid-cols-2 mb-4">
+        <TokensPanel />
+        <SwapPanel />
+      </div>
+
       <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6" {...statsReveal}>
         <motion.div variants={statsChildV}>
           <QuickStat icon="💹" label={t('dashboard.trades')} numericValue={trades.length} color="#00ffa3" onClick={() => setActiveTab('trade')} />
