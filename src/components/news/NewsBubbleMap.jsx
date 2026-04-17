@@ -14,7 +14,36 @@ import { drag as d3drag } from 'd3-drag';
 import useStore from '../../store/useStore';
 import { buildNewsGraph, neighborIds } from '../../lib/newsGraph';
 import { getSourceBrand } from '../../lib/newsBrand';
+import { getTickerAsset, svgToDataUri } from '../../lib/tickerAssets';
 import NewsPreviewModal from './NewsPreviewModal';
+
+// Lightens a hex (#RRGGBB) color toward white by `amount` (0-1).
+function lighten(hex, amount = 0.5) {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex || '');
+  if (!m) return '#ffffff';
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  const lr = Math.round(r + (255 - r) * amount);
+  const lg = Math.round(g + (255 - g) * amount);
+  const lb = Math.round(b + (255 - b) * amount);
+  return `#${((1 << 24) | (lr << 16) | (lg << 8) | lb).toString(16).slice(1)}`;
+}
+// Node IDs contain colons (e.g. "item:uuid") — escape to a form safe for
+// SVG id / url(#…) references.
+function cssId(raw) {
+  return String(raw).replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+function darken(hex, amount = 0.5) {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex || '');
+  if (!m) return '#000000';
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  const dr = Math.round(r * (1 - amount));
+  const dg = Math.round(g * (1 - amount));
+  const db = Math.round(b * (1 - amount));
+  return `#${((1 << 24) | (dr << 16) | (dg << 8) | db).toString(16).slice(1)}`;
+}
 
 /**
  * Bubblemaps-inspired news visualization.
@@ -142,29 +171,112 @@ export default function NewsBubbleMap({ items, onFilterChipChange, onSwitchToGri
       .force('y', forceY(dims.h / 2).strength(0.04));
     simRef.current = sim;
 
-    // Edges
+    // ── Defs: holographic gradients + glow filter + image clips ────
+    const defs = world.append('defs');
+
+    // Shared soft outer glow. Browsers render one filter instance
+    // efficiently even when applied to many elements.
+    const glow = defs.append('filter')
+      .attr('id', 'holo-glow')
+      .attr('x', '-50%').attr('y', '-50%')
+      .attr('width', '200%').attr('height', '200%');
+    glow.append('feGaussianBlur').attr('stdDeviation', 3).attr('result', 'blur');
+    const feMerge = glow.append('feMerge');
+    feMerge.append('feMergeNode').attr('in', 'blur');
+    feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+
+    // Per-node gradient — 3 stops (highlight, accent, deep shade) for the
+    // glass-sphere look. Iridescence comes from the CSS @keyframes
+    // hue-rotate applied via the bubble-holo class below.
+    nodeData.forEach(n => {
+      const accent = nodeFill(n);
+      const grad = defs.append('radialGradient')
+        .attr('id', `grad-${cssId(n.id)}`)
+        .attr('cx', '35%').attr('cy', '30%').attr('r', '75%');
+      grad.append('stop').attr('offset', '0%').attr('stop-color', lighten(accent, 0.7)).attr('stop-opacity', 0.95);
+      grad.append('stop').attr('offset', '45%').attr('stop-color', accent).attr('stop-opacity', n.kind === 'item' ? 0.95 : 0.8);
+      grad.append('stop').attr('offset', '100%').attr('stop-color', darken(accent, 0.55)).attr('stop-opacity', 0.95);
+
+      // Circular clip per node — used for ticker images
+      defs.append('clipPath')
+        .attr('id', `clip-${cssId(n.id)}`)
+        .append('circle')
+        .attr('r', n.radius);
+    });
+
+    // ── Edges ────────────────────────────────────────────────────
     const linkSel = world.append('g').attr('class', 'links').selectAll('line')
       .data(linkData)
       .join('line')
       .attr('stroke', 'rgba(255,255,255,0.10)')
       .attr('stroke-width', d => 0.5 + d.strength * 1.8);
 
-    // Nodes
+    // ── Nodes ────────────────────────────────────────────────────
     const nodeG = world.append('g').attr('class', 'nodes').selectAll('g')
       .data(nodeData, d => d.id)
       .join('g')
-      .attr('class', d => `bubble bubble-${d.kind}`)
-      .style('cursor', 'pointer');
+      .attr('class', d => `bubble bubble-${d.kind} bubble-holo`)
+      .style('cursor', 'pointer')
+      .attr('filter', 'url(#holo-glow)');
 
+    // Base sphere — radial gradient fill
     nodeG.append('circle')
+      .attr('class', 'bubble-sphere')
       .attr('r', d => d.radius)
-      .attr('fill', d => nodeFill(d))
-      .attr('fill-opacity', d => d.kind === 'item' ? 0.85 : 0.55)
-      .attr('stroke', d => nodeStroke(d))
-      .attr('stroke-width', 1.5);
+      .attr('fill', d => `url(#grad-${cssId(d.id)})`)
+      .attr('stroke', 'rgba(255,255,255,0.18)')
+      .attr('stroke-width', 1.2);
 
-    // Labels — only tickers and tags show labels by default; items show on hover
-    nodeG.filter(d => d.kind !== 'item').append('text')
+    // Ticker images (if available) — layered above the sphere, clipped to circle
+    nodeG.filter(d => d.kind === 'ticker')
+      .each(function (d) {
+        const { externalPath, inlineSvg } = getTickerAsset(d.ticker);
+        const node = select(this);
+        const href = externalPath || svgToDataUri(inlineSvg);
+        if (!href) return;
+        const img = node.append('image')
+          .attr('class', 'ticker-art')
+          .attr('href', href)
+          .attr('xlink:href', href)  // for older Safari/Firefox
+          .attr('clip-path', `url(#clip-${cssId(d.id)})`)
+          .attr('x', -d.radius)
+          .attr('y', -d.radius)
+          .attr('width', d.radius * 2)
+          .attr('height', d.radius * 2)
+          .attr('preserveAspectRatio', 'xMidYMid slice')
+          .style('pointer-events', 'none');
+        // If an external file is the first preference but missing, fall
+        // back to the inline SVG on error.
+        if (externalPath && inlineSvg) {
+          img.on('error', () => {
+            img.attr('href', svgToDataUri(inlineSvg))
+               .attr('xlink:href', svgToDataUri(inlineSvg));
+          });
+        }
+      });
+
+    // Top-left specular highlight — gives the "3D glass sphere" pop.
+    // A per-node animation-delay staggers the shimmer so the field doesn't
+    // pulse in unison.
+    nodeG.append('ellipse')
+      .attr('class', 'bubble-highlight')
+      .attr('cx', d => -d.radius * 0.32)
+      .attr('cy', d => -d.radius * 0.4)
+      .attr('rx', d => d.radius * 0.45)
+      .attr('ry', d => d.radius * 0.22)
+      .attr('fill', 'rgba(255,255,255,0.35)')
+      .style('pointer-events', 'none')
+      .style('animation-delay', (_d, i) => `${(i % 11) * 0.4}s`);
+
+    // Text label — only tickers WITHOUT an image get a text label (image
+    // replaces the text); tags always get their text label.
+    nodeG.filter(d => {
+      if (d.kind === 'item') return false;
+      if (d.kind === 'tag') return true;
+      // ticker without any art → show text
+      const { externalPath, inlineSvg } = getTickerAsset(d.ticker);
+      return !externalPath && !inlineSvg;
+    }).append('text')
       .text(d => d.label)
       .attr('text-anchor', 'middle')
       .attr('dy', '0.35em')

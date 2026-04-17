@@ -137,6 +137,27 @@ html.light ::selection {
 }
 .ticker-scroll-rev:hover { animation-play-state: paused; }
 
+/* ── Holographic bubble shimmer ──
+   Applied by NewsBubbleMap to the specular-highlight <ellipse> inside
+   every bubble. Animating opacity (not filter) avoids conflicting with
+   the SVG `filter="url(#holo-glow)"` glow applied to the parent group,
+   and rides the GPU's compositor for free. Each bubble phases at a
+   slightly different tempo via per-node animation-delay to keep the
+   grid from pulsing in unison.
+*/
+@keyframes bubble-shimmer {
+  0%, 100% { opacity: 0.2; transform: translate(0, 0) scale(1); }
+  50%      { opacity: 0.55; transform: translate(1%, -1%) scale(1.06); }
+}
+.bubble-holo .bubble-highlight {
+  animation: bubble-shimmer 5.5s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble-holo .bubble-highlight { animation: none; }
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; background: var(--color-night-2); }
 ::-webkit-scrollbar-thumb { background: var(--color-night-3); border-radius: 99px; }
