@@ -1,8 +1,7 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import useStore from '../store/useStore';
 import { useNewsFeed } from '../hooks/useNewsFeed';
-import NewsHero from '../components/news/NewsHero';
-import NewsCard from '../components/news/NewsCard';
+import BentoNewsGrid from '../components/news/BentoNewsGrid';
 import EventsStrip from '../components/news/EventsStrip';
 import FilterChips from '../components/news/FilterChips';
 import MorningBrief from '../components/news/MorningBrief';
@@ -18,19 +17,6 @@ export default function NewsPage() {
   }, [openNewsTab]);
 
   const { items, isLoading, isFallback, source } = useNewsFeed();
-
-  // Hero: top-ranked item when we have one that earns the slot
-  // (priority > 20 or imminent event). Otherwise we skip the hero
-  // so casual days don't feel over-produced.
-  const [heroItem, gridItems] = useMemo(() => {
-    if (!items.length) return [null, []];
-    const top = items[0];
-    const priority = Number(top.priority || 0);
-    const isImminent = top.source_type === 'event' && top.event_at
-      && (new Date(top.event_at).getTime() - Date.now()) < 48 * 3600_000;
-    const deserveHero = priority >= 20 || isImminent;
-    return deserveHero ? [top, items.slice(1)] : [null, items];
-  }, [items]);
 
   return (
     <div className="max-w-[1200px] mx-auto">
@@ -66,24 +52,19 @@ export default function NewsPage() {
         <div className="py-10 text-center text-muted text-[.8rem]">Loading feed…</div>
       )}
 
-      {/* Hero */}
-      {!isLoading && heroItem && <NewsHero item={heroItem} />}
-
-      {/* Grid */}
+      {/* Bento grid (replaces old NewsHero + 3-col grid).
+          - Top-priority item naturally lands as the 2×2 hero tile.
+          - Text-only rows fall back to branded gradients per source.
+          - Drag is playful & non-persistent. */}
       {!isLoading && (
-        <>
-          {gridItems.length === 0 ? (
-            <div className="py-10 text-center text-muted text-[.8rem]">
-              No items match this filter. Try <button onClick={() => setFilter('all')} className="text-sea underline underline-offset-2">All</button>.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {gridItems.map(item => (
-                <NewsCard key={item.id} item={item} />
-              ))}
-            </div>
-          )}
-        </>
+        items.length === 0 ? (
+          <div className="py-10 text-center text-muted text-[.8rem]">
+            No items match this filter. Try{' '}
+            <button onClick={() => setFilter('all')} className="text-sea underline underline-offset-2">All</button>.
+          </div>
+        ) : (
+          <BentoNewsGrid items={items} />
+        )
       )}
 
       {/* Footer disclaimer (appears once, low-key) */}
