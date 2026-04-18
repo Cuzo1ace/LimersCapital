@@ -33,7 +33,16 @@ import { handleFaucetMttdc } from './faucet.js';
 const ALLOWED_ORIGINS = [
   'https://www.limerscapital.com',
   'https://limerscapital.com',
-  'https://caribcryptomap.pages.dev',
+  'https://caribcryptomap.pages.dev',     // legacy Pages project (Direct Upload, deprecated)
+  'https://limerscapital.pages.dev',      // new Git-connected Pages project (primary)
+];
+
+// Pattern allowlist — matches any subdomain of these roots. Used for
+// per-commit Pages preview URLs (e.g. 6c1b370d.limerscapital.pages.dev).
+// Without this, each new deploy's preview URL gets CORS-blocked when
+// devs try to smoke-test before merging.
+const ALLOWED_ORIGIN_PATTERNS = [
+  /^https:\/\/[a-z0-9]+\.limerscapital\.pages\.dev$/i,
 ];
 
 // Dev origins — always allowed (even in production) so devs can hit the
@@ -52,11 +61,15 @@ const DEV_ORIGINS = [
 
 function getAllowedOrigin(request, env) {
   const origin = request.headers.get('Origin') || '';
-  // DEV_ORIGINS are always allowed now so devs can test the deployed Worker
+  // Exact-match allowlist (prod + dev + legacy Pages project).
+  // DEV_ORIGINS are always allowed so devs can test the deployed Worker
   // from localhost. Safe because the Worker's write surface (faucet, game
   // routes) is devnet-only and IP-rate-limited.
   const allOrigins = [...ALLOWED_ORIGINS, ...DEV_ORIGINS];
-  return allOrigins.includes(origin) ? origin : null;
+  if (allOrigins.includes(origin)) return origin;
+  // Subdomain pattern match for Pages preview URLs.
+  if (ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin))) return origin;
+  return null;
 }
 
 function corsHeaders(origin) {
