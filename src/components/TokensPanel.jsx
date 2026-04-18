@@ -96,7 +96,10 @@ export default function TokensPanel() {
   // read from Zustand which could drift out of sync with the wallet-standard
   // provider that SwapPanel uses, causing a confusing "Connect wallet" message
   // on one card while the other card showed an active wallet.
-  const selectedAccount = useSelectedWalletAccount();
+  //
+  // NOTE: useSelectedWalletAccount returns a tuple [account, setAccount] —
+  // array-destructure it, not treat as a direct value.
+  const [selectedAccount] = useSelectedWalletAccount();
   const walletAddress = selectedAccount?.address || null;
   const walletConnected = !!selectedAccount;
   const [balances, setBalances] = useState({});

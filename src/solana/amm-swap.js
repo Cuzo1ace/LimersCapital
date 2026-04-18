@@ -255,6 +255,11 @@ function bs58Encode(bytes) {
  * that exposes either `solana:signAndSendTransaction` (preferred — modern
  * wallets) or `solana:signTransaction` (fallback — older wallets).
  *
+ * CRITICAL: feature implementations live on the WALLET object
+ * (`wallet.features['solana:signAndSendTransaction']`), NOT on the account.
+ * The account only lists feature NAMES it supports; the implementations
+ * are wallet-level. Pattern mirrors JupiterSwap.jsx:163-164.
+ *
  * Flow:
  *   1. Refresh quote with current reserves (stale-price guard)
  *   2. Build unsigned tx
@@ -263,7 +268,8 @@ function bs58Encode(bytes) {
  *   5. Return { signature, quote, elapsed, solscanUrl }
  */
 export async function executeSwap({
-  selectedAccount, // wallet-standard WalletAccount (from useSelectedWalletAccount)
+  wallet,          // wallet-standard Wallet (from useWallets() — has features)
+  account,         // wallet-standard WalletAccount (from useSelectedWalletAccount)
   pool,            // pool record
   amountIn,        // bigint
   slippageBps,     // bigint, default 50 = 0.50%
@@ -274,15 +280,21 @@ export async function executeSwap({
   const emit = onStatusChange || (() => {});
   emit('quoting');
 
-  if (!selectedAccount) throw new Error('No wallet connected');
-  const features = selectedAccount.features || {};
+  if (!wallet) throw new Error('No wallet found in wallet-standard registry');
+  if (!account) throw new Error('No account selected');
+
+  const features = wallet.features || {};
   const signAndSend = features['solana:signAndSendTransaction'];
   const signOnly = features['solana:signTransaction'];
   if (!signAndSend && !signOnly) {
-    throw new Error('Wallet supports neither signAndSendTransaction nor signTransaction');
+    const available = Object.keys(features).join(', ') || '(none)';
+    throw new Error(
+      `Wallet "${wallet.name || 'unknown'}" exposes no signing feature. ` +
+        `Available features: ${available}`,
+    );
   }
 
-  const traderPubkey = new PublicKey(selectedAccount.address);
+  const traderPubkey = new PublicKey(account.address);
 
   // Stub wallet for Anchor — Anchor requires a wallet shape to instantiate
   // a Program, but we only need it to build the instruction (not sign).
@@ -328,22 +340,25 @@ export async function executeSwap({
   let sig;
 
   if (signAndSend) {
-    // Preferred path — wallet handles signing + sending in one user prompt
+    // Preferred path — wallet handles signing + sending in one user prompt.
+    // Matches JupiterSwap.jsx:163 pattern: pass the single tx bytes + account.
     const chain = `solana:${cluster === 'mainnet-beta' ? 'mainnet' : cluster}`;
     const result = await signAndSend.signAndSendTransaction({
-      account: selectedAccount,
+      account,
       transaction: serialized,
       chain,
     });
-    // result.signature is a Uint8Array (some wallets) or { signature } (others).
-    // Normalize to a base58 string.
-    const sigBytes = result?.signature || result?.[0]?.signature || (Array.isArray(result) ? result[0] : null);
+    // Different wallets return different shapes. Normalize to base58 string.
+    const sigBytes =
+      result?.signature ||
+      result?.[0]?.signature ||
+      (Array.isArray(result) ? result[0] : null);
     if (!sigBytes) throw new Error('Wallet did not return a signature');
     sig = bs58Encode(sigBytes instanceof Uint8Array ? sigBytes : new Uint8Array(sigBytes));
   } else {
     // Fallback — wallet signs, we send
     const { signedTransactions } = await signOnly.signTransaction({
-      account: selectedAccount,
+      account,
       transactions: [serialized],
     });
     const signedBytes = signedTransactions[0] instanceof Uint8Array
