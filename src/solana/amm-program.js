@@ -23,6 +23,17 @@ export function getLimerAmmProgramId() {
  * Create an Anchor Program instance for the limer_amm program with a
  * signing wallet. Use this for mutations (swap, deposit_liquidity, etc.).
  *
+ * CONSTRUCTOR SIGNATURE: @anchor-lang/core@1.0.0 uses `(idl, provider, coder?)`
+ * — NOT the legacy @coral-xyz/anchor `(idl, programId, provider)` shape.
+ * The program ID is read from `idl.address` (Anchor writes it there during
+ * `anchor build`). Passing a PublicKey in the provider slot causes the
+ * AnchorProvider to land in the coder slot, then during AccountClient
+ * construction Anchor does `coder.accounts.size(name)` on what it thinks
+ * is a coder but is actually a provider → `undefined.size` throws. That
+ * was the root cause of the "Cannot read properties of undefined (reading
+ * 'size')" error the user was seeing on every swap click. See the agent's
+ * investigation report 2026-04-17.
+ *
  * Async signature preserved for call-site compatibility; the IDL is now
  * statically imported so there is no await-worthy work here, but
  * downstream callers already use `await getLimerAmmProgram(...)`.
@@ -31,7 +42,7 @@ export async function getLimerAmmProgram(wallet, cluster = DEFAULT_CLUSTER) {
   const endpoint = CLUSTERS[cluster]?.rpc || CLUSTERS[DEFAULT_CLUSTER].rpc;
   const connection = new Connection(endpoint, 'confirmed');
   const provider = new AnchorProvider(connection, wallet, { commitment: 'confirmed' });
-  return new Program(limerAmmIdl, getLimerAmmProgramId(), provider);
+  return new Program(limerAmmIdl, provider);
 }
 
 /**
@@ -47,7 +58,7 @@ export async function getLimerAmmProgramReadOnly(cluster = DEFAULT_CLUSTER) {
     signAllTransactions: async (txs) => txs,
   };
   const provider = new AnchorProvider(connection, readOnlyWallet, { commitment: 'confirmed' });
-  return new Program(limerAmmIdl, getLimerAmmProgramId(), provider);
+  return new Program(limerAmmIdl, provider);
 }
 
 // ── PDA derivation helpers ───────────────────────────────────────────

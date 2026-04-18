@@ -18,12 +18,16 @@ export function getLimerProgramId() {
 
 /**
  * Create an Anchor Program instance for the Limer program (requires wallet for signing).
+ *
+ * Constructor note: @anchor-lang/core@1.0.0 uses `(idl, provider, coder?)` and reads
+ * programId from `idl.address`. See amm-program.js for the full explanation of why
+ * the 3-arg legacy signature throws "Cannot read properties of undefined (reading 'size')".
  */
 export async function getLimerProgram(wallet, cluster = DEFAULT_CLUSTER) {
   const endpoint = CLUSTERS[cluster]?.rpc || CLUSTERS[DEFAULT_CLUSTER].rpc;
   const connection = new Connection(endpoint, 'confirmed');
   const provider = new AnchorProvider(connection, wallet, { commitment: 'confirmed' });
-  return new Program(limerIdl, getLimerProgramId(), provider);
+  return new Program(limerIdl, provider);
 }
 
 /**
@@ -43,7 +47,7 @@ export async function getLimerProgramReadOnly(cluster = DEFAULT_CLUSTER) {
   };
 
   const provider = new AnchorProvider(connection, readOnlyWallet, { commitment: 'confirmed' });
-  return new Program(limerIdl, getLimerProgramId(), provider);
+  return new Program(limerIdl, provider);
 }
 
 /**
