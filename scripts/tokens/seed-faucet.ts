@@ -41,7 +41,13 @@ const MTTDC_RECORD = path.join(process.cwd(), 'src/solana/generated/mock-ttdc.js
 const FAUCET_RECORD = path.join(process.cwd(), 'src/solana/generated/faucet.json');
 
 const SOL_TO_FUND_LAMPORTS = 100_000_000n;  // 0.1 SOL
-const MTTDC_TO_SEED_HUMAN = 50_000n;         // 50K mTTDC
+
+// Bumped 50K → 500K on 2026-04-18 for Colosseum stress-testing: hackathon
+// judges / early testers each claim 10K per wallet per 24h, so 500K = 50
+// fresh-wallet claims. Idempotent check below tops up to exactly this
+// target (not additive), so safe to re-run; if founder ATA is low we'll
+// hit an upstream InsufficientFunds at send time with a clear error.
+const MTTDC_TO_SEED_HUMAN = 500_000n;        // 500K mTTDC
 
 function loadKp(p: string): Keypair {
   return Keypair.fromSecretKey(Uint8Array.from(JSON.parse(fs.readFileSync(p, 'utf8'))));

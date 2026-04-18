@@ -3,11 +3,11 @@
   "faucetPubkey": "F4TYxjqLTnZrnZLCBWsCstrJFEm3kFpZ3PBALKQEqBPW",
   "faucetAta": "BvoSp8me2yWumZGZKKJMtoetxBEu5y3v5upSanbpCsrr",
   "mttdcMint": "BScyHpzzSC4UoUysx7XUqCpSaKdcgjqvNMjpZcXFTxUM",
-  "seedTxSig": "szTycszRPnBGv3Rs5LVBVnHqsHmZSnuYib4x3ruSZE2ADGwGg5FXgVxuRgsqn2PGyN4smQjXhYXPfh4a8jDtfin",
-  "seededAt": "2026-04-17T19:16:30.572Z",
+  "seedTxSig": "5gQxvbLGDaXLxHugEeNiBX6H3mCRTZ41kpEPDTcbzZvPZDLyGWVzsFiKWSwFSzcokBV1zowRUevqjzxuj5Fiph8c",
+  "seededAt": "2026-04-18T03:26:07.811Z",
   "claimAmountHuman": 10000,
   "claimAmountRaw": "10000000000",
   "initialFundingSol": 0.1,
-  "initialMttdcHuman": 50000,
+  "initialMttdcHuman": 500000,
   "network": "devnet"
 }
