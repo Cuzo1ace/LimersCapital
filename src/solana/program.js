@@ -1,12 +1,14 @@
 import { Program, AnchorProvider } from '@anchor-lang/core';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { CLUSTERS, DEFAULT_CLUSTER } from './config';
+// Static import — see commentary in amm-program.js. Dynamic JSON imports
+// were flaky in Vite production builds.
+import limerIdl from './idl/limer.json';
 
 // Program ID — updated after `anchor deploy`
 const PROGRAM_ID_STRING = 'HuCCEkDvYdm1EMs3EH9wzLYi53aVkE7orkGXma8azhFk';
 
 let _programId = null;
-let _idlWarned = false;
 export function getLimerProgramId() {
   if (!_programId) {
     _programId = new PublicKey(PROGRAM_ID_STRING);
@@ -16,21 +18,12 @@ export function getLimerProgramId() {
 
 /**
  * Create an Anchor Program instance for the Limer program (requires wallet for signing).
- * Returns null if IDL is not yet available (pre-build).
  */
 export async function getLimerProgram(wallet, cluster = DEFAULT_CLUSTER) {
   const endpoint = CLUSTERS[cluster]?.rpc || CLUSTERS[DEFAULT_CLUSTER].rpc;
   const connection = new Connection(endpoint, 'confirmed');
   const provider = new AnchorProvider(connection, wallet, { commitment: 'confirmed' });
-
-  try {
-    const idlModule = await import('./idl/limer.json');
-    const idl = idlModule.default || idlModule;
-    return new Program(idl, getLimerProgramId(), provider);
-  } catch {
-    if (!_idlWarned) { console.warn('[Limer] IDL not found — program client unavailable until anchor build'); _idlWarned = true; }
-    return null;
-  }
+  return new Program(limerIdl, getLimerProgramId(), provider);
 }
 
 /**
@@ -50,15 +43,7 @@ export async function getLimerProgramReadOnly(cluster = DEFAULT_CLUSTER) {
   };
 
   const provider = new AnchorProvider(connection, readOnlyWallet, { commitment: 'confirmed' });
-
-  try {
-    const idlModule = await import('./idl/limer.json');
-    const idl = idlModule.default || idlModule;
-    return new Program(idl, getLimerProgramId(), provider);
-  } catch {
-    if (!_idlWarned) { console.warn('[Limer] IDL not found — program client unavailable'); _idlWarned = true; }
-    return null;
-  }
+  return new Program(limerIdl, getLimerProgramId(), provider);
 }
 
 /**

@@ -1,13 +1,18 @@
 import { Program, AnchorProvider } from '@anchor-lang/core';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { CLUSTERS, DEFAULT_CLUSTER } from './config';
+// Static import — dynamic `await import('./idl/limer_amm.json')` was flaky
+// in Vite production builds (JSON chunk wasn't always emitted, causing
+// runtime 404s and the user-visible "limer_amm program client unavailable"
+// error on the deployed site). IDL is ~22 KB; bundle size impact is
+// negligible vs. the reliability gain.
+import limerAmmIdl from './idl/limer_amm.json';
 
 // Program ID for limer_amm — matches anchor/target/deploy/limer_amm-keypair.json
 // and the declare_id! in anchor/programs/limer_amm/src/lib.rs.
 const PROGRAM_ID_STRING = 'FVk7LzdZ976beSEJkdXD5ww1xRxpZpYjxodN9Kq1Bpwo';
 
 let _programId = null;
-let _idlWarned = false;
 
 export function getLimerAmmProgramId() {
   if (!_programId) _programId = new PublicKey(PROGRAM_ID_STRING);
@@ -17,24 +22,16 @@ export function getLimerAmmProgramId() {
 /**
  * Create an Anchor Program instance for the limer_amm program with a
  * signing wallet. Use this for mutations (swap, deposit_liquidity, etc.).
- * Returns null if the IDL isn't yet importable (pre-build).
+ *
+ * Async signature preserved for call-site compatibility; the IDL is now
+ * statically imported so there is no await-worthy work here, but
+ * downstream callers already use `await getLimerAmmProgram(...)`.
  */
 export async function getLimerAmmProgram(wallet, cluster = DEFAULT_CLUSTER) {
   const endpoint = CLUSTERS[cluster]?.rpc || CLUSTERS[DEFAULT_CLUSTER].rpc;
   const connection = new Connection(endpoint, 'confirmed');
   const provider = new AnchorProvider(connection, wallet, { commitment: 'confirmed' });
-
-  try {
-    const idlModule = await import('./idl/limer_amm.json');
-    const idl = idlModule.default || idlModule;
-    return new Program(idl, getLimerAmmProgramId(), provider);
-  } catch {
-    if (!_idlWarned) {
-      console.warn('[limer_amm] IDL not found — AMM program client unavailable');
-      _idlWarned = true;
-    }
-    return null;
-  }
+  return new Program(limerAmmIdl, getLimerAmmProgramId(), provider);
 }
 
 /**
@@ -50,18 +47,7 @@ export async function getLimerAmmProgramReadOnly(cluster = DEFAULT_CLUSTER) {
     signAllTransactions: async (txs) => txs,
   };
   const provider = new AnchorProvider(connection, readOnlyWallet, { commitment: 'confirmed' });
-
-  try {
-    const idlModule = await import('./idl/limer_amm.json');
-    const idl = idlModule.default || idlModule;
-    return new Program(idl, getLimerAmmProgramId(), provider);
-  } catch {
-    if (!_idlWarned) {
-      console.warn('[limer_amm] IDL not found');
-      _idlWarned = true;
-    }
-    return null;
-  }
+  return new Program(limerAmmIdl, getLimerAmmProgramId(), provider);
 }
 
 // ── PDA derivation helpers ───────────────────────────────────────────
