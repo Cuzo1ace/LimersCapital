@@ -332,10 +332,17 @@ export async function executeSwap({
   const start = Date.now();
   let sig;
 
-  // @solana/react's signer abstracts sign-and-send. Returns a Uint8Array
-  // (the signature bytes). Different wrapper shapes across versions —
-  // handle both "returns bytes directly" and "returns { signature: bytes }".
-  const result = await signAndSendTransaction(serialized);
+  // @solana/react's signer abstracts sign-and-send. Input MUST be a wrapped
+  // object `{ transaction: Uint8Array }` — passing raw bytes positionally
+  // results in `input.transaction` being undefined downstream, then the
+  // wallet-standard feature trips on `undefined.size` when computing the
+  // expected message length. Contract defined in
+  // node_modules/@solana/react/src/useSignAndSendTransaction.ts.
+  //
+  // Return shape varies across versions: `{ signature: Uint8Array }` today,
+  // possibly bare `Uint8Array` in older minor versions. The switch below
+  // handles both.
+  const result = await signAndSendTransaction({ transaction: serialized });
   let sigBytes;
   if (result instanceof Uint8Array) {
     sigBytes = result;
