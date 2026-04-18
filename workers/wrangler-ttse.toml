@@ -1,0 +1,25 @@
+# ── Limer's Capital — TTSE Proxy Worker ──
+# Deploy:
+#   cd workers
+#   wrangler deploy -c wrangler-ttse.toml
+#
+# Why the explicit -c (and the file name wrangler-ttse.toml instead of the
+# default wrangler.toml): on 2026-04-17 the Cloudflare Workers Builds CI was
+# running a plain `wrangler deploy` in this directory, which auto-picked up
+# the default wrangler.toml that was then set up for ttse-proxy. The Builds
+# service had the directory bound to limer-api-proxy, so it pushed
+# ttse-proxy.js bytecode onto the API-proxy service. Every POST route
+# (/faucet/mttdc, /rpc, /game/*) silently 405'd until we noticed the
+# claim-mTTDC break. Renaming to wrangler-ttse.toml eliminates the default-
+# config footgun — any invocation has to specify -c explicitly, so you
+# can't accidentally deploy the wrong service.
+#
+# The API proxy lives in wrangler-api.toml (a sibling file). Deploy it with
+#   wrangler deploy -c wrangler-api.toml
+
+name = "ttse-proxy"
+main = "ttse-proxy.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+ENVIRONMENT = "production"

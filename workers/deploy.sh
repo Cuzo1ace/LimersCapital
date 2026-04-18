@@ -20,8 +20,15 @@ echo "╚═══════════════════════�
 echo ""
 
 # 1. Deploy TTSE proxy (origin-locked)
+# NOTE: --config pin added 2026-04-17 after a Workers Builds CI misfire —
+# wrangler.toml used to be the default-name file which meant a CI `wrangler
+# deploy` without an explicit -c would pick up the ttse-proxy config and
+# push its bytecode to whichever service the Dashboard had bound to this
+# directory (in our case, limer-api-proxy). That killed every POST route.
+# Renaming to wrangler-ttse.toml + always using -c means there's no
+# ambiguous default config for any CI/CLI invocation to grab.
 echo "→ Deploying ttse-proxy (origin-locked CORS)..."
-wrangler deploy ttse-proxy.js --name ttse-proxy
+wrangler deploy -c wrangler-ttse.toml
 echo "  ✅ ttse-proxy deployed"
 echo ""
 
