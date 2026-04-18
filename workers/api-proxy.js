@@ -45,11 +45,15 @@ const ALLOWED_ORIGIN_PATTERNS = [
   /^https:\/\/[a-z0-9]+\.limerscapital\.pages\.dev$/i,
 ];
 
-// Dev origins — always allowed (even in production) so devs can hit the
-// deployed Worker from localhost during testing. The risk is bounded: the
-// Worker's KV rate limits still apply, and the faucet only hands out devnet
-// mock tokens. If we ever add a write path that touches real assets, move
-// this back to a strict `env.ENVIRONMENT !== 'production'` gate.
+// Dev origins — only allowed when ENVIRONMENT !== 'production'.
+// Originally these were permitted in prod "so devs can test the deployed
+// Worker from localhost" — revoked 2026-04-18 (audit finding Backend H-03)
+// because an attacker running a phishing page on localhost:5173 (or a DNS-
+// rebound domain pointing at 127.0.0.1) could issue requests with
+// Origin: http://localhost:5173 and get past CORS. Unused API budget
+// (Anthropic, Finnhub) could then be burned at zero attacker cost.
+// Devs who need to hit the deployed worker from localhost should point
+// at a staging worker with ENVIRONMENT != "production" in its vars.
 const DEV_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173',
@@ -61,11 +65,10 @@ const DEV_ORIGINS = [
 
 function getAllowedOrigin(request, env) {
   const origin = request.headers.get('Origin') || '';
-  // Exact-match allowlist (prod + dev + legacy Pages project).
-  // DEV_ORIGINS are always allowed so devs can test the deployed Worker
-  // from localhost. Safe because the Worker's write surface (faucet, game
-  // routes) is devnet-only and IP-rate-limited.
-  const allOrigins = [...ALLOWED_ORIGINS, ...DEV_ORIGINS];
+  // Exact-match allowlist. Dev origins only in non-production environments.
+  const allOrigins = env.ENVIRONMENT === 'production'
+    ? ALLOWED_ORIGINS
+    : [...ALLOWED_ORIGINS, ...DEV_ORIGINS];
   if (allOrigins.includes(origin)) return origin;
   // Subdomain pattern match for Pages preview URLs.
   if (ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin))) return origin;
@@ -1034,6 +1037,17 @@ const ROUTES = {
 };
 
 // ── Allowed JSON-RPC methods (prevent abuse) ──
+// sendTransaction removed 2026-04-18 (audit finding Backend H-04): frontend
+// never sends transactions through this proxy — wallet adapters go direct to
+// the RPC for signing + broadcast. Leaving it on the allowlist let any
+// caller past the origin check burn your paid Helius `sendTransaction`
+// quota by pre-signing and replaying junk txs. If future code needs a
+// server-side send path, put it on its own route with a KV-backed 5/min/IP
+// rate limit and a body-shape validator.
+//
+// simulateTransaction stays — Jupiter pre-flight simulation uses it at
+// src/components/JupiterSwap.jsx:131. Consider adding a 2/min/IP cap if
+// the audit M-05 upgrade to Cloudflare Rate Limiting Rules lands.
 const ALLOWED_RPC_METHODS = [
   'getAssetBatch',
   'getAsset',
@@ -1043,7 +1057,6 @@ const ALLOWED_RPC_METHODS = [
   'getLatestBlockhash',
   'getSignaturesForAddress',
   'getTransaction',
-  'sendTransaction',
   'simulateTransaction',
   'getRecentPrioritizationFees',
 ];

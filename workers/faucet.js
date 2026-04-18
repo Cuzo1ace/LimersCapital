@@ -52,6 +52,15 @@ const CLAIM_AMOUNT_HUMAN = 10_000n;
 const CLAIM_AMOUNT_RAW = CLAIM_AMOUNT_HUMAN * 10n ** BigInt(MTTDC_DECIMALS);
 const CLAIM_COOLDOWN_MS = 24 * 60 * 60 * 1000;  // 24h
 
+// Per-IP daily cap — added 2026-04-18 (audit Backend H-02). The per-wallet
+// KV limit alone was bypassable by generating throwaway Solana keypairs
+// (free, ~1ms) and claiming from each. 50 fresh wallets = full faucet drain
+// in under a minute. Gating by Cloudflare's CF-Connecting-IP costs the
+// attacker an IP per 3 claims, which is the actual friction you want.
+// KV key expires 24h so the budget self-resets.
+const MAX_CLAIMS_PER_IP_PER_DAY = 3;
+const IP_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
 function json(body, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
     status,
@@ -122,6 +131,29 @@ async function _handleFaucetMttdcInner(request, env, ctx, corsHeaders) {
   if (!env.GAME_STATE) {
     return json({ error: 'Faucet not configured (GAME_STATE KV missing)' }, 500, corsHeaders);
   }
+
+  // Per-IP daily cap (audit Backend H-02). Check BEFORE per-wallet so a
+  // single attacker running a keypair-generation loop eats IP budget
+  // before incrementing wallet-level state. CF-Connecting-IP is set by
+  // the Cloudflare edge and cannot be spoofed by direct worker hits.
+  const clientIp = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const ipKey = `faucet:ip:${clientIp}`;
+  const ipCountRaw = await env.GAME_STATE.get(ipKey);
+  const ipCount = ipCountRaw ? parseInt(ipCountRaw, 10) || 0 : 0;
+  if (ipCount >= MAX_CLAIMS_PER_IP_PER_DAY) {
+    return json(
+      {
+        error: `Rate limit: max ${MAX_CLAIMS_PER_IP_PER_DAY} claims per IP per 24h`,
+        claimsUsed: ipCount,
+        retryAfterHuman: '~24h',
+      },
+      429,
+      corsHeaders,
+    );
+  }
+
+  // Per-wallet cap — kept as secondary layer so fresh IP + repeat wallet
+  // still gets a clear error (rather than a confusing on-chain revert).
   const rlKey = `faucet:mttdc:${walletAddress}`;
   const lastClaimIso = await env.GAME_STATE.get(rlKey);
   if (lastClaimIso) {
@@ -186,7 +218,9 @@ async function _handleFaucetMttdcInner(request, env, ctx, corsHeaders) {
   // with 403s. resolveRpcUrl() returns Helius devnet if HELIUS_API_KEY is
   // present, falling back to public only as a last resort.
   const rpcUrl = resolveRpcUrl(env);
-  console.log('[faucet] HELIUS key len:', (env.HELIUS_API_KEY || '').length, 'rpc host:', new URL(rpcUrl).host);
+  // Diagnostic log removed 2026-04-18 (audit Backend M-02). Key length leaks
+  // bind-state recon to any wrangler-tail observer. Add a structured
+  // Sentry breadcrumb instead if you need to track which RPC is used.
   const connection = new Connection(rpcUrl, 'confirmed');
   const recipient = new PublicKey(walletAddress);
   const mint = new PublicKey(MTTDC_MINT);
@@ -280,10 +314,16 @@ async function _handleFaucetMttdcInner(request, env, ctx, corsHeaders) {
   }
 
   // Mark rate limit now that the send succeeded. Expire the KV key after
-  // cooldown so it self-cleans.
-  await env.GAME_STATE.put(rlKey, new Date().toISOString(), {
-    expirationTtl: Math.ceil(CLAIM_COOLDOWN_MS / 1000),
-  });
+  // cooldown so it self-cleans. Increment both per-wallet timestamp and
+  // per-IP counter (audit Backend H-02).
+  await Promise.all([
+    env.GAME_STATE.put(rlKey, new Date().toISOString(), {
+      expirationTtl: Math.ceil(CLAIM_COOLDOWN_MS / 1000),
+    }),
+    env.GAME_STATE.put(ipKey, String(ipCount + 1), {
+      expirationTtl: Math.ceil(IP_COOLDOWN_MS / 1000),
+    }),
+  ]);
 
   return json(
     {
