@@ -251,14 +251,28 @@ function bs58Encode(bytes) {
 }
 
 /**
+ * Resolve the currently-connected wallet-standard Wallet matching a given
+ * account. Uses the global wallet-standard registry (window.navigator.wallets)
+ * which exposes the full Wallet interface with features keyed by name —
+ * NOT @wallet-standard/react's useWallets() which returns wrapped objects
+ * where `features` is an array of feature-name strings instead of the
+ * implementation-keyed object we need.
+ */
+function resolveWalletForAccount(account) {
+  if (typeof window === 'undefined') return null;
+  const wallets = window.navigator?.wallets?.get?.() || [];
+  return wallets.find((w) => w.accounts?.some((a) => a.address === account.address)) || null;
+}
+
+/**
  * One-shot swap using wallet-standard directly. Works with any wallet
  * that exposes either `solana:signAndSendTransaction` (preferred — modern
  * wallets) or `solana:signTransaction` (fallback — older wallets).
  *
- * CRITICAL: feature implementations live on the WALLET object
- * (`wallet.features['solana:signAndSendTransaction']`), NOT on the account.
- * The account only lists feature NAMES it supports; the implementations
- * are wallet-level. Pattern mirrors JupiterSwap.jsx:163-164.
+ * CRITICAL: wallet-standard feature implementations live on the Wallet
+ * object (`wallet.features['solana:signAndSendTransaction']`), NOT on the
+ * account. We resolve the Wallet from the global registry — the pattern
+ * JupiterSwap.jsx:143-164 uses and proves out.
  *
  * Flow:
  *   1. Refresh quote with current reserves (stale-price guard)
@@ -268,7 +282,6 @@ function bs58Encode(bytes) {
  *   5. Return { signature, quote, elapsed, solscanUrl }
  */
 export async function executeSwap({
-  wallet,          // wallet-standard Wallet (from useWallets() — has features)
   account,         // wallet-standard WalletAccount (from useSelectedWalletAccount)
   pool,            // pool record
   amountIn,        // bigint
@@ -280,8 +293,15 @@ export async function executeSwap({
   const emit = onStatusChange || (() => {});
   emit('quoting');
 
-  if (!wallet) throw new Error('No wallet found in wallet-standard registry');
   if (!account) throw new Error('No account selected');
+
+  const wallet = resolveWalletForAccount(account);
+  if (!wallet) {
+    throw new Error(
+      'Could not resolve the connected wallet from window.navigator.wallets. ' +
+        'Try reconnecting your wallet.',
+    );
+  }
 
   const features = wallet.features || {};
   const signAndSend = features['solana:signAndSendTransaction'];

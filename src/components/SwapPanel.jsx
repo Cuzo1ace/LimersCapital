@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSelectedWalletAccount } from '@solana/react';
-import { useWallets } from '@wallet-standard/react';
 import { Connection, PublicKey } from '@solana/web3.js';
 import useStore from '../store/useStore';
 import { CLUSTERS, DEFAULT_CLUSTER } from '../solana/config';
@@ -69,20 +68,13 @@ function bpsToPct(bps) {
 }
 
 export default function SwapPanel() {
-  // NOTE: useSelectedWalletAccount returns a [account] tuple (like useState).
-  // We also need the Wallet object (not just the account) to access feature
-  // implementations like solana:signAndSendTransaction. useWallets() from
-  // @wallet-standard/react gives us the list of wallets; we match by account
-  // address. Pattern mirrors JupiterSwap.jsx:143-164.
+  // NOTE: useSelectedWalletAccount returns a [account, setAccount] tuple
+  // (like useState). Array-destructure it. The matching wallet-standard
+  // Wallet object is resolved inside executeSwap via the global registry
+  // — @wallet-standard/react's useWallets() returns a wrapped shape where
+  // features is a string[] not an object, so we can't use it here.
   const [selectedAccount] = useSelectedWalletAccount();
-  const wallets = useWallets();
   const walletConnected = !!selectedAccount;
-  const connectedWallet = useMemo(() => {
-    if (!selectedAccount || !wallets?.length) return null;
-    return wallets.find((w) =>
-      w.accounts?.some((a) => a.address === selectedAccount.address),
-    ) || null;
-  }, [wallets, selectedAccount]);
   const setActiveTab = useStore((s) => s.setActiveTab);
 
   const allTokens = useMemo(() => listTokens(DEFAULT_CLUSTER), []);
@@ -194,15 +186,8 @@ export default function SwapPanel() {
       return;
     }
 
-    if (!connectedWallet) {
-      setErrorMsg('Could not find your wallet in the wallet-standard registry. Try reconnecting.');
-      setStatus('error');
-      return;
-    }
-
     try {
       const result = await executeSwap({
-        wallet: connectedWallet,
         account: selectedAccount,
         pool: activePool,
         amountIn: quote.amountIn,
