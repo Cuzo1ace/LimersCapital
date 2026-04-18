@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useSelectedWalletAccount } from '@solana/react';
+import { useSelectedWalletAccount, useSignAndSendTransaction } from '@solana/react';
 import { Connection, PublicKey } from '@solana/web3.js';
 import useStore from '../store/useStore';
 import { CLUSTERS, DEFAULT_CLUSTER } from '../solana/config';
@@ -67,15 +67,51 @@ function bpsToPct(bps) {
   return `${(n / 100).toFixed(2)}%`;
 }
 
+// Public entry — just reads the selected account and delegates to an
+// inner component that mounts only when an account exists. This lets
+// useSignAndSendTransaction safely assume a non-null account (React
+// hook rules forbid conditional hook calls).
 export default function SwapPanel() {
-  // NOTE: useSelectedWalletAccount returns a [account, setAccount] tuple
-  // (like useState). Array-destructure it. The matching wallet-standard
-  // Wallet object is resolved inside executeSwap via the global registry
-  // — @wallet-standard/react's useWallets() returns a wrapped shape where
-  // features is a string[] not an object, so we can't use it here.
   const [selectedAccount] = useSelectedWalletAccount();
-  const walletConnected = !!selectedAccount;
+  if (!selectedAccount) {
+    return <SwapPanelDisconnected />;
+  }
+  return <SwapPanelInner selectedAccount={selectedAccount} />;
+}
+
+// Rendered when no wallet is connected. Mirrors the visual language of
+// the connected variant so the layout doesn't shift on connect/disconnect.
+function SwapPanelDisconnected() {
+  return (
+    <div className="rounded-2xl border border-[#C46CFF]/20 bg-black/30 backdrop-blur-sm p-5">
+      <h3 className="text-base font-semibold" style={{ color: '#C46CFF' }}>
+        Swap · Limer AMM
+      </h3>
+      <p className="text-xs text-white/50 mt-0.5 mb-6">
+        mTTDC ↔ mStock · devnet · our own AMM, not Jupiter
+      </p>
+      <div className="text-center py-8 text-sm text-white/50">
+        Connect your wallet to swap.
+      </div>
+      <div className="mt-3 pt-3 border-t border-white/5 text-[11px] text-white/35">
+        AMM program: FVk7Lzd…Bpwo · 6 pools · 30 bps fee · devnet only
+      </div>
+    </div>
+  );
+}
+
+// Connected variant. Hooks may now assume selectedAccount is a real
+// wallet-standard WalletAccount.
+function SwapPanelInner({ selectedAccount }) {
+  const walletConnected = true;
   const setActiveTab = useStore((s) => s.setActiveTab);
+
+  // @solana/react's signing hook handles wallet-standard lookup internally
+  // (matching the account to its wallet, resolving the signAndSendTransaction
+  // feature, passing the correct chain). Returns a function that takes the
+  // serialized transaction bytes and returns the signature bytes.
+  const chain = `solana:${DEFAULT_CLUSTER === 'mainnet-beta' ? 'mainnet' : DEFAULT_CLUSTER}`;
+  const signAndSendTransaction = useSignAndSendTransaction(selectedAccount, chain);
 
   const allTokens = useMemo(() => listTokens(DEFAULT_CLUSTER), []);
   const pools = useMemo(() => listPools(), []);
@@ -189,6 +225,7 @@ export default function SwapPanel() {
     try {
       const result = await executeSwap({
         account: selectedAccount,
+        signAndSendTransaction,
         pool: activePool,
         amountIn: quote.amountIn,
         slippageBps,

@@ -251,42 +251,28 @@ function bs58Encode(bytes) {
 }
 
 /**
- * Resolve the currently-connected wallet-standard Wallet matching a given
- * account. Uses the global wallet-standard registry (window.navigator.wallets)
- * which exposes the full Wallet interface with features keyed by name —
- * NOT @wallet-standard/react's useWallets() which returns wrapped objects
- * where `features` is an array of feature-name strings instead of the
- * implementation-keyed object we need.
- */
-function resolveWalletForAccount(account) {
-  if (typeof window === 'undefined') return null;
-  const wallets = window.navigator?.wallets?.get?.() || [];
-  return wallets.find((w) => w.accounts?.some((a) => a.address === account.address)) || null;
-}
-
-/**
- * One-shot swap using wallet-standard directly. Works with any wallet
- * that exposes either `solana:signAndSendTransaction` (preferred — modern
- * wallets) or `solana:signTransaction` (fallback — older wallets).
+ * One-shot swap. Takes an @solana/react-provided signer function — the
+ * caller is expected to have resolved it via useSignAndSendTransaction
+ * (which handles all wallet-standard registry + feature lookup internally).
  *
- * CRITICAL: wallet-standard feature implementations live on the Wallet
- * object (`wallet.features['solana:signAndSendTransaction']`), NOT on the
- * account. We resolve the Wallet from the global registry — the pattern
- * JupiterSwap.jsx:143-164 uses and proves out.
+ * This avoids the pitfalls of trying to walk window.navigator.wallets or
+ * @wallet-standard/react's useWallets(): both return different shapes in
+ * different environments. @solana/react abstracts the variance.
  *
  * Flow:
  *   1. Refresh quote with current reserves (stale-price guard)
- *   2. Build unsigned tx
- *   3. Wallet-standard sign + send (one user prompt)
+ *   2. Build + serialize unsigned tx
+ *   3. Call signAndSendTransaction(txBytes) — wallet popup
  *   4. Poll confirmation via HTTP
  *   5. Return { signature, quote, elapsed, solscanUrl }
  */
 export async function executeSwap({
-  account,         // wallet-standard WalletAccount (from useSelectedWalletAccount)
-  pool,            // pool record
-  amountIn,        // bigint
-  slippageBps,     // bigint, default 50 = 0.50%
-  fromMint,        // PublicKey or string — which side the trader sends
+  account,                   // wallet-standard WalletAccount (from useSelectedWalletAccount)
+  signAndSendTransaction,    // function returned by useSignAndSendTransaction(account, chain)
+  pool,                      // pool record
+  amountIn,                  // bigint
+  slippageBps,               // bigint, default 50 = 0.50%
+  fromMint,                  // PublicKey or string — which side the trader sends
   cluster = DEFAULT_CLUSTER,
   onStatusChange,
 }) {
@@ -294,23 +280,10 @@ export async function executeSwap({
   emit('quoting');
 
   if (!account) throw new Error('No account selected');
-
-  const wallet = resolveWalletForAccount(account);
-  if (!wallet) {
+  if (typeof signAndSendTransaction !== 'function') {
     throw new Error(
-      'Could not resolve the connected wallet from window.navigator.wallets. ' +
-        'Try reconnecting your wallet.',
-    );
-  }
-
-  const features = wallet.features || {};
-  const signAndSend = features['solana:signAndSendTransaction'];
-  const signOnly = features['solana:signTransaction'];
-  if (!signAndSend && !signOnly) {
-    const available = Object.keys(features).join(', ') || '(none)';
-    throw new Error(
-      `Wallet "${wallet.name || 'unknown'}" exposes no signing feature. ` +
-        `Available features: ${available}`,
+      'signAndSendTransaction is not available. Ensure SwapPanel passes the value from ' +
+        'useSignAndSendTransaction(account, chain).',
     );
   }
 
@@ -359,37 +332,27 @@ export async function executeSwap({
   const start = Date.now();
   let sig;
 
-  if (signAndSend) {
-    // Preferred path — wallet handles signing + sending in one user prompt.
-    // Matches JupiterSwap.jsx:163 pattern: pass the single tx bytes + account.
-    const chain = `solana:${cluster === 'mainnet-beta' ? 'mainnet' : cluster}`;
-    const result = await signAndSend.signAndSendTransaction({
-      account,
-      transaction: serialized,
-      chain,
-    });
-    // Different wallets return different shapes. Normalize to base58 string.
-    const sigBytes =
-      result?.signature ||
-      result?.[0]?.signature ||
-      (Array.isArray(result) ? result[0] : null);
-    if (!sigBytes) throw new Error('Wallet did not return a signature');
-    sig = bs58Encode(sigBytes instanceof Uint8Array ? sigBytes : new Uint8Array(sigBytes));
+  // @solana/react's signer abstracts sign-and-send. Returns a Uint8Array
+  // (the signature bytes). Different wrapper shapes across versions —
+  // handle both "returns bytes directly" and "returns { signature: bytes }".
+  const result = await signAndSendTransaction(serialized);
+  let sigBytes;
+  if (result instanceof Uint8Array) {
+    sigBytes = result;
+  } else if (result && result.signature instanceof Uint8Array) {
+    sigBytes = result.signature;
+  } else if (result && Array.isArray(result.signature)) {
+    sigBytes = new Uint8Array(result.signature);
+  } else if (Array.isArray(result) && result[0] instanceof Uint8Array) {
+    sigBytes = result[0];
   } else {
-    // Fallback — wallet signs, we send
-    const { signedTransactions } = await signOnly.signTransaction({
-      account,
-      transactions: [serialized],
-    });
-    const signedBytes = signedTransactions[0] instanceof Uint8Array
-      ? signedTransactions[0]
-      : new Uint8Array(signedTransactions[0]);
-    emit('sending');
-    sig = await connection.sendRawTransaction(signedBytes, {
-      skipPreflight: false,
-      preflightCommitment: 'confirmed',
-    });
+    throw new Error(
+      `signAndSendTransaction returned an unexpected shape: ${JSON.stringify(
+        Object.keys(result || {}),
+      )}`,
+    );
   }
+  sig = bs58Encode(sigBytes);
 
   emit('confirming');
   await pollConfirm(connection, sig);
