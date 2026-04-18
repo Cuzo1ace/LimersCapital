@@ -192,19 +192,22 @@ export async function joinWaitlist({ email, country = null, source = 'website', 
 
 /**
  * Get waitlist count (for social proof on landing page).
+ *
+ * Uses the SECURITY DEFINER RPC `waitlist_count` rather than selecting
+ * from the table directly. Migration 009 (audit Backend H-05, 2026-04-18)
+ * revoked anon SELECT on public.waitlist to close the email-harvest PII
+ * breach. The RPC returns only the scalar count, no row data.
  */
 export async function getWaitlistCount() {
   if (!isSupabaseReady()) return 0;
 
-  const { count, error } = await supabase
-    .from('waitlist')
-    .select('*', { count: 'exact', head: true });
+  const { data, error } = await supabase.rpc('waitlist_count');
 
   if (error) {
     console.warn('[Supabase] getWaitlistCount failed:', error.message);
     return 0;
   }
-  return count || 0;
+  return typeof data === 'number' ? data : 0;
 }
 
 // ── ACTIVITY FEED ────────────────────────────────────────────
