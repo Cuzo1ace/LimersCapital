@@ -6,6 +6,8 @@ import { computeExposure, etfSymbolsFromPositions, SUPPORTED_ETFS, OTHER_TICKER 
 import { fetchEtfHoldingsBatch } from '../../api/terminal';
 import { regionOf } from '../../api/marketDataMock';
 import BlinkPreview from './BlinkPreview';
+import HoverPeek from '../ui/HoverPeek';
+import TickerPreview from './TickerPreview';
 
 // Resolve the Blink base URL — points to the worker's /actions/exposure
 // endpoint. Users share this link; Phantom / Twitter / Dialect render a
@@ -254,22 +256,36 @@ export default function OverlapPanel() {
             <span className="w-14 text-right">%</span>
           </div>
           {rows.map(r => (
-            <div key={r.ticker}
-                 className="flex items-center py-1 border-b border-border/40 last:border-0">
-              <span
-                className="inline-block w-2 h-2 rounded-sm mr-2 flex-shrink-0"
-                style={{ background: colorFor(r.ticker) }}
-              />
-              <span className={`flex-1 truncate ${r.ticker === OTHER_TICKER ? 'text-muted italic' : 'text-txt'}`}>
-                {r.ticker}
-              </span>
-              <span className="w-24 text-right text-txt-2">
-                ${r.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-              </span>
-              <span className="w-14 text-right text-sea">
-                {(r.share * 100).toFixed(2)}
-              </span>
-            </div>
+            <HoverPeek
+              key={r.ticker}
+              width={280}
+              height={170}
+              side="top"
+              align="start"
+              enableLens={r.ticker !== OTHER_TICKER && r.ticker !== 'Others'}
+              lensSize={90}
+              lensZoom={1.45}
+              content={<TickerPreview symbol={r.ticker} />}
+            >
+              <div
+                tabIndex={0}
+                className="flex items-center py-1 border-b border-border/40 last:border-0 cursor-help rounded-sm px-1 -mx-1 hover:bg-white/[0.03] focus:bg-white/[0.04] focus:outline-none focus:ring-1 focus:ring-sea/30"
+              >
+                <span
+                  className="inline-block w-2 h-2 rounded-sm mr-2 flex-shrink-0"
+                  style={{ background: colorFor(r.ticker) }}
+                />
+                <span className={`flex-1 truncate ${r.ticker === OTHER_TICKER ? 'text-muted italic' : 'text-txt'}`}>
+                  {r.ticker}
+                </span>
+                <span className="w-24 text-right text-txt-2">
+                  ${r.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                </span>
+                <span className="w-14 text-right text-sea">
+                  {(r.share * 100).toFixed(2)}
+                </span>
+              </div>
+            </HoverPeek>
           ))}
         </div>
       </div>

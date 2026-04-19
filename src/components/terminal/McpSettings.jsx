@@ -4,6 +4,9 @@ import GlassCard from '../ui/GlassCard';
 import { TERMINAL_TOOLS } from '../../api/terminalTools';
 import { useCluster } from '../../solana/provider';
 import { getAccountExplorerUrl } from '../../solana/config';
+import HoverPeek from '../ui/HoverPeek';
+import HolographicLink from '../ui/HolographicLink';
+import ExplorerPreview from './ExplorerPreview';
 
 function genKey() {
   const bytes = new Uint8Array(24);
@@ -81,14 +84,18 @@ export default function McpSettings() {
               <span className="text-[.55rem] uppercase tracking-widest text-gold font-mono">
                 Your Terminal Pass · verified on-chain
               </span>
-              <a
-                href={getAccountExplorerUrl(passAddr, cluster)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[.6rem] text-sea hover:text-txt underline underline-offset-2 font-mono"
+              <HoverPeek
+                content={<ExplorerPreview address={passAddr} cluster={cluster} kind="account" label="Terminal Access Pass" />}
+                side="top" align="end"
               >
-                view on explorer ↗
-              </a>
+                <HolographicLink
+                  href={getAccountExplorerUrl(passAddr, cluster)}
+                  tiltMax={3}
+                  className="text-[.6rem] font-mono"
+                >
+                  view on explorer ↗
+                </HolographicLink>
+              </HoverPeek>
             </div>
             <div className="text-txt font-mono text-[.7rem] break-all">{passAddr}</div>
           </div>

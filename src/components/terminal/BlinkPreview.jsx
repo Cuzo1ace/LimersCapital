@@ -1,6 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '../ui/GlassCard';
+import HolographicCard from '../ui/HolographicCard';
+import HolographicLink from '../ui/HolographicLink';
+import HoverPeek from '../ui/HoverPeek';
 
 /**
  * Modal preview of a Solana Action (Blink) manifest.
@@ -44,6 +47,17 @@ export default function BlinkPreview({ url, onClose }) {
     });
   }
 
+  // Parse the share URL into a friendlier summary for the hover preview.
+  const parsedUrl = useMemo(() => {
+    try {
+      const u = new URL(url);
+      const params = Array.from(u.searchParams.entries());
+      return { host: u.host, pathname: u.pathname, params };
+    } catch {
+      return null;
+    }
+  }, [url]);
+
   return (
     <AnimatePresence>
       <motion.div
@@ -62,6 +76,11 @@ export default function BlinkPreview({ url, onClose }) {
           onClick={(e) => e.stopPropagation()}
           className="max-w-lg w-full"
         >
+          {/* HolographicCard wraps the whole share surface with Veridian-palette
+             iridescent shimmer + 3D parallax so the most shareable artifact on
+             the platform feels like a trading-card collectible. Intensity is
+             dialed down so the content stays legible. */}
+          <HolographicCard intensity={0.55} tiltMax={4} className="rounded-xl">
           <GlassCard variant="elevated" className="p-5">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
@@ -153,19 +172,60 @@ export default function BlinkPreview({ url, onClose }) {
                   open raw ↗
                 </a>
               </div>
-              <button
+              {/* Primary share CTA — the single artifact users copy.
+                 Wrapped in HolographicLink so the act of copying the
+                 Blink feels like claiming a trading card, not pressing
+                 a utility button. Intentionally the ONLY link on this
+                 surface with the tilt treatment. */}
+              <HolographicLink
+                as="button"
+                type="button"
                 onClick={copyUrl}
-                className={`px-3 py-1.5 rounded-md text-[.7rem] uppercase tracking-widest font-headline font-bold transition-all
-                  ${copied ? 'bg-sea text-night' : 'bg-sea/10 text-sea border border-sea/40 hover:bg-sea/20'}`}
+                tiltMax={5}
+                className={`text-[.7rem] uppercase tracking-widest font-headline font-bold border-none ${copied ? 'is-copied' : ''}`}
+                aria-label={copied ? 'URL copied' : 'Copy share URL'}
               >
                 {copied ? '✓ url copied' : '▸ copy share url'}
-              </button>
+              </HolographicLink>
             </div>
 
-            {/* URL preview */}
-            <div className="mt-3 text-[.58rem] font-mono text-muted break-all">
-              {url}
-            </div>
+            {/* URL preview — hover to inspect host + query breakdown */}
+            <HoverPeek
+              side="top"
+              align="start"
+              width={320}
+              height={150}
+              content={parsedUrl ? (
+                <div className="p-3">
+                  <div className="text-[.55rem] uppercase tracking-[.3em] text-gold font-mono mb-1">
+                    Share URL · host
+                  </div>
+                  <div className="text-txt text-[.7rem] font-mono break-all mb-2">
+                    {parsedUrl.host}<span className="text-muted">{parsedUrl.pathname}</span>
+                  </div>
+                  <div className="text-[.55rem] uppercase tracking-widest text-muted font-mono mb-1">
+                    Query params (aggregate only)
+                  </div>
+                  <div className="space-y-0.5 max-h-[90px] overflow-y-auto">
+                    {parsedUrl.params.map(([k, v]) => (
+                      <div key={k} className="flex items-center justify-between text-[.6rem] font-mono">
+                        <span className="text-txt-2">{k}</span>
+                        <span className="text-sea">{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 text-[.7rem] font-mono text-muted">Unparseable URL</div>
+              )}
+            >
+              <div
+                tabIndex={0}
+                className="mt-3 text-[.58rem] font-mono text-muted break-all cursor-help hover:text-txt-2 transition-colors focus:outline-none focus:ring-1 focus:ring-sea/30 rounded px-1 -mx-1"
+              >
+                {url}
+              </div>
+            </HoverPeek>
 
             <div className="mt-3 text-[.58rem] font-mono text-txt-2 italic">
               This is exactly how the card renders in Phantom, Solflare, Twitter/X,
@@ -173,6 +233,7 @@ export default function BlinkPreview({ url, onClose }) {
               Cloudflare Worker — proof the endpoint works.
             </div>
           </GlassCard>
+          </HolographicCard>
         </motion.div>
       </motion.div>
     </AnimatePresence>
