@@ -3,6 +3,7 @@ import useStore from '../../store/useStore';
 import GlassCard from '../ui/GlassCard';
 import MonteCarloCanvas from './MonteCarloCanvas';
 import { mockQuote, TICKER_UNIVERSE } from '../../api/marketDataMock';
+import ConfidentialBadge from '../ui/ConfidentialBadge';
 
 // Realistic annualized (μ, σ) by sector. Chosen so σ² < 2μ — otherwise
 // volatility drag makes the GBM median decline over time, which reads
@@ -95,8 +96,14 @@ export default function SimulatePanel() {
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
       {/* Parameters */}
       <GlassCard className="lg:col-span-3 p-5 min-h-[520px]">
-        <div className="text-[.65rem] uppercase tracking-[.3em] text-muted font-mono mb-4">
-          Parameters
+        <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
+          <div className="text-[.65rem] uppercase tracking-[.3em] text-muted font-mono">
+            Parameters
+          </div>
+          {/* Monte Carlo paths run client-side today, but the math is the
+             same kind of aggregate (no individual path leaked) that an
+             Arcis MXE circuit would expose. Surface that promise here. */}
+          <ConfidentialBadge />
         </div>
 
         <label className="block mb-3">

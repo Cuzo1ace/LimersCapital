@@ -22,6 +22,9 @@ import useScrollReveal from '../hooks/useScrollReveal';
 import { useCelebration } from '../components/fx/CelebrationBurst';
 import PositionGlow, { deriveGlowProps } from '../components/ui/PositionGlow';
 import CollapsibleSection from '../components/ui/CollapsibleSection';
+import PrivateValue from '../components/ui/PrivateValue';
+import PrivateModeToggle from '../components/ui/PrivateModeToggle';
+import ConfidentialBadge from '../components/ui/ConfidentialBadge';
 
 const fmtUSD = n => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtTTD = n => n == null ? '—' : 'TT$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -52,6 +55,7 @@ function exportCSV(trades) {
 export default function PortfolioPage() {
   const [chartAsset, setChartAsset] = useState(null);
   const { balanceUSD, balanceTTD, holdings, trades, resetPortfolio } = useStore();
+  const privateMode = useStore(s => s.privateMode);
   const marketQ = useQuery({ queryKey: ['sol-market'], queryFn: fetchSolanaMarketData, staleTime: 30000 });
   const ttseQ = useQuery({ queryKey: ['ttse-data'], queryFn: fetchTTSEData, staleTime: 120000 });
   const tokens = marketQ.data || [];
@@ -111,9 +115,27 @@ export default function PortfolioPage() {
     <div>
       <CelebrationPortal />
       {/* ── Risk Disclosure Banner ──────────────────────────── */}
-      <div className="flex items-start gap-2.5 rounded-xl px-4 py-3 mb-5 border border-[rgba(251,146,60,.25)] bg-[rgba(251,146,60,.06)] text-[.76rem] text-[#FB923C] font-body">
+      <div className="flex items-start gap-2.5 rounded-xl px-4 py-3 mb-3 border border-[rgba(251,146,60,.25)] bg-[rgba(251,146,60,.06)] text-[.76rem] text-[#FB923C] font-body">
         <span className="flex-shrink-0 mt-0.5">&#9888;&#65039;</span>
         <span>{RISK_BANNER.portfolio}</span>
+      </div>
+
+      {/* ── Privacy bar — Arcium Confidential Portfolio toggle ──
+         When ON, per-position numbers across the page mask to dots.
+         The Total P&L tile keeps rendering — it stands in for an
+         Arcis MXE circuit's confidentially-computed aggregate. */}
+      <div className="flex items-center justify-between gap-3 mb-5">
+        <div className="flex items-center gap-2 text-[.66rem] font-mono uppercase tracking-widest text-txt-2">
+          {privateMode ? (
+            <>
+              <ConfidentialBadge />
+              <span className="hidden sm:inline">Aggregate stays visible · per-position figures are hidden.</span>
+            </>
+          ) : (
+            <span className="text-muted">Privacy: standard view — anyone over your shoulder can read your positions.</span>
+          )}
+        </div>
+        <PrivateModeToggle />
       </div>
 
       {/* On-Chain Wallet Section — only shown when wallet connected */}
@@ -268,6 +290,7 @@ export default function PortfolioPage() {
               sub={`${totalPnlPct >= 0 ? '+' : ''}${totalPnlPct.toFixed(2)}%`}
               color={totalPnl >= 0 ? 'text-up' : 'text-down'}
               useAbsValue
+              confidentialAggregate
             />
           </PositionGlow>
         </motion.div>
@@ -360,10 +383,10 @@ export default function PortfolioPage() {
                 <div key={`sol:${h.symbol}`} className="flex items-center gap-2 md:gap-4 rounded-xl px-2.5 md:px-4 py-2.5 border border-border text-[.76rem]"
                   style={{ background: 'var(--color-card)' }}>
                   <span className="font-body font-bold w-14">{h.symbol}</span>
-                  <span className="text-txt-2 tabular-nums">{h.qty.toFixed(4)}</span>
-                  <span className="hidden md:block text-txt-2">{fmtUSD(h.avgPrice)}</span>
-                  <span className="text-txt tabular-nums">{fmtUSD(h.qty * cur)}</span>
-                  <span className={`ml-auto tabular-nums ${pnl >= 0 ? 'text-up' : 'text-down'}`}>{pnl >= 0 ? '+' : ''}{pnl.toFixed(2)}%</span>
+                  <span className="text-txt-2 tabular-nums"><PrivateValue width={5}>{h.qty.toFixed(4)}</PrivateValue></span>
+                  <span className="hidden md:block text-txt-2"><PrivateValue width={6}>{fmtUSD(h.avgPrice)}</PrivateValue></span>
+                  <span className="text-txt tabular-nums"><PrivateValue width={7}>{fmtUSD(h.qty * cur)}</PrivateValue></span>
+                  <span className={`ml-auto tabular-nums ${pnl >= 0 ? 'text-up' : 'text-down'}`}><PrivateValue width={5}>{pnl >= 0 ? '+' : ''}{pnl.toFixed(2)}%</PrivateValue></span>
                 </div>
               );
             })}
@@ -390,10 +413,10 @@ export default function PortfolioPage() {
                 <div key={`ttse:${h.symbol}`} className="flex items-center gap-2 md:gap-4 rounded-xl px-2.5 md:px-4 py-2.5 border border-[rgba(200,16,46,.15)] text-[.76rem]"
                   style={{ background: 'var(--color-card)' }}>
                   <span className="font-body font-bold w-14">{h.symbol}</span>
-                  <span className="text-txt-2 tabular-nums">{h.qty.toFixed(0)} <span className="hidden md:inline">shares</span></span>
-                  <span className="hidden md:block text-txt-2">{fmtTTD(h.avgPrice)}</span>
-                  <span className="text-txt tabular-nums">{fmtTTD(h.qty * cur)}</span>
-                  <span className={`ml-auto tabular-nums ${pnl >= 0 ? 'text-up' : 'text-down'}`}>{pnl >= 0 ? '+' : ''}{pnl.toFixed(2)}%</span>
+                  <span className="text-txt-2 tabular-nums"><PrivateValue width={4}>{h.qty.toFixed(0)}</PrivateValue> <span className="hidden md:inline">shares</span></span>
+                  <span className="hidden md:block text-txt-2"><PrivateValue width={6}>{fmtTTD(h.avgPrice)}</PrivateValue></span>
+                  <span className="text-txt tabular-nums"><PrivateValue width={7}>{fmtTTD(h.qty * cur)}</PrivateValue></span>
+                  <span className={`ml-auto tabular-nums ${pnl >= 0 ? 'text-up' : 'text-down'}`}><PrivateValue width={5}>{pnl >= 0 ? '+' : ''}{pnl.toFixed(2)}%</PrivateValue></span>
                 </div>
               );
             })}
@@ -439,7 +462,7 @@ export default function PortfolioPage() {
                 </span>
                 <span className="font-body font-bold flex-1">{t.symbol}</span>
                 <span className="text-txt-2">
-                  {t.qty < 1 ? t.qty.toFixed(4) : t.qty.toFixed(2)} @ {t.currency === 'TTD' ? fmtTTD(t.price) : fmtUSD(t.price)}
+                  <PrivateValue width={5}>{t.qty < 1 ? t.qty.toFixed(4) : t.qty.toFixed(2)}</PrivateValue> @ <PrivateValue width={6}>{t.currency === 'TTD' ? fmtTTD(t.price) : fmtUSD(t.price)}</PrivateValue>
                 </span>
                 <span className="text-muted text-[.65rem] ml-auto">{new Date(t.timestamp).toLocaleString()}</span>
               </div>
@@ -464,13 +487,29 @@ export default function PortfolioPage() {
   );
 }
 
-function DashCard({ label, value, numericValue, prefix = '', format = 'number', sub, color, useAbsValue }) {
+function DashCard({ label, value, numericValue, prefix = '', format = 'number', sub, color, useAbsValue, confidentialAggregate = false }) {
+  const privateMode = useStore(s => s.privateMode);
   const displayValue = useAbsValue ? Math.abs(numericValue ?? 0) : (numericValue ?? 0);
+  // Per-card numbers are hidden in Private Mode. Aggregates marked
+  // `confidentialAggregate` survive — they represent the kind of output
+  // an Arcis MXE circuit would expose without leaking inputs.
+  const masked = privateMode && !confidentialAggregate;
   return (
-    <div className="rounded-[14px] p-5 border border-border gpu-accelerated" style={{ background: 'var(--color-card)' }}>
-      <div className="text-[.66rem] text-muted uppercase tracking-widest mb-1.5">{label}</div>
+    <div className={`rounded-[14px] p-5 border gpu-accelerated ${
+      privateMode && confidentialAggregate
+        ? 'border-[rgba(191,129,255,0.35)] shadow-[0_0_22px_rgba(191,129,255,0.08)]'
+        : 'border-border'
+    }`} style={{ background: 'var(--color-card)' }}>
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <div className="text-[.66rem] text-muted uppercase tracking-widest">{label}</div>
+        {privateMode && confidentialAggregate && (
+          <span className="text-[.52rem] font-mono uppercase tracking-widest text-purple/80">· conf</span>
+        )}
+      </div>
       <div className={`font-headline text-[1.6rem] font-black ${color || 'text-txt'}`}>
-        {typeof numericValue === 'number' ? (
+        {masked ? (
+          <PrivateValue width={6} className="text-[1.6rem] tracking-wider" />
+        ) : typeof numericValue === 'number' ? (
           <AnimatedCounter
             value={displayValue}
             format={format}
@@ -481,7 +520,7 @@ function DashCard({ label, value, numericValue, prefix = '', format = 'number', 
           value
         )}
       </div>
-      {sub && <div className={`text-[.7rem] mt-0.5 ${color || 'text-txt-2'}`}>{sub}</div>}
+      {sub && <div className={`text-[.7rem] mt-0.5 ${color || 'text-txt-2'}`}>{masked ? <PrivateValue width={8} /> : sub}</div>}
     </div>
   );
 }

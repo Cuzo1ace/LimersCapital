@@ -223,6 +223,17 @@ const useStore = create(
       }),
       isChatOpen: false,
       setIsChatOpen: (open) => set({ isChatOpen: !!open }),
+      // ── Arcium Confidential Portfolio (Sprint A) ────────────
+      // When true, monetary values across the Portfolio panel render
+      // as masked dots ("•••••") instead of plaintext. Aggregate P&L
+      // and totals are still computable (the UI layer stub mimics what
+      // an Arcis MXE circuit would return); per-position numbers are
+      // hidden from over-the-shoulder onlookers without losing the
+      // user's own visibility into their book. Persisted so the
+      // preference survives reloads.
+      privateMode: false,
+      togglePrivateMode: () => set((s) => ({ privateMode: !s.privateMode })),
+      setPrivateMode: (on) => set({ privateMode: !!on }),
       // Monte Carlo simulation parameters (persisted so users don't
       // re-enter σ/horizon/paths on every visit).
       mcSimParams: {
