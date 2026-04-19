@@ -1709,6 +1709,22 @@ export default {
       return handleCspReport(request, env, ctx);
     }
 
+    // /actions/* — Solana Blinks are public endpoints by spec. Phantom,
+    // Dialect, Twitter and other Action-capable clients fetch the manifest
+    // server-side (often without an Origin header), so they cannot pass the
+    // allowlist. The handler sets Access-Control-Allow-Origin: * on its
+    // own responses via actionsCorsHeaders(); rate-limiting still applies.
+    if (path.startsWith('/actions/')) {
+      const reporterIp = request.headers.get('CF-Connecting-IP') || 'unknown';
+      if (!checkRateLimit(reporterIp)) {
+        return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
+          status: 429,
+          headers: { 'Content-Type': 'application/json', 'Retry-After': '60' },
+        });
+      }
+      return handleActionsRoute(path, request, env);
+    }
+
     // CORS preflight
     const origin = getAllowedOrigin(request, env);
 
@@ -1748,11 +1764,6 @@ export default {
     // Handle /ai/* routes (Claude API powered intelligence)
     if (path.startsWith('/ai/')) {
       return handleAIRoute(path, request, env, origin);
-    }
-
-    // Handle /actions/* routes (Solana Blinks/Actions)
-    if (path.startsWith('/actions/')) {
-      return handleActionsRoute(path, request, env);
     }
 
     // ── Terminal dashboard routes (Phase 2) ───────────────────────────
