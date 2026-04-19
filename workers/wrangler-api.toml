@@ -39,3 +39,33 @@ ENVIRONMENT = "production"
 [[kv_namespaces]]
 binding = "GAME_STATE"
 id = "c84ffd0d5d8c40fdaf2d9900619afdb6"
+
+# KV namespace for Flipside async SQL job IDs (3600s TTL).
+# Create with:  wrangler kv:namespace create FLIPSIDE_JOBS -c wrangler-api.toml
+# then paste the returned id below.
+# [[kv_namespaces]]
+# binding = "FLIPSIDE_JOBS"
+# id     = "__REPLACE_WITH_KV_NAMESPACE_ID__"
+
+# R2 bucket for cached ETF holdings blobs (populated nightly by the
+# /cron/etf-refresh scheduled handler). Create with:
+#   wrangler r2 bucket create limer-etf-cache -c wrangler-api.toml
+# [[r2_buckets]]
+# binding     = "ETF_CACHE"
+# bucket_name = "limer-etf-cache"
+
+# Cron Trigger — run /cron/etf-refresh every day at 06:00 UTC (01:00 AST).
+# Times after US market close so the ARK/iShares CSVs published same day
+# are included. Handler is the `scheduled` export in api-proxy.js.
+# [triggers]
+# crons = ["0 6 * * *"]
+
+# Additional secrets to set for the Terminal dashboard:
+#   wrangler secret put ALPHAVANTAGE_API_KEY -c wrangler-api.toml
+#   wrangler secret put ARTEMIS_API_KEY      -c wrangler-api.toml
+#   wrangler secret put FLIPSIDE_API_KEY     -c wrangler-api.toml
+#   wrangler secret put CRON_KEY             -c wrangler-api.toml
+# The KV + R2 bindings above are commented out so the worker still deploys
+# without errors in environments that haven't provisioned them yet. Uncomment
+# after the `wrangler kv:namespace create` / `wrangler r2 bucket create`
+# commands return successful IDs.

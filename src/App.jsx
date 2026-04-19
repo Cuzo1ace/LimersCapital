@@ -29,9 +29,11 @@ import LegalPage from './pages/LegalPage';
 import AboutPage from './pages/AboutPage';
 import FAQPage from './pages/FAQPage';
 import NewsPage from './pages/NewsPage';
+import TerminalPage from './pages/TerminalPage';
 import WeeklyDigestModal from './components/news/WeeklyDigestModal';
 import useStore from './store/useStore';
 import LimerBridge from './components/solana/LimerBridge';
+import { useAccessPassSync } from './solana/useAccessPassSync';
 import PriceAlertChecker from './components/PriceAlertChecker';
 import OnboardingTour from './components/OnboardingTour';
 import NetworkStatus from './components/NetworkStatus';
@@ -92,8 +94,14 @@ function TabContent() {
     case 'about': return <AboutPage />;
     case 'faq': return <FAQPage />;
     case 'news': return <NewsPage />;
+    case 'terminal': return <TerminalPage />;
     default: return <DashboardPage />;
   }
+}
+
+function AccessPassSync() {
+  useAccessPassSync();
+  return null;
 }
 
 function StreakCheck() {
@@ -164,6 +172,7 @@ export default function App() {
         <>
           <NewUserRedirect />
           <LimerBridge />
+          <AccessPassSync />
           <PriceAlertChecker />
           <OnboardingTour />
           <Header />

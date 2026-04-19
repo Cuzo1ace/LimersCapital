@@ -1,0 +1,18 @@
+{
+  "name": "Limer's Terminal Access Pass",
+  "symbol": "LTAP",
+  "description": "Proof of Pro-tier access to Limer's Capital Terminal — the Caribbean-first investing workbench. Unlocks portfolio look-through, Monte Carlo, AI chat, and MCP endpoint.",
+  "image": "https://limerscapital.com/icon.svg",
+  "external_url": "https://limerscapital.com",
+  "attributes": [
+    { "trait_type": "Tier",    "value": "Terminal Pro" },
+    { "trait_type": "Region",  "value": "Caribbean" },
+    { "trait_type": "Issued",  "value": "2026-04-18" },
+    { "trait_type": "Cohort",  "value": "Founder" },
+    { "trait_type": "Network", "value": "Devnet" }
+  ],
+  "properties": {
+    "category": "access",
+    "creators": [{ "address": "LimersCapitalIssuer", "share": 100 }]
+  }
+}

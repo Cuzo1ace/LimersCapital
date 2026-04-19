@@ -198,6 +198,45 @@ const useStore = create(
       activeTab: 'dashboard',
       setActiveTab: (tab) => set({ activeTab: tab }),
 
+      // ── Terminal (premium investing dashboard) ──────────────
+      // Mirror of public.users.tier in Supabase. Flipped to 'pro' by
+      // upgrade_to_pro() RPC or by hand for the first 50 customers.
+      userTier: 'free',
+      setUserTier: (tier) => set({ userTier: tier === 'pro' ? 'pro' : 'free' }),
+      // Per-user API key for the /mcp/terminal streamable-http endpoint,
+      // so external Claude agents can bind this account's tools.
+      mcpApiKey: null,
+      setMcpApiKey: (key) => set({ mcpApiKey: key || null }),
+      // On-chain Access Pass asset address (mpl-core). When present the
+      // user has minted a pass in their wallet and should be treated as
+      // pro tier regardless of the Supabase admin flag.
+      passAddress: null,
+      setPassAddress: (addr) => set({ passAddress: addr || null }),
+      terminalSubTab: 'research',  // 'research' | 'portfolio' | 'simulate' | 'macro' | 'micro' | 'mcp'
+      setTerminalSubTab: (tab) => set({ terminalSubTab: tab }),
+      // Uploaded portfolio positions from CSV/JSON — separate from `holdings`
+      // (paper trading) so a user can research real-world exposure without
+      // polluting their trading ledger.
+      uploadedPortfolio: [],
+      setUploadedPortfolio: (positions) => set({
+        uploadedPortfolio: Array.isArray(positions) ? positions : [],
+      }),
+      isChatOpen: false,
+      setIsChatOpen: (open) => set({ isChatOpen: !!open }),
+      // Monte Carlo simulation parameters (persisted so users don't
+      // re-enter σ/horizon/paths on every visit).
+      mcSimParams: {
+        symbol: 'AAPL',
+        horizonDays: 252,
+        numPaths: 1000,
+        lookbackDays: 90,
+      },
+      setMcSimParams: (patch) => set(s => ({
+        mcSimParams: { ...s.mcSimParams, ...patch },
+      })),
+      terminalTourSeen: false,
+      setTerminalTourSeen: (seen) => set({ terminalTourSeen: !!seen }),
+
       // ── Gamification ────────────────────────────────────────
       xp: 0,
       lessonsRead: {},
@@ -1519,6 +1558,14 @@ const useStore = create(
         morningBriefSeenFor: state.morningBriefSeenFor,
         interestedTickers: state.interestedTickers,
         userCountry: state.userCountry,
+        // Terminal (premium investing dashboard)
+        userTier: state.userTier,
+        mcpApiKey: state.mcpApiKey,
+        passAddress: state.passAddress,
+        terminalSubTab: state.terminalSubTab,
+        uploadedPortfolio: state.uploadedPortfolio,
+        mcSimParams: state.mcSimParams,
+        terminalTourSeen: state.terminalTourSeen,
       }),
       // ── Hydration safety ───────────────────────────────────────────
       // Persisted state from older app versions may omit fields we now
@@ -1549,6 +1596,7 @@ const useStore = create(
           'priceAlerts', 'modulesCompleted', 'earnedBadges', 'unlockedFeatures',
           'viewedGlossaryTerms', 'teachingMomentsViewed', 'viewedMicroLessons',
           'tradeJournal', 'completedPracticeChallenges', 'premiumConversionEvents',
+          'uploadedPortfolio',
         ];
         for (const field of arrayFields) {
           if (field in persisted && !Array.isArray(persisted[field])) {

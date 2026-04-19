@@ -32,6 +32,7 @@ const TABS = [
   { id: 'insights',   labelKey: 'nav.insights',   icon: '\u{1F310}' },
   { id: 'market',     labelKey: 'nav.market',     icon: '\u{1F4CA}' },
   { id: 'portfolio',  labelKey: 'nav.portfolio',  icon: '\u{1F392}' },
+  { id: 'terminal',   label: 'Terminal',          icon: '\u{26A1}', pro: true },
 ];
 
 function shortenAddress(addr) {
@@ -41,7 +42,7 @@ function shortenAddress(addr) {
 
 export default function Header() {
   const { t, i18n } = useTranslation();
-  const { activeTab, setActiveTab, connectWallet, disconnectWallet, theme, setTheme } = useStore();
+  const { activeTab, setActiveTab, connectWallet, disconnectWallet, theme, setTheme, userTier } = useStore();
   const { setTabIndex } = useNavigationDirection();
   const hasUnreadNews = useHasUnreadNews();
   const [showWalletMenu, setShowWalletMenu] = useState(false);
@@ -133,8 +134,11 @@ export default function Header() {
                   px-3.5 py-1.5 rounded-md text-[.72rem] uppercase tracking-widest
                   font-headline transition-all cursor-pointer border-none
                   ${activeTab === tab.id
-                    ? tab.ttse ? 'text-[#FF4D6D] bg-[rgba(200,16,46,.1)]' : 'text-sea bg-sea/12'
-                    : 'text-muted bg-transparent hover:text-txt hover:bg-sea/8'
+                    ? tab.ttse ? 'text-[#FF4D6D] bg-[rgba(200,16,46,.1)]'
+                      : tab.pro ? 'text-gold bg-[rgba(212,175,55,.12)]'
+                      : 'text-sea bg-sea/12'
+                    : tab.pro ? 'text-gold/80 bg-transparent hover:text-gold hover:bg-[rgba(212,175,55,.08)]'
+                      : 'text-muted bg-transparent hover:text-txt hover:bg-sea/8'
                   }
                 `}
               >

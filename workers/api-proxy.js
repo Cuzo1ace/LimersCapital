@@ -28,6 +28,12 @@
  */
 
 import { handleFaucetMttdc } from './faucet.js';
+import { fetchArkHoldings, ARK_ETFS } from '../src/api/adapters/arkAdapter.js';
+import { fetchIsharesHoldings, ISHARES_ETFS } from '../src/api/adapters/isharesAdapter.js';
+import { TERMINAL_TOOLS, SYSTEM_PROMPT } from '../src/api/terminalTools.js';
+import { mockQuote, mockOverview, mockDaily, mockMacro, mockMicro, mockOnChainFlows } from '../src/api/marketDataMock.js';
+import { mockHoldings } from '../src/api/etfHoldingsMock.js';
+import { computeExposure, SUPPORTED_ETFS } from '../src/api/etfOverlap.js';
 
 // ── Allowed origins ──
 const ALLOWED_ORIGINS = [
@@ -788,9 +794,569 @@ Return ONLY valid JSON in this exact format (no markdown, no code fences):
     }
   }
 
+  if (path === '/ai/terminal-chat') {
+    return handleTerminalChat(request, env, origin);
+  }
+
   return new Response(JSON.stringify({ error: 'AI route not found' }), {
     status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
   });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Terminal AI chat — Claude tool-use loop streamed over SSE.
+// Client posts { messages, portfolioSnapshot }. We append a system prompt,
+// run the agent loop (tool calls executed locally), and emit SSE events:
+//   event: text    — assistant text delta
+//   event: tool    — tool call / tool result boundary
+//   event: done    — stream complete
+// ═══════════════════════════════════════════════════════════════════════
+
+export async function executeTerminalTool(name, input, ctx) {
+  const snap = ctx?.portfolioSnapshot || [];
+  switch (name) {
+    case 'get_portfolio':
+      return { positions: snap };
+
+    case 'get_quote':
+      return mockQuote(input?.symbol) || { error: `Unknown symbol: ${input?.symbol}` };
+
+    case 'get_price_history': {
+      const days = Math.min(500, Math.max(5, Number(input?.days) || 90));
+      return { symbol: input?.symbol, history: mockDaily(input?.symbol, days) };
+    }
+
+    case 'compute_overlap': {
+      const holdingsMap = {};
+      const symbols = [...new Set(snap.map(p => String(p.symbol || '').toUpperCase()))];
+      for (const s of symbols) {
+        const h = mockHoldings(s);
+        if (h) holdingsMap[s] = h;
+      }
+      const { total, rows } = computeExposure(snap, holdingsMap);
+      return { total, top: rows.slice(0, 15) };
+    }
+
+    case 'run_monte_carlo': {
+      const quote = mockQuote(input?.symbol);
+      if (!quote) return { error: `Unknown symbol: ${input?.symbol}` };
+      // Simple analytical summary: compute quantiles from 500 sim paths
+      // in-worker (fast enough) without streaming the full fan.
+      const days  = Math.min(1260, Math.max(5,  Number(input?.horizonDays) || 252));
+      const paths = Math.min(5000, Math.max(50, Number(input?.numPaths)    || 1000));
+      const mu = 0.08, sigma = quote.sector === 'Crypto' ? 0.80 : 0.30;
+      const dt = 1 / 252;
+      const drift = (mu - 0.5 * sigma * sigma) * dt;
+      const volStep = sigma * Math.sqrt(dt);
+      const finals = new Float64Array(paths);
+      for (let p = 0; p < paths; p++) {
+        let price = quote.price;
+        for (let t = 1; t < days; t++) {
+          let u = Math.random(); while (u === 0) u = Math.random();
+          const v = Math.random();
+          const z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+          price = price * Math.exp(drift + volStep * z);
+        }
+        finals[p] = price;
+      }
+      finals.sort();
+      const q = (frac) => finals[Math.floor(paths * frac)];
+      const mean = finals.reduce((s, v) => s + v, 0) / paths;
+      return {
+        symbol: input.symbol,
+        startPrice: quote.price,
+        horizonDays: days,
+        numPaths: paths,
+        mean, p5: q(0.05), p50: q(0.50), p95: q(0.95),
+        min: finals[0], max: finals[paths - 1],
+      };
+    }
+
+    case 'compare_tickers': {
+      const syms = (input?.symbols || []).slice(0, 6);
+      return { rows: syms.map(s => ({ symbol: s, ...(mockOverview(s) || { error: 'unknown' }) })) };
+    }
+
+    case 'get_macro_indicator': {
+      const m = mockMacro()[String(input?.indicator || '').toUpperCase()];
+      return m || { error: `Unknown indicator: ${input?.indicator}` };
+    }
+
+    case 'get_on_chain_flow':
+      return mockOnChainFlows();
+
+    case 'search_news':
+      return { results: [], note: 'Live news wiring pending — returns empty until news provider is configured.' };
+
+    case 'submit_paper_trade': {
+      const { side, symbol, qty, price } = input || {};
+      const q = mockQuote(symbol);
+      if (!q) return { error: `Unknown symbol: ${symbol}` };
+      const fill = price || q.price;
+      return {
+        accepted: true,
+        fill: { side, symbol, qty, price: fill, total: fill * qty, paper: true },
+        note: 'Paper trade only. Add to paper ledger in client.',
+      };
+    }
+
+    default:
+      return { error: `Unknown tool: ${name}` };
+  }
+}
+
+async function handleTerminalChat(request, env, origin) {
+  if (request.method !== 'POST') {
+    return jsonRes({ error: 'Method not allowed' }, 405, origin);
+  }
+  if (!env.ANTHROPIC_API_KEY) {
+    return jsonRes({ error: 'ANTHROPIC_API_KEY not configured' }, 503, origin);
+  }
+
+  let payload = {};
+  try { payload = await request.json(); }
+  catch { return jsonRes({ error: 'Invalid JSON' }, 400, origin); }
+
+  const userMessages = Array.isArray(payload.messages) ? payload.messages : [];
+  const snap = Array.isArray(payload.portfolioSnapshot) ? payload.portfolioSnapshot : [];
+  if (userMessages.length === 0) {
+    return jsonRes({ error: 'messages required' }, 400, origin);
+  }
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const encoder = new TextEncoder();
+      const sse = (event, data) => controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+
+      try {
+        let conversation = [...userMessages];
+        const maxIterations = 6;
+
+        for (let iter = 0; iter < maxIterations; iter++) {
+          const res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': env.ANTHROPIC_API_KEY,
+              'anthropic-version': '2023-06-01',
+            },
+            body: JSON.stringify({
+              model: 'claude-haiku-4-5-20251001',
+              max_tokens: 1200,
+              system: SYSTEM_PROMPT,
+              tools: TERMINAL_TOOLS,
+              messages: conversation,
+            }),
+          });
+
+          if (!res.ok) {
+            const errText = await res.text().catch(() => '');
+            sse('error', { error: `Anthropic ${res.status}`, detail: errText.slice(0, 400) });
+            break;
+          }
+          const data = await res.json();
+          const contentBlocks = data.content || [];
+
+          // Stream text blocks; collect tool_use blocks for execution.
+          const toolUses = [];
+          for (const b of contentBlocks) {
+            if (b.type === 'text' && b.text) {
+              sse('text', { text: b.text });
+            } else if (b.type === 'tool_use') {
+              toolUses.push(b);
+              sse('tool', { phase: 'call', name: b.name, input: b.input });
+            }
+          }
+
+          if (data.stop_reason !== 'tool_use' || toolUses.length === 0) {
+            break;  // Done — no further tools requested.
+          }
+
+          // Append assistant + tool_result turn, then loop.
+          conversation = [
+            ...conversation,
+            { role: 'assistant', content: contentBlocks },
+            {
+              role: 'user',
+              content: await Promise.all(toolUses.map(async tu => {
+                const result = await executeTerminalTool(tu.name, tu.input, { portfolioSnapshot: snap });
+                sse('tool', { phase: 'result', name: tu.name, result });
+                return {
+                  type: 'tool_result',
+                  tool_use_id: tu.id,
+                  content: JSON.stringify(result),
+                };
+              })),
+            },
+          ];
+        }
+
+        sse('done', { ok: true });
+      } catch (err) {
+        controller.enqueue(new TextEncoder().encode(`event: error\ndata: ${JSON.stringify({ error: err.message })}\n\n`));
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-store',
+      'Connection': 'keep-alive',
+      ...corsHeaders(origin),
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Terminal dashboard routes — Alpha Vantage, Artemis, Flipside, ETF
+// holdings (ARK + iShares), and the nightly /cron/etf-refresh job.
+// Phase 2 of the premium Terminal build. All routes gracefully degrade
+// to a "not configured" body when the relevant secret is missing so the
+// worker never 500s in environments where only a subset of providers
+// are enabled.
+// ═══════════════════════════════════════════════════════════════════════
+
+function jsonRes(body, status, origin, extraHeaders = {}) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      ...corsHeaders(origin),
+      ...extraHeaders,
+    },
+  });
+}
+
+// ── Alpha Vantage ─────────────────────────────────────────────────────
+// Free tier = 5 req/min. We edge-cache 60s per (fn,symbol) to stay safe.
+
+const AV_FUNCTIONS = {
+  quote:    { av: 'GLOBAL_QUOTE',       param: 'symbol', cache: 30 },
+  daily:    { av: 'TIME_SERIES_DAILY',  param: 'symbol', cache: 600 },
+  overview: { av: 'OVERVIEW',           param: 'symbol', cache: 3600 },
+  econ:     { av: null,                 param: 'indicator', cache: 3600 }, // indicator is the function name
+};
+
+async function handleAlphaVantageRoute(path, request, env, origin) {
+  if (request.method !== 'GET') {
+    return jsonRes({ error: 'Method not allowed' }, 405, origin);
+  }
+  if (!env.ALPHAVANTAGE_API_KEY) {
+    return jsonRes({ error: 'Alpha Vantage not configured' }, 503, origin);
+  }
+  const fn = path.replace(/^\/alpha-vantage\//, '').split('/')[0];
+  const cfg = AV_FUNCTIONS[fn];
+  if (!cfg) return jsonRes({ error: `Unknown AV function: ${fn}` }, 400, origin);
+
+  const url = new URL(request.url);
+  const paramVal = url.searchParams.get(cfg.param);
+  if (!paramVal) return jsonRes({ error: `Missing ?${cfg.param}` }, 400, origin);
+
+  // Safety whitelist pattern: only ASCII letters, digits, underscore.
+  if (!/^[A-Za-z0-9_]{1,32}$/.test(paramVal)) {
+    return jsonRes({ error: 'Invalid parameter' }, 400, origin);
+  }
+
+  const avFn = cfg.av || paramVal.toUpperCase();   // econ uses indicator as function
+  const upstream = new URL('https://www.alphavantage.co/query');
+  upstream.searchParams.set('function', avFn);
+  if (cfg.av)  upstream.searchParams.set(cfg.param, paramVal.toUpperCase());
+  if (fn === 'econ') upstream.searchParams.set('interval', 'monthly');
+  if (fn === 'daily') upstream.searchParams.set('outputsize', url.searchParams.get('outputsize') === 'full' ? 'full' : 'compact');
+  upstream.searchParams.set('apikey', env.ALPHAVANTAGE_API_KEY);
+
+  const r = await fetch(upstream.toString(), {
+    cf: { cacheTtl: cfg.cache, cacheEverything: true },
+  });
+  const body = await r.text();
+  return new Response(body, {
+    status: r.status,
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': `public, max-age=${cfg.cache}`,
+      ...corsHeaders(origin),
+    },
+  });
+}
+
+// ── Artemis ───────────────────────────────────────────────────────────
+
+async function handleArtemisRoute(path, request, env, origin) {
+  if (request.method !== 'GET') return jsonRes({ error: 'Method not allowed' }, 405, origin);
+  if (!env.ARTEMIS_API_KEY)     return jsonRes({ error: 'Artemis not configured' }, 503, origin);
+
+  const sub = path.replace(/^\/artemis\//, '');
+  // Safety: alphanumeric + dashes + slashes (Artemis API paths).
+  if (!/^[A-Za-z0-9/_\-.]+$/.test(sub) || sub.length > 200) {
+    return jsonRes({ error: 'Invalid artemis subpath' }, 400, origin);
+  }
+  const url = new URL(request.url);
+  const upstream = new URL(`https://api.artemisxyz.com/${sub}`);
+  for (const [k, v] of url.searchParams) upstream.searchParams.set(k, v);
+  upstream.searchParams.set('APIKey', env.ARTEMIS_API_KEY);
+
+  const r = await fetch(upstream.toString(), {
+    cf: { cacheTtl: 1800, cacheEverything: true },
+  });
+  const body = await r.text();
+  return new Response(body, {
+    status: r.status,
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, max-age=1800',
+      ...corsHeaders(origin),
+    },
+  });
+}
+
+// ── Flipside (async SQL) ──────────────────────────────────────────────
+// Stateless pattern: client POSTs SQL, gets a jobId, then polls. We use
+// the v2 /api/v2/queries endpoint. Requires FLIPSIDE_JOBS KV binding.
+
+async function handleFlipsideRoute(path, request, env, origin) {
+  if (!env.FLIPSIDE_API_KEY) return jsonRes({ error: 'Flipside not configured' }, 503, origin);
+
+  if (path === '/flipside/query' && request.method === 'POST') {
+    let payload = {};
+    try { payload = await request.json(); } catch { return jsonRes({ error: 'Invalid JSON' }, 400, origin); }
+    const sql = String(payload.sql || '');
+    if (sql.length < 10 || sql.length > 20_000) return jsonRes({ error: 'SQL length invalid' }, 400, origin);
+    // Basic safety: read-only keyword enforcement.
+    if (!/^\s*(with|select)\b/i.test(sql) || /;\s*(drop|delete|update|insert|truncate|alter)\b/i.test(sql)) {
+      return jsonRes({ error: 'Only read-only SQL allowed' }, 400, origin);
+    }
+    const r = await fetch('https://api-v2.flipsidecrypto.xyz/json-rpc', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': env.FLIPSIDE_API_KEY,
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0', id: 1, method: 'createQueryRun',
+        params: [{ resultTTLHours: 1, maxAgeMinutes: 60, sql, tags: { source: 'limer-terminal' }, dataSource: 'snowflake-default', dataProvider: 'flipside' }],
+      }),
+    });
+    const data = await r.json().catch(() => ({}));
+    const jobId = data?.result?.queryRun?.id;
+    if (!jobId) return jsonRes({ error: 'Flipside createQueryRun failed', upstream: data }, 502, origin);
+    if (env.FLIPSIDE_JOBS) {
+      await env.FLIPSIDE_JOBS.put(jobId, '1', { expirationTtl: 3600 });
+    }
+    return jsonRes({ jobId }, 200, origin);
+  }
+
+  if (path === '/flipside/poll' && request.method === 'GET') {
+    const url = new URL(request.url);
+    const jobId = url.searchParams.get('jobId') || '';
+    if (!/^[A-Za-z0-9\-_]{8,64}$/.test(jobId)) return jsonRes({ error: 'Invalid jobId' }, 400, origin);
+    // Status
+    const statusRes = await fetch('https://api-v2.flipsidecrypto.xyz/json-rpc', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': env.FLIPSIDE_API_KEY },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getQueryRun', params: [{ queryRunId: jobId }] }),
+    });
+    const statusJson = await statusRes.json().catch(() => ({}));
+    const state = statusJson?.result?.queryRun?.state; // QUERY_STATE_{READY,RUNNING,SUCCESS,FAILED,CANCELED}
+    if (state === 'QUERY_STATE_SUCCESS') {
+      const rowsRes = await fetch('https://api-v2.flipsidecrypto.xyz/json-rpc', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': env.FLIPSIDE_API_KEY },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getQueryRunResults', params: [{ queryRunId: jobId, format: 'json', page: { number: 1, size: 1000 } }] }),
+      });
+      const rowsJson = await rowsRes.json().catch(() => ({}));
+      return jsonRes({ status: 'succeeded', rows: rowsJson?.result?.rows || [] }, 200, origin);
+    }
+    if (state === 'QUERY_STATE_FAILED' || state === 'QUERY_STATE_CANCELED') {
+      return jsonRes({ status: 'failed', error: statusJson?.result?.queryRun?.errorMessage || state }, 200, origin);
+    }
+    return jsonRes({ status: 'running' }, 200, origin);
+  }
+
+  return jsonRes({ error: 'Flipside route not found' }, 404, origin);
+}
+
+// ── ETF holdings (ARK + iShares) ──────────────────────────────────────
+// Served from R2 cache (populated by /cron/etf-refresh). If the cached
+// blob is missing, we fetch upstream once and backfill. Adapters are
+// imported at the top of this file.
+
+async function loadHoldings(env, source, symbol) {
+  const key = `etf/${source}/${symbol}.json`;
+  if (env.ETF_CACHE) {
+    const cached = await env.ETF_CACHE.get(key, { type: 'json' });
+    if (cached) return { cached: true, data: cached };
+  }
+  // Miss → upstream fetch + backfill.
+  const data = source === 'ark'
+    ? await fetchArkHoldings(symbol)
+    : await fetchIsharesHoldings(symbol);
+  if (env.ETF_CACHE) {
+    await env.ETF_CACHE.put(key, JSON.stringify(data), {
+      httpMetadata: { contentType: 'application/json' },
+    });
+  }
+  return { cached: false, data };
+}
+
+async function handleEtfHoldingsRoute(path, request, env, origin) {
+  if (request.method !== 'GET') return jsonRes({ error: 'Method not allowed' }, 405, origin);
+  const [, source, kind, rawSymbol] = path.split('/');  // /ark/holdings/ARKK
+  if (kind !== 'holdings' || !rawSymbol) {
+    return jsonRes({ error: 'Usage: /<source>/holdings/<SYMBOL>' }, 400, origin);
+  }
+  const symbol = rawSymbol.toUpperCase();
+  const registry = source === 'ark' ? ARK_ETFS : ISHARES_ETFS;
+  if (!registry.includes(symbol)) {
+    return jsonRes({ error: `Unsupported ${source} ETF: ${symbol}`, allowed: registry }, 400, origin);
+  }
+  try {
+    const { cached, data } = await loadHoldings(env, source, symbol);
+    return jsonRes(data, 200, origin, {
+      'Cache-Control': 'public, max-age=3600',
+      'X-ETF-Cache': cached ? 'HIT' : 'MISS',
+    });
+  } catch (err) {
+    return jsonRes({ error: err.message }, 502, origin);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// MCP endpoint (Model Context Protocol — streamable HTTP transport).
+// External Claude agents register this with:
+//   claude mcp add --transport http terminal <url> --header "x-api-key: <KEY>"
+// Tools are the shared TERMINAL_TOOLS set; execution hits the same
+// executeTerminalTool() path as the built-in chat drawer.
+//
+// For MVP, auth is a per-user API key validated against Supabase
+// `users.mcp_api_key`. If Supabase isn't configured, we fall back to a
+// shared DEV_MCP_KEY env var so the endpoint can be exercised locally.
+// ═══════════════════════════════════════════════════════════════════════
+
+async function validateMcpKey(env, key) {
+  if (!key) return { ok: false, reason: 'missing key' };
+  if (env.DEV_MCP_KEY && key === env.DEV_MCP_KEY) return { ok: true, wallet: 'dev' };
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) {
+    return { ok: false, reason: 'supabase unavailable' };
+  }
+  const r = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/users?select=wallet_address,tier&mcp_api_key=eq.${encodeURIComponent(key)}`,
+    {
+      headers: {
+        apikey: env.SUPABASE_SERVICE_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+      },
+    }
+  );
+  if (!r.ok) return { ok: false, reason: `supabase ${r.status}` };
+  const arr = await r.json().catch(() => []);
+  const row = arr?.[0];
+  if (!row) return { ok: false, reason: 'unknown key' };
+  if (row.tier !== 'pro') return { ok: false, reason: 'not pro tier' };
+  return { ok: true, wallet: row.wallet_address };
+}
+
+async function handleMcpTerminal(request, env, origin) {
+  if (request.method !== 'POST') {
+    return jsonRes({ error: 'Method not allowed — POST JSON-RPC' }, 405, origin);
+  }
+  const keyHeader = request.headers.get('x-api-key') || request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || '';
+  const auth = await validateMcpKey(env, keyHeader);
+  if (!auth.ok) {
+    return jsonRes({ error: `MCP auth failed: ${auth.reason}` }, 401, origin);
+  }
+
+  let body;
+  try { body = await request.json(); }
+  catch { return jsonRes({ error: 'Invalid JSON' }, 400, origin); }
+
+  const id = body?.id ?? null;
+  const method = body?.method;
+  const params = body?.params || {};
+
+  const rpcOk  = (result) => jsonRes({ jsonrpc: '2.0', id, result }, 200, origin);
+  const rpcErr = (code, message) => jsonRes({ jsonrpc: '2.0', id, error: { code, message } }, 200, origin);
+
+  switch (method) {
+    case 'initialize':
+      return rpcOk({
+        protocolVersion: '2024-11-05',
+        serverInfo: { name: 'limer-terminal-mcp', version: '0.1.0' },
+        capabilities: { tools: { listChanged: false } },
+      });
+
+    case 'tools/list':
+      return rpcOk({
+        tools: TERMINAL_TOOLS.map(t => ({
+          name: t.name,
+          description: t.description,
+          inputSchema: t.input_schema,
+        })),
+      });
+
+    case 'tools/call': {
+      const { name, arguments: args } = params;
+      if (!name) return rpcErr(-32602, 'tools/call requires a tool name');
+      try {
+        const result = await executeTerminalTool(name, args || {}, { portfolioSnapshot: [] });
+        return rpcOk({
+          content: [{ type: 'text', text: JSON.stringify(result) }],
+          isError: !!result?.error,
+        });
+      } catch (e) {
+        return rpcErr(-32000, `tool ${name} failed: ${e.message}`);
+      }
+    }
+
+    case 'ping':
+      return rpcOk({});
+
+    default:
+      return rpcErr(-32601, `Method not found: ${method}`);
+  }
+}
+
+// ── Cron: /cron/etf-refresh ────────────────────────────────────────────
+// Triggered nightly by `crons = ["0 6 * * *"]` in wrangler config, or
+// manually via GET /cron/etf-refresh (authenticated with CRON_KEY).
+
+async function handleCronRoute(path, request, env, origin) {
+  if (path !== '/cron/etf-refresh') return jsonRes({ error: 'Unknown cron' }, 404, origin);
+
+  // Require shared secret for manual invocation — the scheduled handler
+  // (worker scheduled() export) calls this internally with the header set.
+  const providedKey = request.headers.get('x-cron-key') || '';
+  if (!env.CRON_KEY || providedKey !== env.CRON_KEY) {
+    return jsonRes({ error: 'Forbidden' }, 403, origin);
+  }
+
+  const results = { ark: [], ishares: [] };
+  for (const sym of ARK_ETFS) {
+    try {
+      const data = await fetchArkHoldings(sym);
+      if (env.ETF_CACHE) {
+        await env.ETF_CACHE.put(`etf/ark/${sym}.json`, JSON.stringify(data));
+      }
+      results.ark.push({ sym, rows: data.rows.length });
+    } catch (e) {
+      results.ark.push({ sym, error: e.message });
+    }
+  }
+  for (const sym of ISHARES_ETFS) {
+    try {
+      const data = await fetchIsharesHoldings(sym);
+      if (env.ETF_CACHE) {
+        await env.ETF_CACHE.put(`etf/ishares/${sym}.json`, JSON.stringify(data));
+      }
+      results.ishares.push({ sym, rows: data.rows.length });
+    } catch (e) {
+      results.ishares.push({ sym, error: e.message });
+    }
+  }
+  return jsonRes({ ok: true, refreshedAt: new Date().toISOString(), results }, 200, origin);
 }
 
 // ── FMP ticker whitelist (audit finding M-06) ──
@@ -1144,6 +1710,17 @@ export default {
       return handleActionsRoute(path, request, env);
     }
 
+    // ── Terminal dashboard routes (Phase 2) ───────────────────────────
+    if (path.startsWith('/alpha-vantage/')) return handleAlphaVantageRoute(path, request, env, origin);
+    if (path.startsWith('/artemis/'))       return handleArtemisRoute(path, request, env, origin);
+    if (path.startsWith('/flipside/'))      return handleFlipsideRoute(path, request, env, origin);
+    if (path.startsWith('/ark/') || path.startsWith('/ishares/')) {
+      return handleEtfHoldingsRoute(path, request, env, origin);
+    }
+    if (path.startsWith('/cron/'))          return handleCronRoute(path, request, env, origin);
+    if (path === '/mcp/terminal' || path === '/mcp/terminal/')
+                                             return handleMcpTerminal(request, env, origin);
+
     // Handle /faucet/mttdc — devnet mTTDC faucet (Phase B5)
     if (path === '/faucet/mttdc') {
       return handleFaucetMttdc(request, env, ctx, corsHeaders(origin));
@@ -1288,5 +1865,17 @@ export default {
         headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
       });
     }
+  },
+
+  // Scheduled Cron Trigger — refresh ETF holdings nightly.
+  // Configured via `[[triggers.crons]]` in wrangler-api.toml.
+  async scheduled(event, env, ctx) {
+    if (!env.CRON_KEY) return;
+    const req = new Request('https://internal/cron/etf-refresh', {
+      headers: { 'x-cron-key': env.CRON_KEY, Origin: 'https://limerscapital.com' },
+    });
+    // Origin is allowlisted so corsHeaders() resolves. The handler guards
+    // on x-cron-key so exposure is limited even if someone hits it directly.
+    ctx.waitUntil(handleCronRoute('/cron/etf-refresh', req, env, 'https://limerscapital.com'));
   },
 };
