@@ -13,6 +13,8 @@ import { SkeletonRows, SkeletonCard } from '../components/ui/Skeleton';
 import RemittanceCalculator from '../components/RemittanceCalculator';
 import Tooltip from '../components/ui/Tooltip';
 import ContextualHelp from '../components/ContextualHelp';
+import AttributionChip from '../components/ui/AttributionChip';
+import { BLOCKWORKS_HOME } from '../data/blockworks';
 import {
   fetchEconomicCalendar, fetchEarningsCalendar,
   fetchMarketNews, fetchCongressionalTrading,
@@ -140,7 +142,16 @@ export default function InsightsPage() {
             Market<br /><em className="italic text-sea">Insights</em>
           </h1>
           <p className="font-body text-txt-2 text-[.82rem] leading-relaxed">
-            Live data powered by CoinGecko, DeFiLlama, and Jupiter. Layer 1 chains, DeFi protocols, RWA tokens, and Caribbean macro — all free-tier APIs.
+            Live data powered by CoinGecko, DeFiLlama, and Jupiter · editorial curation via{' '}
+            <a
+              href={BLOCKWORKS_HOME}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#C46CFF] hover:text-[#C46CFF]/80 transition-colors no-underline"
+            >
+              Blockworks ↗
+            </a>
+            . Layer 1 chains, DeFi protocols, RWA tokens, and Caribbean macro — all free-tier APIs.
           </p>
         </div>
         <div className="grid grid-cols-2 gap-3.5">
@@ -626,6 +637,15 @@ export default function InsightsPage() {
         {['CoinGecko', 'DeFiLlama', 'Jupiter', 'ExchangeRate-API', 'World Bank', 'FMP', 'Finnhub'].map(s => (
           <span key={s} className="text-[.65rem] text-txt-2 bg-white/4 border border-white/7 rounded px-2 py-0.5">{s}</span>
         ))}
+        <a
+          href={BLOCKWORKS_HOME}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[.65rem] text-[#C46CFF] bg-[#C46CFF]/8 border border-[#C46CFF]/25 rounded px-2 py-0.5 hover:bg-[#C46CFF]/15 transition-colors no-underline"
+          title="Editorial curation via Blockworks"
+        >
+          Curated by Blockworks ↗
+        </a>
         <span className="text-[.63rem] text-muted ml-auto">All free-tier · No API keys required</span>
       </div>
 

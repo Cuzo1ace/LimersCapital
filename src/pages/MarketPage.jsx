@@ -12,6 +12,7 @@ import BasisSpreadBadge from '../components/BasisSpreadBadge';
 import { TradingViewScreener } from '../components/charts';
 import useScrollReveal from '../hooks/useScrollReveal';
 import ParallaxCard from '../components/ui/ParallaxCard';
+import AttributionChip from '../components/ui/AttributionChip';
 
 function fmt(n, decimals = 2) {
   if (n == null) return '—';
@@ -396,12 +397,15 @@ export default function MarketPage() {
         title="Global Capital Markets on Solana"
         label="CoinGecko · Jupiter · DexScreener"
         action={
-          <button
-            onClick={() => marketQ.refetch()}
-            className={`bg-transparent border border-border text-sea cursor-pointer rounded-lg px-3 py-1 text-[.7rem] font-mono transition-all hover:bg-sea/10 ${marketQ.isFetching ? 'animate-spin' : ''}`}
-          >
-            ↻ Refresh
-          </button>
+          <div className="flex items-center gap-3">
+            <AttributionChip compact />
+            <button
+              onClick={() => marketQ.refetch()}
+              className={`bg-transparent border border-border text-sea cursor-pointer rounded-lg px-3 py-1 text-[.7rem] font-mono transition-all hover:bg-sea/10 ${marketQ.isFetching ? 'animate-spin' : ''}`}
+            >
+              ↻ Refresh
+            </button>
+          </div>
         }
       />
 

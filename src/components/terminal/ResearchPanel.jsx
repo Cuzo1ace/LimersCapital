@@ -9,6 +9,7 @@ import {
 } from '../../api/marketDataMock';
 import { usePythPrice } from '../../api/usePythPrice';
 import { PYTH_FEED_IDS } from '../../api/pyth-ws';
+import BlockworksResearchHub from './BlockworksResearchHub';
 
 function fmtMoney(v) {
   if (v == null) return '—';
@@ -97,7 +98,13 @@ export default function ResearchPanel() {
   const peers = TICKER_UNIVERSE.filter(s => s !== symbol && mockOverview(s)?.sector === overview?.sector).slice(0, 5);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+    <div>
+      {/* Blockworks Research Hub — the Pro tier's institutional-context
+         header. Sits above the ticker drill-down so users who land on
+         Terminal → Research get editorial signal first, data second. */}
+      <BlockworksResearchHub />
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
       {/* Main ticker panel */}
       <GlassCard className="lg:col-span-8 p-5">
         {/* Search */}
@@ -197,6 +204,7 @@ export default function ResearchPanel() {
             </div>
           </div>
         </GlassCard>
+      </div>
       </div>
     </div>
   );

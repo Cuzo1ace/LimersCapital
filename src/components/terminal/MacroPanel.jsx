@@ -1,6 +1,7 @@
 import ReactApexChart from 'react-apexcharts';
 import GlassCard from '../ui/GlassCard';
 import { mockMacro, mockCaribbeanFx } from '../../api/marketDataMock';
+import WeekendSessionPanel from './WeekendSessionPanel';
 
 function Sparkline({ data, color }) {
   const options = {
@@ -39,6 +40,11 @@ export default function MacroPanel() {
 
   return (
     <div className="grid grid-cols-1 gap-4">
+      {/* Weekend Session — Pro Blockworks-curated surface. Sits above the
+         Caribbean FX rail so Pro users get global weekend-session context
+         before zooming into the regional lens. */}
+      <WeekendSessionPanel />
+
       {/* Caribbean FX — listed FIRST to anchor the regional lens. */}
       <div>
         <div className="text-[.6rem] uppercase tracking-[.3em] text-gold font-mono mb-2">

@@ -17,6 +17,8 @@ import { PE_COMPARISON, VALUE_UNLOCK } from '../data/capitalMarkets';
 import CommunityFeed from '../components/CommunityFeed';
 import TokensPanel from '../components/TokensPanel';
 import SwapPanel from '../components/SwapPanel';
+import BlockworksSignalStrip from '../components/BlockworksSignalStrip';
+import WeekendMarketsCard from '../components/WeekendMarketsCard';
 import Tooltip from '../components/ui/Tooltip';
 import DailyKnowledgeCard from '../components/DailyKnowledgeCard';
 import SkillMap from '../components/gamification/SkillMap';
@@ -156,6 +158,14 @@ export default function DashboardPage() {
       {/* ── Hero Section ── */}
       <HeroSection />
 
+      {/* ── Blockworks Signal Strip ──
+         Institutional research headline rotates just below the hero so the
+         first content beat after "welcome" is market context, not personal
+         stats. Free tier: headline + link-out to blockworks.com; pro tier:
+         "Research Hub →" that opens Terminal. Matches the Signal pillar of
+         the Edge Layer philosophy. */}
+      <BlockworksSignalStrip />
+
       {/* ── Tier & Progress Card — parallax for premium feel ── */}
       <GlassCard variant="elevated" parallax parallaxDepth={0.02} className="p-5 md:p-6 mb-6">
         <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
@@ -214,10 +224,15 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── Devnet tokens + AMM swap panels (Phase B5 + Swap UI) ── */}
-      <div className="grid gap-4 md:grid-cols-2 mb-4">
+      {/* ── Devnet tokens + AMM swap panels + Weekend Markets card ──
+         3-column grid on desktop places on-chain reality (Tokens, Swap)
+         next to institutional macro signal (Weekend Markets). On mobile
+         it stacks naturally. The Weekend card is tier-gated — free
+         users get a teaser, Pro gets the full link-out. */}
+      <div className="grid gap-4 md:grid-cols-3 mb-4">
         <TokensPanel />
         <SwapPanel />
+        <WeekendMarketsCard />
       </div>
 
       <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6" {...statsReveal}>
