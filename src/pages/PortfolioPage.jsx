@@ -25,6 +25,7 @@ import CollapsibleSection from '../components/ui/CollapsibleSection';
 import PrivateValue from '../components/ui/PrivateValue';
 import PrivateModeToggle from '../components/ui/PrivateModeToggle';
 import ConfidentialBadge from '../components/ui/ConfidentialBadge';
+import PersonalEdgeCard from '../components/PersonalEdgeCard';
 
 const fmtUSD = n => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtTTD = n => n == null ? '—' : 'TT$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -311,6 +312,13 @@ export default function PortfolioPage() {
           </div>
         </div>
       )}
+
+      {/* Personal Edge Card — reflects user's own trading patterns back to them.
+         Empty state invites the first journal entry; populated state shows
+         overall winrate + strongest/weakest journal tag + market mix + peer
+         framing. Descriptive only (no performance claims), honoring the
+         platform's "show, don't tell" product rule. */}
+      <PersonalEdgeCard />
 
       {/* Portfolio Value Chart — scroll-reveal */}
       <motion.div className="mb-6" {...chartReveal}>

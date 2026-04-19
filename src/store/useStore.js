@@ -55,6 +55,10 @@ const useStore = create(
           const holdings = newQty > 0.0001
             ? state.holdings.map(h => `${h.market}:${h.symbol}` === holdKey ? { ...h, qty: newQty } : h)
             : state.holdings.filter(h => `${h.market}:${h.symbol}` !== holdKey);
+          // Attach realized pnl (converted to USD when needed) so edge-stat
+          // selectors can compute winrate per journal tag without recomputing
+          // historical avg-costs.
+          trade.pnl = (price - existing.avgPrice) * qty;
           set({ [balKey]: state[balKey] + total, holdings, trades: [trade, ...state.trades].slice(0, 100) });
         }
 
@@ -1606,9 +1610,14 @@ const useStore = create(
           'listingApplications', 'limitOrders', 'perpPositions', 'watchlist',
           'priceAlerts', 'modulesCompleted', 'earnedBadges', 'unlockedFeatures',
           'viewedGlossaryTerms', 'teachingMomentsViewed', 'viewedMicroLessons',
-          'tradeJournal', 'completedPracticeChallenges', 'premiumConversionEvents',
+          'completedPracticeChallenges', 'premiumConversionEvents',
           'uploadedPortfolio',
         ];
+        // tradeJournal is an object keyed by trade id, not an array.
+        // If persisted as a non-object (legacy corruption), reset to {}.
+        if ('tradeJournal' in persisted && (persisted.tradeJournal === null || typeof persisted.tradeJournal !== 'object' || Array.isArray(persisted.tradeJournal))) {
+          merged.tradeJournal = {};
+        }
         for (const field of arrayFields) {
           if (field in persisted && !Array.isArray(persisted[field])) {
             merged[field] = Array.isArray(current[field]) ? current[field] : [];
