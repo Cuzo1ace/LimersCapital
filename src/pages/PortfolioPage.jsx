@@ -26,6 +26,7 @@ import PrivateValue from '../components/ui/PrivateValue';
 import PrivateModeToggle from '../components/ui/PrivateModeToggle';
 import ConfidentialBadge from '../components/ui/ConfidentialBadge';
 import PersonalEdgeCard from '../components/PersonalEdgeCard';
+import DevnetEdgeCard from '../components/DevnetEdgeCard';
 
 const fmtUSD = n => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtTTD = n => n == null ? '—' : 'TT$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -319,6 +320,11 @@ export default function PortfolioPage() {
          framing. Descriptive only (no performance claims), honoring the
          platform's "show, don't tell" product rule. */}
       <PersonalEdgeCard />
+
+      {/* Devnet Edge Card — surfaces the live on-chain footprint (limer +
+         limer_amm programs, 5 tokenized TTSE equities, 6 AMM pools, mTTDC
+         faucet) as a user-visible edge. Only renders when cluster === devnet. */}
+      <DevnetEdgeCard />
 
       {/* Portfolio Value Chart — scroll-reveal */}
       <motion.div className="mb-6" {...chartReveal}>
