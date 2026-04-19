@@ -5,6 +5,7 @@ import GlassCard from '../ui/GlassCard';
 import { computeExposure, etfSymbolsFromPositions, SUPPORTED_ETFS, OTHER_TICKER } from '../../api/etfOverlap';
 import { fetchEtfHoldingsBatch } from '../../api/terminal';
 import { regionOf } from '../../api/marketDataMock';
+import BlinkPreview from './BlinkPreview';
 
 // Resolve the Blink base URL — points to the worker's /actions/exposure
 // endpoint. Users share this link; Phantom / Twitter / Dialect render a
@@ -93,13 +94,10 @@ export default function OverlapPanel() {
     return `${PROXY_BASE}/actions/exposure?${params.toString()}`;
   }, [regionRows, total]);
 
-  const [copied, setCopied] = useState(false);
-  function copyBlink() {
+  const [previewOpen, setPreviewOpen] = useState(false);
+  function openBlinkPreview() {
     if (!blinkUrl) return;
-    navigator.clipboard?.writeText(blinkUrl).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1600);
-    });
+    setPreviewOpen(true);
   }
 
   if (uploaded.length === 0) {
@@ -198,11 +196,11 @@ export default function OverlapPanel() {
           )}
           {blinkUrl && (
             <button
-              onClick={copyBlink}
-              title="Share your regional exposure as a Solana Action — paste the URL into Phantom, Twitter, or a Dialect chat to render a native card"
+              onClick={openBlinkPreview}
+              title="Preview your regional-exposure Blink — see exactly how Phantom / Twitter / Dialect will render the card before you share"
               className="text-[.6rem] uppercase tracking-widest font-headline font-bold px-2.5 py-1 rounded-md border border-sea/40 text-sea hover:bg-sea/10 transition-colors"
             >
-              {copied ? '✓ blink copied' : '▸ share as blink'}
+              ▸ share as blink
             </button>
           )}
         </div>
@@ -275,6 +273,10 @@ export default function OverlapPanel() {
           ))}
         </div>
       </div>
+
+      {previewOpen && (
+        <BlinkPreview url={blinkUrl} onClose={() => setPreviewOpen(false)} />
+      )}
     </GlassCard>
   );
 }
