@@ -21,6 +21,7 @@ import AnimatedCounter from '../components/ui/AnimatedCounter';
 import useScrollReveal from '../hooks/useScrollReveal';
 import { useCelebration } from '../components/fx/CelebrationBurst';
 import PositionGlow, { deriveGlowProps } from '../components/ui/PositionGlow';
+import CollapsibleSection from '../components/ui/CollapsibleSection';
 
 const fmtUSD = n => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtTTD = n => n == null ? '—' : 'TT$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -118,27 +119,31 @@ export default function PortfolioPage() {
       {/* On-Chain Wallet Section — only shown when wallet connected */}
       {walletConnected && walletAddress && (
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <h2 className="font-headline text-[.92rem] font-bold uppercase tracking-widest text-txt">
-              On-Chain Wallet
-            </h2>
-            <span className={`px-2 py-0.5 rounded text-[.6rem] font-mono uppercase tracking-wider
-              ${cluster === 'devnet'
-                ? 'bg-[rgba(255,179,71,.1)] text-[#FFB347] border border-[rgba(255,179,71,.25)]'
-                : 'bg-up/10 text-up border border-up/25'
-              }`}>
-              {clusterLabel}
-            </span>
-            <a
-              href={getAccountExplorerUrl(walletAddress, cluster)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[.68rem] text-sea hover:text-txt no-underline transition-colors ml-auto"
-            >
-              View on Solscan
-            </a>
-          </div>
-
+          <CollapsibleSection
+            title="On-Chain Wallet"
+            accent="text-sea"
+            defaultOpen
+            storageKey="portfolio:onchain"
+            headerRight={
+              <>
+                <span className={`px-2 py-0.5 rounded text-[.6rem] font-mono uppercase tracking-wider
+                  ${cluster === 'devnet'
+                    ? 'bg-[rgba(255,179,71,.1)] text-[#FFB347] border border-[rgba(255,179,71,.25)]'
+                    : 'bg-up/10 text-up border border-up/25'
+                  }`}>
+                  {clusterLabel}
+                </span>
+                <a
+                  href={getAccountExplorerUrl(walletAddress, cluster)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[.68rem] text-sea hover:text-txt no-underline transition-colors"
+                >
+                  View on Solscan
+                </a>
+              </>
+            }
+          >
           <div className="rounded-xl border border-sea/20 p-5 mb-4" style={{ background: 'linear-gradient(135deg, rgba(0,255,163,.04), rgba(45,155,86,.02))' }}>
             <WalletBalances walletAddress={walletAddress} solPrice={solPrice} />
           </div>
@@ -230,6 +235,8 @@ export default function PortfolioPage() {
               </button>
             </div>
           )}
+
+          </CollapsibleSection>
 
           {/* Separator between on-chain and paper */}
           <div className="flex items-center gap-3 my-6">
@@ -336,8 +343,14 @@ export default function PortfolioPage() {
 
       {/* Solana Holdings */}
       {solHoldings.length > 0 && (
-        <div className="mb-6">
-          <h3 className="font-headline text-[.88rem] font-bold uppercase tracking-widest mb-3 text-txt">📊 Solana Positions</h3>
+        <CollapsibleSection
+          title="Solana Positions"
+          icon="📊"
+          accent="text-txt"
+          count={solHoldings.length}
+          defaultOpen
+          storageKey="portfolio:sol"
+        >
           <div className="flex flex-col gap-0.5">
             {solHoldings.map(h => {
               const t = tokens.find(t => t.symbol?.toUpperCase() === h.symbol?.toUpperCase());
@@ -355,13 +368,19 @@ export default function PortfolioPage() {
               );
             })}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* TTSE Holdings */}
       {ttseHoldings.length > 0 && (
-        <div className="mb-6">
-          <h3 className="font-headline text-[.88rem] font-bold uppercase tracking-widest mb-3 text-[#FF4D6D]">🇹🇹 TTSE Positions</h3>
+        <CollapsibleSection
+          title="TTSE Positions"
+          icon="🇹🇹"
+          accent="text-[#FF4D6D]"
+          count={ttseHoldings.length}
+          defaultOpen
+          storageKey="portfolio:ttse"
+        >
           <div className="flex flex-col gap-0.5">
             {ttseHoldings.map(h => {
               const s = stocks.find(s => s.sym === h.symbol);
@@ -379,49 +398,55 @@ export default function PortfolioPage() {
               );
             })}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Recent Activity */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-headline text-[.92rem] font-bold uppercase tracking-widest text-txt">All Activity</h2>
-        <div className="flex gap-2">
-          {trades.length > 0 && (
-            <button onClick={() => exportCSV(trades)}
-              className="bg-transparent border border-sea/30 text-sea cursor-pointer rounded-lg px-3 py-1 text-[.7rem] font-mono transition-all hover:bg-sea/10">
-              ↓ Export CSV
+      <CollapsibleSection
+        title="All Activity"
+        accent="text-txt"
+        count={trades.length}
+        defaultOpen
+        storageKey="portfolio:activity"
+        headerRight={
+          <>
+            {trades.length > 0 && (
+              <button onClick={() => exportCSV(trades)}
+                className="bg-transparent border border-sea/30 text-sea cursor-pointer rounded-lg px-3 py-1 text-[.7rem] font-mono transition-all hover:bg-sea/10">
+                ↓ Export CSV
+              </button>
+            )}
+            <button onClick={resetPortfolio}
+              className="bg-transparent border border-down/25 text-down cursor-pointer rounded-lg px-3 py-1 text-[.7rem] font-mono transition-all hover:bg-down/10">
+              Reset Portfolio
             </button>
-          )}
-          <button onClick={resetPortfolio}
-            className="bg-transparent border border-down/25 text-down cursor-pointer rounded-lg px-3 py-1 text-[.7rem] font-mono transition-all hover:bg-down/10">
-            Reset Portfolio
-          </button>
-        </div>
-      </div>
-
-      {trades.length === 0 ? (
-        <div className="text-muted text-sm py-8 text-center border border-border rounded-xl" style={{ background: 'var(--color-card)' }}>
-          No trades yet. Head to Paper Trade to get started!
-        </div>
-      ) : (
-        <div className="flex flex-col gap-1">
-          {trades.map(t => (
-            <div key={t.id} className="flex items-center gap-3 rounded-xl px-4 py-2 border border-border text-[.74rem]"
-              style={{ background: 'var(--color-card)' }}>
-              <span className={`px-1.5 py-0.5 rounded text-[.62rem] font-semibold uppercase
-                ${t.side === 'buy' ? 'bg-up/12 text-up' : 'bg-down/12 text-down'}`}>{t.side}</span>
-              <span className={`text-[.58rem] px-1.5 py-0.5 rounded ${t.market === 'ttse' ? 'bg-[rgba(200,16,46,.08)] text-[#FF4D6D]' : 'bg-sea/8 text-sea'}`}>
-                {t.market === 'ttse' ? 'TTSE' : 'SOL'}
-              </span>
-              <span className="font-body font-bold flex-1">{t.symbol}</span>
-              <span className="text-txt-2">
-                {t.qty < 1 ? t.qty.toFixed(4) : t.qty.toFixed(2)} @ {t.currency === 'TTD' ? fmtTTD(t.price) : fmtUSD(t.price)}
-              </span>
-              <span className="text-muted text-[.65rem] ml-auto">{new Date(t.timestamp).toLocaleString()}</span>
-            </div>
-          ))}
-        </div>
-      )}
+          </>
+        }
+      >
+        {trades.length === 0 ? (
+          <div className="text-muted text-sm py-8 text-center border border-border rounded-xl" style={{ background: 'var(--color-card)' }}>
+            No trades yet. Head to Paper Trade to get started!
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1">
+            {trades.map(t => (
+              <div key={t.id} className="flex items-center gap-3 rounded-xl px-4 py-2 border border-border text-[.74rem]"
+                style={{ background: 'var(--color-card)' }}>
+                <span className={`px-1.5 py-0.5 rounded text-[.62rem] font-semibold uppercase
+                  ${t.side === 'buy' ? 'bg-up/12 text-up' : 'bg-down/12 text-down'}`}>{t.side}</span>
+                <span className={`text-[.58rem] px-1.5 py-0.5 rounded ${t.market === 'ttse' ? 'bg-[rgba(200,16,46,.08)] text-[#FF4D6D]' : 'bg-sea/8 text-sea'}`}>
+                  {t.market === 'ttse' ? 'TTSE' : 'SOL'}
+                </span>
+                <span className="font-body font-bold flex-1">{t.symbol}</span>
+                <span className="text-txt-2">
+                  {t.qty < 1 ? t.qty.toFixed(4) : t.qty.toFixed(2)} @ {t.currency === 'TTD' ? fmtTTD(t.price) : fmtUSD(t.price)}
+                </span>
+                <span className="text-muted text-[.65rem] ml-auto">{new Date(t.timestamp).toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </CollapsibleSection>
       {/* Trading Journal */}
       <div className="mt-6 mb-6">
         <h2 className="font-headline text-[.92rem] font-bold uppercase tracking-widest text-txt mb-4">Trading Journal</h2>

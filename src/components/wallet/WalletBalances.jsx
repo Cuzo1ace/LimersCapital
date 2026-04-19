@@ -39,7 +39,7 @@ export default function WalletBalances({ walletAddress, solPrice }) {
   return (
     <div>
       {/* SOL Balance */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-start justify-between mb-4 gap-3">
         <div>
           <div className="text-[.66rem] text-muted uppercase tracking-widest mb-1">SOL Balance</div>
           <div className="font-serif text-[1.6rem] font-black text-txt">
@@ -56,22 +56,43 @@ export default function WalletBalances({ walletAddress, solPrice }) {
 
         {/* Airdrop button — devnet only */}
         {cluster === 'devnet' && (
-          <button
-            onClick={handleAirdrop}
-            disabled={airdropStatus === 'loading'}
-            className={`px-3 py-1.5 rounded-lg text-[.72rem] font-mono cursor-pointer border transition-all
-              ${airdropStatus === 'success'
-                ? 'bg-up/12 border-up/30 text-up'
-                : airdropStatus === 'error'
-                  ? 'bg-down/12 border-down/30 text-down'
-                  : 'bg-sea/8 border-sea/25 text-sea hover:bg-sea/15'
-              } disabled:opacity-50`}
-          >
-            {airdropStatus === 'loading' ? 'Airdropping...'
-              : airdropStatus === 'success' ? '+1 SOL'
-              : airdropStatus === 'error' ? 'Failed (rate limited?)'
-              : 'Airdrop 1 SOL'}
-          </button>
+          <div className="flex flex-col items-end gap-1.5">
+            <button
+              onClick={handleAirdrop}
+              disabled={airdropStatus === 'loading'}
+              className={`px-3 py-1.5 rounded-lg text-[.72rem] font-mono cursor-pointer border transition-all
+                ${airdropStatus === 'success'
+                  ? 'bg-up/12 border-up/30 text-up'
+                  : airdropStatus === 'error'
+                    ? 'bg-down/12 border-down/30 text-down'
+                    : 'bg-sea/8 border-sea/25 text-sea hover:bg-sea/15'
+                } disabled:opacity-50`}
+            >
+              {airdropStatus === 'loading' ? 'Airdropping...'
+                : airdropStatus === 'success' ? '+1 SOL'
+                : airdropStatus === 'error' ? 'Failed (rate limited?)'
+                : 'Airdrop 1 SOL'}
+            </button>
+            {airdropStatus === 'error' && (
+              <div className="flex items-center gap-2 text-[.62rem] font-mono text-txt-2">
+                <a
+                  href="https://faucet.solana.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sea hover:text-txt underline"
+                >
+                  Use faucet.solana.com →
+                </a>
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard?.writeText(String(walletAddress))}
+                  className="px-1.5 py-0.5 rounded bg-sea/10 border border-sea/25 text-sea hover:bg-sea/20 cursor-pointer"
+                >
+                  Copy address
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
 

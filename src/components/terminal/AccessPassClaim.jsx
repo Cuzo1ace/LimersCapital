@@ -7,6 +7,9 @@ import { useRpc, useCluster } from '../../solana/provider';
 import { mintAccessPass } from '../../solana/terminalPass';
 import { hasAccessPass } from '../../solana/checkPass';
 import { getTxExplorerUrl, getAccountExplorerUrl } from '../../solana/config';
+import HoverPeek from '../ui/HoverPeek';
+import HolographicLink from '../ui/HolographicLink';
+import ExplorerPreview from './ExplorerPreview';
 
 const STEP_CONNECT = 0;
 const STEP_FUND    = 1;
@@ -205,8 +208,28 @@ function AccessPassClaimInner({ account: selectedAccount }) {
       </AnimatePresence>
 
       {error && (
-        <div className="mt-4 p-3 rounded-md bg-down/10 border border-down/30 text-[.7rem] text-down font-mono">
-          ⚠ {error}
+        <div className="mt-4 p-3 rounded-md bg-down/10 border border-down/30 text-[.7rem] font-mono">
+          <div className="text-down">⚠ {error}</div>
+          {selectedAccount?.address && (
+            <div className="mt-2 pt-2 border-t border-down/20 text-txt-2 flex flex-wrap items-center gap-2">
+              <span>Devnet faucet rate-limited?</span>
+              <a
+                href="https://faucet.solana.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sea hover:text-txt underline"
+              >
+                Get devnet SOL manually →
+              </a>
+              <button
+                type="button"
+                onClick={() => navigator.clipboard?.writeText(String(selectedAccount.address))}
+                className="ml-auto px-2 py-0.5 rounded bg-sea/10 border border-sea/25 text-sea hover:bg-sea/20 text-[.65rem] cursor-pointer"
+              >
+                Copy address
+              </button>
+            </div>
+          )}
         </div>
       )}
     </GlassCard>
@@ -252,14 +275,20 @@ function FundView({ balance, busy, phase, airdropSig, cluster, onAirdrop }) {
       </button>
       {airdropSig && (
         <div className="mt-3 text-[.65rem] font-mono">
-          <a
-            href={getTxExplorerUrl(airdropSig, cluster)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sea hover:text-txt underline underline-offset-2"
+          <HoverPeek
+            content={<ExplorerPreview address={airdropSig} cluster={cluster} kind="tx" label="Airdrop transaction" />}
+            side="top"
+            align="start"
           >
-            airdrop tx ↗
-          </a>
+            <a
+              href={getTxExplorerUrl(airdropSig, cluster)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sea hover:text-txt underline underline-offset-2"
+            >
+              airdrop tx ↗
+            </a>
+          </HoverPeek>
         </div>
       )}
     </>
@@ -307,14 +336,27 @@ function DoneView({ mintResult, onEnter }) {
           {mintResult?.assetAddress}
         </div>
         <div className="flex flex-wrap gap-3 text-[.65rem] font-mono">
-          <a href={mintResult?.explorerAssetUrl} target="_blank" rel="noopener noreferrer"
-             className="text-sea hover:text-txt underline underline-offset-2">
-            view asset ↗
-          </a>
-          <a href={mintResult?.explorerTxUrl} target="_blank" rel="noopener noreferrer"
-             className="text-sea hover:text-txt underline underline-offset-2">
-            mint tx ↗
-          </a>
+          {/* View-asset is the "share your pass" artifact — wrap it in
+             HolographicLink so the primary brag-worthy link has the
+             trading-card feel. Mint-tx stays as a plain HoverPeek'd
+             anchor so the two links have visual hierarchy. */}
+          <HoverPeek
+            content={<ExplorerPreview address={mintResult?.assetAddress} cluster="devnet" kind="account" label="Your Access Pass" />}
+            side="top" align="start"
+          >
+            <HolographicLink href={mintResult?.explorerAssetUrl} tiltMax={3} className="text-[.65rem]">
+              view asset ↗
+            </HolographicLink>
+          </HoverPeek>
+          <HoverPeek
+            content={<ExplorerPreview address={mintResult?.signature} cluster="devnet" kind="tx" label="Mint transaction" />}
+            side="top" align="start"
+          >
+            <a href={mintResult?.explorerTxUrl} target="_blank" rel="noopener noreferrer"
+               className="text-sea hover:text-txt underline underline-offset-2">
+              mint tx ↗
+            </a>
+          </HoverPeek>
         </div>
       </div>
       <p className="text-txt-2 text-sm mb-4">
