@@ -15,12 +15,30 @@
 
 const HERMES_WS_URL = 'wss://hermes.pyth.network/ws';
 
-// Feed IDs (same as src/api/prices.js PYTH_FEEDS)
+// Feed IDs (same as src/api/prices.js PYTH_FEEDS).
+// Crypto + gold are streamed alongside US-equity feeds — Pyth publishes
+// all of them on the same Hermes WebSocket. Adding new tickers here just
+// extends the on-connect subscription list; unknown IDs simply never
+// emit price events (harmless).
 export const PYTH_FEED_IDS = {
+  // ── Crypto / commodities ───────────────────────────────
   SOL:  '0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d',
   BTC:  '0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43',
   ETH:  '0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace',
   GOLD: '0x765d2ba906dbc32ca17cc11f5310a89e9ee1f6420508c63861f2f8ba4ee34bb2',
+  // ── US equities (Pyth Network published feed IDs) ──────
+  // Source: pyth.network/developers/price-feed-ids — equity IDs are
+  // stable but verify before assuming mainnet correctness; the
+  // ResearchPanel falls back to mock data if a feed doesn't emit.
+  AAPL:  '0x49f6b65cb1de6b10eaf75e7c03ca029c306d0357e91b5311b175084a5ad55688',
+  TSLA:  '0x16dad506d7db8da01c87581c87ca897a012a153557d4d578c3b9c9e1bc0632f1',
+  NVDA:  '0xb1073854ed24cbc755dc527418f52b7d271f6cc967bbf8d8129112b18860a593',
+  MSFT:  '0xd0ca23c1cc005e004ccf1db5bf76aeb6a49218f43dac3d4b275e92de12ded4d1',
+  AMZN:  '0xb5d0e0fa58a1f8b81498ae670ce93c872d14434b72c364885d4fa1b257cbb07a',
+  META:  '0x78a3e3b8e676a8f73c439f5d749737034b139bbbe899ba5775216fba596607fe',
+  GOOGL: '0xe65ff435be42630439c96396653a342829e877e2aafaeaf1a10d0ee5fd2cf3f2',
+  SPY:   '0x19e09bb805456ada3979a7d1cbb4b6d63babc3a0f8e8a9509f68afa5c4c11cd5',
+  QQQ:   '0x9695e2b96ea7b3859da9ed25b7a46a920a776e2fdae19a7bcfdf2b219230452d',
 };
 
 // Also map zBTC/WETH aliases (used in prices.js)

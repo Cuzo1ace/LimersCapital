@@ -6,6 +6,11 @@ import { computeExposure, etfSymbolsFromPositions, SUPPORTED_ETFS, OTHER_TICKER 
 import { fetchEtfHoldingsBatch } from '../../api/terminal';
 import { regionOf } from '../../api/marketDataMock';
 
+// Resolve the Blink base URL — points to the worker's /actions/exposure
+// endpoint. Users share this link; Phantom / Twitter / Dialect render a
+// native card from the Action JSON manifest.
+const PROXY_BASE = (import.meta.env.VITE_API_PROXY_URL || 'https://limer-api-proxy.workers.dev').replace(/\/$/, '');
+
 const REGION_LABELS = {
   caribbean:    { label: 'Caribbean',     color: '#00ffa3' },
   us_equity:    { label: 'US equity',     color: '#bf81ff' },
@@ -74,6 +79,28 @@ export default function OverlapPanel() {
   }, [rows, total]);
 
   const caribbeanShare = regionRows.find(r => r.region === 'caribbean')?.share || 0;
+
+  // Build the Solana Action (Blink) URL for sharing the regional lens.
+  // We emit absolute shares as percentages rounded to 2 decimals — all
+  // identifying position detail stays off the URL for privacy.
+  const blinkUrl = useMemo(() => {
+    if (total <= 0) return null;
+    const params = new URLSearchParams();
+    params.set('total', Math.round(total).toString());
+    for (const r of regionRows) {
+      params.set(r.region, (r.share * 100).toFixed(2));
+    }
+    return `${PROXY_BASE}/actions/exposure?${params.toString()}`;
+  }, [regionRows, total]);
+
+  const [copied, setCopied] = useState(false);
+  function copyBlink() {
+    if (!blinkUrl) return;
+    navigator.clipboard?.writeText(blinkUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    });
+  }
 
   if (uploaded.length === 0) {
     return (
@@ -163,11 +190,22 @@ export default function OverlapPanel() {
             {caribbeanShare > 0.25 ? 'regionally anchored' : caribbeanShare > 0 ? 'US-tilted with Caribbean sleeve' : 'no Caribbean allocation'}
           </div>
         </div>
-        {loading && (
-          <div className="text-[.6rem] text-sea font-mono animate-pulse">
-            resolving ETF weights…
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {loading && (
+            <div className="text-[.6rem] text-sea font-mono animate-pulse">
+              resolving ETF weights…
+            </div>
+          )}
+          {blinkUrl && (
+            <button
+              onClick={copyBlink}
+              title="Share your regional exposure as a Solana Action — paste the URL into Phantom, Twitter, or a Dialect chat to render a native card"
+              className="text-[.6rem] uppercase tracking-widest font-headline font-bold px-2.5 py-1 rounded-md border border-sea/40 text-sea hover:bg-sea/10 transition-colors"
+            >
+              {copied ? '✓ blink copied' : '▸ share as blink'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Regional exposure strip — the headline Caribbean-vs-rest lens. */}

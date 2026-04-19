@@ -7,6 +7,8 @@ import {
   mockDaily,
   TICKER_UNIVERSE,
 } from '../../api/marketDataMock';
+import { usePythPrice } from '../../api/usePythPrice';
+import { PYTH_FEED_IDS } from '../../api/pyth-ws';
 
 function fmtMoney(v) {
   if (v == null) return '—';
@@ -34,7 +36,30 @@ function Stat({ label, value, sub, up }) {
 export default function ResearchPanel() {
   const [symbol, setSymbol] = useState('AAPL');
 
-  const quote    = useMemo(() => mockQuote(symbol),    [symbol]);
+  // Live Pyth stream for tickers with known feed IDs — mock baseline
+  // stays as the canonical snapshot (for change %, dayLow/dayHigh, etc.).
+  // When Pyth emits a tick we substitute the `.price` field so users see
+  // sub-second updates; all other overview data remains from the catalog.
+  const mockBase  = useMemo(() => mockQuote(symbol),    [symbol]);
+  const hasPyth   = Object.prototype.hasOwnProperty.call(PYTH_FEED_IDS, symbol);
+  const pyth      = usePythPrice(hasPyth ? symbol : null);
+  const livePrice = pyth?.price ?? null;
+  const quote     = useMemo(() => {
+    if (!mockBase) return null;
+    if (livePrice != null) {
+      const change = livePrice - (mockBase.price - mockBase.change);
+      return {
+        ...mockBase,
+        price:     livePrice,
+        change,
+        changePct: ((livePrice - (mockBase.price - mockBase.change)) / (mockBase.price - mockBase.change)) * 100,
+        live:      true,
+        streaming: pyth?.isStreaming === true,
+      };
+    }
+    return { ...mockBase, live: false, streaming: false };
+  }, [mockBase, livePrice, pyth?.isStreaming]);
+
   const overview = useMemo(() => mockOverview(symbol), [symbol]);
   const daily    = useMemo(() => mockDaily(symbol, 90), [symbol]);
 
@@ -87,8 +112,21 @@ export default function ResearchPanel() {
           </select>
           {quote && (
             <div className="ml-auto flex items-baseline gap-3">
-              <div className="font-headline text-2xl font-black text-txt">
-                ${quote.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              <div className="flex flex-col items-end">
+                <div className="font-headline text-2xl font-black text-txt flex items-center gap-2">
+                  ${quote.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  {quote.streaming && (
+                    <span
+                      title="Live Pyth Hermes feed"
+                      className="inline-block w-2 h-2 rounded-full bg-sea animate-pulse"
+                    />
+                  )}
+                </div>
+                {hasPyth && (
+                  <div className="text-[.55rem] uppercase tracking-[.2em] font-mono text-muted mt-0.5">
+                    {quote.streaming ? 'Pyth · live' : quote.live ? 'Pyth · cached' : 'feed pending'}
+                  </div>
+                )}
               </div>
               <div className={`text-sm font-mono ${quote.changePct >= 0 ? 'text-sea' : 'text-down'}`}>
                 {quote.changePct >= 0 ? '▲' : '▼'} {Math.abs(quote.change).toFixed(2)} ({quote.changePct.toFixed(2)}%)

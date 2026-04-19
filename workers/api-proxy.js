@@ -568,6 +568,51 @@ async function handleActionsRoute(path, request, env) {
   const actionId = path.replace('/actions/', '').split('/')[0];
   const headers = actionsCorsHeaders();
 
+  // ── Dynamic "exposure" Blink — shareable regional-portfolio card ──
+  // Query params: caribbean, us_equity, us_etf, crypto, fixed_income,
+  // other, total (dollars), label (optional short tag). All percentages
+  // are floats 0–100. The Blink renders a native card in Phantom /
+  // Twitter / Dialect whenever a user pastes the URL — CTA opens the
+  // Terminal so recipients can upload their own book.
+  if (actionId === 'exposure' && request.method === 'GET') {
+    const url = new URL(request.url);
+    const num = (k, d = 0) => {
+      const v = parseFloat(url.searchParams.get(k));
+      return Number.isFinite(v) ? v : d;
+    };
+    const parts = {
+      caribbean:    num('caribbean'),
+      us_equity:    num('us_equity'),
+      us_etf:       num('us_etf'),
+      crypto:       num('crypto'),
+      fixed_income: num('fixed_income'),
+      other:        num('other'),
+    };
+    const total = num('total');
+    const ordered = Object.entries(parts)
+      .filter(([, v]) => v > 0)
+      .sort(([, a], [, b]) => b - a);
+    const summary = ordered
+      .map(([k, v]) => `${k.replace('_', ' ')} ${v.toFixed(1)}%`)
+      .join(' · ');
+    const headline = parts.caribbean > 25 ? 'Regionally anchored Caribbean book'
+      : parts.caribbean > 0 ? 'US-tilted with Caribbean sleeve'
+      : 'Global-market book';
+    return new Response(JSON.stringify({
+      type: 'action',
+      icon: `${SITE_URL}/og-terminal.png`,
+      title: `My Terminal · ${headline}`,
+      description: `${summary}${total ? ` · $${total.toLocaleString()}` : ''}\n\nUpload your own portfolio to see your true exposure — SPY, QQQ, ARKK and iShares flattened into single-name positions, Caribbean vs US lens, Monte Carlo on demand.`,
+      label: 'See your own exposure',
+      links: {
+        actions: [
+          { label: 'Open Terminal', href: `${SITE_URL}?tab=terminal`, type: 'external-link' },
+          { label: 'Learn about Limer\'s', href: `${SITE_URL}?tab=learn`, type: 'external-link' },
+        ],
+      },
+    }), { status: 200, headers });
+  }
+
   // Only GET is needed for Blink preview cards
   if (request.method === 'GET') {
     const actions = {
