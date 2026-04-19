@@ -1,0 +1,37 @@
+{
+  "name": "@limers/curriculum",
+  "version": "0.1.0-alpha.0",
+  "description": "Retail-friendly crypto & DeFi curriculum (8 modules, 37+ lessons, 8 quizzes) extracted from Limer's Capital. The data-layer half of a learn-to-earn stack; pair with @limers/gamification for the reward loop.",
+  "type": "module",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./modules": "./src/modules.js",
+    "./lessons": "./src/lessons.js",
+    "./quizzes": "./src/quizzes.js",
+    "./schema": "./src/schema.js"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "keywords": [
+    "solana",
+    "defi",
+    "education",
+    "learn-to-earn",
+    "curriculum",
+    "caribbean"
+  ],
+  "homepage": "https://limerscapital.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/limerscapital/caribcryptomap"
+  },
+  "license": "Apache-2.0",
+  "private": true,
+  "publishConfig": {
+    "access": "public"
+  }
+}

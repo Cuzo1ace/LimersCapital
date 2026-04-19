@@ -1,4 +1,4 @@
-import { TIERS } from './gamification';
+import { TIERS } from './gamification.js';
 
 export const LP_MULTIPLIERS = {
   1: 1.0,  // Sand Walker

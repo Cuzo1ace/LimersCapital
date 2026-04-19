@@ -1,0 +1,40 @@
+{
+  "name": "@limers/gamification",
+  "version": "0.1.0-alpha.0",
+  "description": "XP, tiers, badges, LP multipliers, and leaderboard helpers extracted from Limer's Capital — a production-tested reward loop for Solana retail apps. Framework-agnostic pure functions; pair with @limers/curriculum for a full learn-to-earn stack.",
+  "type": "module",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./tiers": "./src/tiers.js",
+    "./xp": "./src/xp.js",
+    "./lp": "./src/lp.js",
+    "./badges": "./src/badges.js",
+    "./features": "./src/features.js",
+    "./schema": "./src/schema.js"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "keywords": [
+    "solana",
+    "gamification",
+    "learn-to-earn",
+    "xp",
+    "badges",
+    "leaderboard",
+    "caribbean"
+  ],
+  "homepage": "https://limerscapital.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/limerscapital/caribcryptomap"
+  },
+  "license": "Apache-2.0",
+  "private": true,
+  "publishConfig": {
+    "access": "public"
+  }
+}
