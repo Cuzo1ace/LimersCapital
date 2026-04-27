@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { getSourceBrand } from '../../lib/newsBrand';
+import TiltCard from '../ui/TiltCard';
 
 /**
  * Click-to-reveal card anchored to a bubble in NewsBubbleMap.
@@ -36,46 +37,55 @@ export default function BubblePopover({
     <motion.div
       role="dialog"
       aria-label={`Details: ${node.label}`}
-      initial={{ opacity: 0, y: 8, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 4, scale: 0.98 }}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 4 }}
       transition={{ type: 'spring', stiffness: 480, damping: 28 }}
-      className="absolute z-[60] w-[280px] md:w-[320px] rounded-xl border backdrop-blur-xl pointer-events-auto"
-      style={{
-        background: 'rgba(13,14,16,0.92)',
-        borderColor: 'rgba(255,255,255,0.14)',
-        boxShadow: '0 20px 50px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,255,163,0.06)',
-        ...style,
-      }}
+      className="absolute z-[60] w-[280px] md:w-[320px] pointer-events-auto"
+      style={style}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Pointer from bubble to card (small tick on top-left) */}
-      <div
-        className="absolute -top-1.5 left-6 w-3 h-3 rotate-45 border-l border-t pointer-events-none"
+      <TiltCard
+        tiltLimit={8}
+        scale={1.02}
+        perspective={1400}
+        effect="evade"
+        spotlight
+        className="rounded-xl border backdrop-blur-xl"
         style={{
           background: 'rgba(13,14,16,0.92)',
           borderColor: 'rgba(255,255,255,0.14)',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,255,163,0.06)',
         }}
-      />
-
-      {/* Close button */}
-      <button
-        onClick={onClose}
-        aria-label="Close card"
-        className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-md text-muted hover:text-txt hover:bg-white/5 cursor-pointer border-none bg-transparent text-[.72rem] transition-colors"
       >
-        ✕
-      </button>
+        {/* Pointer from bubble to card (small tick on top-left) */}
+        <div
+          className="absolute -top-1.5 left-6 w-3 h-3 rotate-45 border-l border-t pointer-events-none z-20"
+          style={{
+            background: 'rgba(13,14,16,0.92)',
+            borderColor: 'rgba(255,255,255,0.14)',
+          }}
+        />
 
-      {node.kind === 'item' && (
-        <ItemCard node={node} onClose={onClose} onOpenModal={onOpenModal} />
-      )}
-      {node.kind === 'ticker' && (
-        <TickerCard node={node} items={items} onFilterFeed={onFilterFeed} onOpenItem={onOpenItem} />
-      )}
-      {node.kind === 'tag' && (
-        <TagCard node={node} items={items} onFilterFeed={onFilterFeed} onOpenItem={onOpenItem} />
-      )}
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          aria-label="Close card"
+          className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-md text-muted hover:text-txt hover:bg-white/5 cursor-pointer border-none bg-transparent text-[.72rem] transition-colors z-20"
+        >
+          ✕
+        </button>
+
+        {node.kind === 'item' && (
+          <ItemCard node={node} onClose={onClose} onOpenModal={onOpenModal} />
+        )}
+        {node.kind === 'ticker' && (
+          <TickerCard node={node} items={items} onFilterFeed={onFilterFeed} onOpenItem={onOpenItem} />
+        )}
+        {node.kind === 'tag' && (
+          <TagCard node={node} items={items} onFilterFeed={onFilterFeed} onOpenItem={onOpenItem} />
+        )}
+      </TiltCard>
     </motion.div>
   );
 }

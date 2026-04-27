@@ -17,7 +17,7 @@ import { getSourceBrand } from '../../lib/newsBrand';
 import { getTickerAsset, svgToDataUri } from '../../lib/tickerAssets';
 import NewsPreviewModal from './NewsPreviewModal';
 import BubblePopover from './BubblePopover';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 
 // Lightens a hex (#RRGGBB) color toward white by `amount` (0-1).
 function lighten(hex, amount = 0.5) {
@@ -97,6 +97,9 @@ export default function NewsBubbleMap({ items, onFilterChipChange, onSwitchToGri
   const worldRef = useRef(null);
   const minimapRef = useRef(null);
   const simRef = useRef(null);
+  const reducedMotion = useReducedMotion();
+  const visitedNewsItems = useStore(s => s.visitedNewsItems);
+  const markNewsItemVisited = useStore(s => s.markNewsItemVisited);
   const [dims, setDims] = useState({ w: WIDTH_DEFAULT, h: HEIGHT_DEFAULT });
   const [selected, setSelected] = useState(null);
   const [query, setQuery] = useState('');
@@ -108,6 +111,10 @@ export default function NewsBubbleMap({ items, onFilterChipChange, onSwitchToGri
   // the link, which is fine — they can click again).
   const [popoverNode, setPopoverNode] = useState(null);
   const [popoverPos, setPopoverPos] = useState({ x: 0, y: 0 });
+  // Screen-space center+radius of the currently selected bubble — drives
+  // the SVG ring halo overlay so it tracks the bubble through the force
+  // simulation, drags, and zoom/pan. Shape: { cx, cy, r } in container coords.
+  const [highlightBox, setHighlightBox] = useState(null);
   // Latest node positions keyed by id — written on every sim tick, read
   // by the popover-position effect below.
   const nodePositionsRef = useRef(new Map());
@@ -305,6 +312,17 @@ export default function NewsBubbleMap({ items, onFilterChipChange, onSwitchToGri
       .style('pointer-events', 'none')
       .style('user-select', 'none');
 
+    // Source-brand glyph centered on each item bubble — gives every news
+    // bubble a visible identity even when many items share the same accent.
+    nodeG.filter(d => d.kind === 'item')
+      .append('text')
+      .text(d => getSourceBrand(d.source_name).glyph)
+      .attr('text-anchor', 'middle')
+      .attr('dy', '0.35em')
+      .attr('font-size', d => Math.max(11, d.radius * 0.7))
+      .style('pointer-events', 'none')
+      .style('user-select', 'none');
+
     // Drag behavior — uses d3-drag (plays nice with SVG + click)
     const dragBehavior = d3drag()
       .on('start', (event, d) => {
@@ -374,19 +392,32 @@ export default function NewsBubbleMap({ items, onFilterChipChange, onSwitchToGri
     // Rebuild whenever the graph structure changes or canvas resizes.
   }, [graph, dims.w, dims.h]);
 
-  // Track the popover anchor position as the simulation ticks and the
-  // viewport transform changes. Converts world coords to SVG-local
-  // coords (world.x, world.y) then applies the zoom transform.
+  // Track the popover anchor + highlight overlay position. We read the
+  // bubble's screen-space rect directly from the live SVG element each
+  // frame — robust to d3 sim cycles, HMR, drags, and zoom/pan.
   useEffect(() => {
-    if (!popoverNode) return;
+    if (!popoverNode) {
+      setHighlightBox(null);
+      return;
+    }
     let raf = 0;
     const update = () => {
-      const pos = nodePositionsRef.current.get(popoverNode.id);
-      if (pos) {
-        // Anchor the popover just below and slightly right of the bubble.
-        const x = pos.x * viewport.k + viewport.x + pos.radius * viewport.k + 8;
-        const y = pos.y * viewport.k + viewport.y + pos.radius * viewport.k + 8;
-        setPopoverPos({ x, y });
+      const svgEl = svgRef.current;
+      if (svgEl) {
+        // Find the rendered <g class="bubble"> for this node by datum id
+        const target = Array.from(svgEl.querySelectorAll('g.bubble'))
+          .find(g => g.__data__?.id === popoverNode.id);
+        if (target) {
+          const tr = target.getBoundingClientRect();
+          const sr = svgEl.getBoundingClientRect();
+          const cx = tr.left + tr.width / 2 - sr.left;
+          const cy = tr.top + tr.height / 2 - sr.top;
+          const r = tr.width / 2;
+          // Popover anchors just below + right of the bubble.
+          setPopoverPos({ x: cx + r + 8, y: cy + r + 8 });
+          // Halo: bubble center + radius in container coords.
+          setHighlightBox({ cx, cy, r });
+        }
       }
       raf = requestAnimationFrame(update);
     };
@@ -410,11 +441,58 @@ export default function NewsBubbleMap({ items, onFilterChipChange, onSwitchToGri
       });
   }, [activeIds]);
 
+  // Apply "visited" styling — dim the bubble fill and add a small ✓ badge
+  // so users can see at a glance which news items they've already opened.
+  // Runs whenever the visited set or graph changes; doesn't rebuild the sim.
+  useEffect(() => {
+    const world = select(worldRef.current);
+    if (world.empty()) return;
+    const visitedSet = new Set(visitedNewsItems);
+
+    world.selectAll('g.bubble-item').each(function (d) {
+      const isVisited = d.item?.id && visitedSet.has(d.item.id);
+      const node = select(this);
+      // Dim the sphere + desaturate
+      node.select('circle.bubble-sphere')
+        .attr('fill-opacity', isVisited ? 0.45 : 1)
+        .attr('stroke', isVisited ? 'rgba(0,255,163,0.55)' : 'rgba(255,255,255,0.18)')
+        .attr('stroke-width', isVisited ? 1.6 : 1.2);
+
+      // Add or remove the visited ✓ badge (top-right of bubble)
+      const existing = node.select('g.visited-badge');
+      if (isVisited && existing.empty()) {
+        const badge = node.append('g').attr('class', 'visited-badge')
+          .attr('transform', `translate(${d.radius * 0.65},${-d.radius * 0.65})`)
+          .style('pointer-events', 'none');
+        badge.append('circle')
+          .attr('r', 7)
+          .attr('fill', '#00ffa3')
+          .attr('stroke', '#0d0e10')
+          .attr('stroke-width', 1.5);
+        badge.append('text')
+          .text('✓')
+          .attr('text-anchor', 'middle')
+          .attr('dy', '0.32em')
+          .attr('font-size', 9)
+          .attr('font-weight', 700)
+          .attr('fill', '#0d0e10')
+          .attr('font-family', 'DM Mono, monospace');
+      } else if (!isVisited && !existing.empty()) {
+        existing.remove();
+      }
+    });
+  }, [visitedNewsItems, graph]);
+
   function handleNodeClick(d) {
     // d3 event listeners run outside React's auto-batched event path in
     // some React 18 code paths; queueMicrotask defers the setState so
     // React reliably schedules a re-render.
     queueMicrotask(() => {
+      // Mark item bubbles as visited so the user can see at a glance
+      // which news items they've already navigated.
+      if (d.kind === 'item' && d.item?.id) {
+        markNewsItemVisited(d.item.id);
+      }
       // New UX: every click opens the popover card. The card's own
       // buttons trigger the downstream actions (modal, filter, etc.).
       setPopoverNode(d);
@@ -442,6 +520,15 @@ export default function NewsBubbleMap({ items, onFilterChipChange, onSwitchToGri
   const itemCount = graph.nodes.filter(n => n.kind === 'item').length;
   const tickerCount = graph.nodes.filter(n => n.kind === 'ticker').length;
   const tagCount = graph.nodes.filter(n => n.kind === 'tag').length;
+
+  // Sources actually present in the current feed — drives the per-source legend.
+  const presentSources = useMemo(() => {
+    const set = new Set();
+    for (const n of graph.nodes) {
+      if (n.kind === 'item' && n.source_name) set.add(n.source_name);
+    }
+    return [...set].slice(0, 8);
+  }, [graph]);
 
   return (
     <div className="relative rounded-2xl border border-border overflow-hidden bg-[var(--color-night-2)]">
@@ -497,6 +584,83 @@ export default function NewsBubbleMap({ items, onFilterChipChange, onSwitchToGri
           <rect width="100%" height="100%" fill="url(#bubble-bg)" />
           <g ref={worldRef} />
         </svg>
+
+        {/* Selected-bubble halo — thin sea-green inner ring + two pinging
+            outer rings. SVG strokes scale crisply at any bubble radius and
+            sit cleanly over any source colour. SMIL animations drive the
+            shimmer + pings (more reliable for SVG attrs than framer-motion
+            in this codebase). */}
+        {highlightBox && popoverNode && (() => {
+          const { cx, cy, r } = highlightBox;
+          const pingRange = Math.max(10, r * 0.5);
+          // Bound the SVG to a rect that covers the largest ping radius.
+          const reach = r + 3 + pingRange + 4;
+          const left = cx - reach;
+          const top = cy - reach;
+          const size = reach * 2;
+          // Translate centre coords into local SVG coords.
+          const lx = reach;
+          const ly = reach;
+          const baseR = r + 3;
+          const farR = baseR + pingRange;
+          return (
+            <svg
+              width={size}
+              height={size}
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                left,
+                top,
+                pointerEvents: 'none',
+                zIndex: 5,
+                overflow: 'visible',
+              }}
+            >
+              <defs>
+                <filter id="halo-soft" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="1.2" />
+                </filter>
+              </defs>
+
+              {/* Stable inner ring — marks "this is selected" */}
+              <circle
+                className="bubble-halo-shimmer"
+                cx={lx}
+                cy={ly}
+                r={baseR}
+                fill="none"
+                stroke="#00ffa3"
+                strokeWidth={1.5}
+                strokeOpacity={0.9}
+                filter="url(#halo-soft)"
+              />
+
+              {/* Two staggered ping rings — communicates "active / live".
+                  CSS scales them outward from baseR to baseR*1.7. */}
+              <circle
+                className="bubble-halo-ping"
+                cx={lx}
+                cy={ly}
+                r={baseR}
+                fill="none"
+                stroke="#00ffa3"
+                strokeWidth={1}
+                strokeOpacity={0.55}
+              />
+              <circle
+                className="bubble-halo-ping bubble-halo-ping--delayed"
+                cx={lx}
+                cy={ly}
+                r={baseR}
+                fill="none"
+                stroke="#00ffa3"
+                strokeWidth={1}
+                strokeOpacity={0.55}
+              />
+            </svg>
+          );
+        })()}
 
         {/* Popover card anchored to the active bubble */}
         <AnimatePresence>
@@ -557,21 +721,45 @@ export default function NewsBubbleMap({ items, onFilterChipChange, onSwitchToGri
           </div>
         )}
 
-        {/* Legend */}
-        <div className="absolute top-3 left-3 rounded-md border border-border bg-[rgba(13,14,16,0.75)] backdrop-blur-md px-2.5 py-2 text-[.6rem] text-txt-2 pointer-events-none">
-          <div className="flex items-center gap-1.5 mb-1">
-            <span className="w-3 h-3 rounded-full" style={{ background: '#00ffa3', opacity: 0.85 }} />
-            <span>News item</span>
+        {/* Legend — per-source key derived from items in view */}
+        {presentSources.length > 0 && (
+          <div className="absolute top-3 left-3 rounded-md border border-border bg-[rgba(13,14,16,0.75)] backdrop-blur-md px-2.5 py-2 text-[.6rem] text-txt-2 pointer-events-none max-w-[220px]">
+            <div className="text-[.55rem] uppercase tracking-widest text-muted mb-1.5 font-headline">Sources</div>
+            {presentSources.map(name => {
+              const brand = getSourceBrand(name);
+              return (
+                <div key={name} className="flex items-center gap-1.5 mb-1 last:mb-0">
+                  <span
+                    className="w-4 h-4 rounded-full flex items-center justify-center text-[.55rem] shrink-0 overflow-hidden"
+                    style={{ background: brand.accent, opacity: 0.9 }}
+                  >
+                    {brand.image ? (
+                      <img
+                        src={brand.image}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        draggable={false}
+                      />
+                    ) : (
+                      brand.glyph
+                    )}
+                  </span>
+                  <span className="truncate">{name}</span>
+                </div>
+              );
+            })}
+            <div className="mt-1.5 pt-1.5 border-t border-border flex items-center gap-3 text-muted">
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full" style={{ background: '#00ffa3', opacity: 0.6 }} />
+                ticker
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full" style={{ background: '#bf81ff', opacity: 0.6 }} />
+                tag
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 mb-1">
-            <span className="w-3 h-3 rounded-full" style={{ background: '#00ffa3', opacity: 0.55 }} />
-            <span>Ticker</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full" style={{ background: '#bf81ff', opacity: 0.55 }} />
-            <span>Tag</span>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Hint */}
