@@ -17,7 +17,7 @@ export default function AttributionChip({ className = '', compact = false }) {
       href={BLOCKWORKS_HOME}
       target="_blank"
       rel="noopener noreferrer"
-      className={`inline-flex items-center text-[.56rem] font-mono uppercase tracking-widest text-txt-2 hover:text-[#C46CFF] transition-colors no-underline ${className}`}
+      className={`inline-flex items-center text-[.56rem] font-mono uppercase tracking-widest text-txt-2 hover:text-coral-lt transition-colors no-underline ${className}`}
       title="Data powered by CoinGecko, editorial curation via Blockworks"
     >
       {label}

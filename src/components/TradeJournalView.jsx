@@ -1,5 +1,6 @@
 import useStore from '../store/useStore';
 import { fmtUSD } from '../utils/format';
+import { InsightIcon } from './icons';
 
 /**
  * TradeJournalView — Journal entries paired with P&L outcomes.
@@ -37,7 +38,7 @@ export default function TradeJournalView() {
   if (journaledTrades.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-[2.5rem] mb-3">📝</div>
+        <InsightIcon size={34} className="mx-auto mb-3 text-sun" />
         <div className="font-body font-bold text-[.95rem] text-txt mb-2">Start Your Trading Journal</div>
         <div className="text-[.78rem] text-txt-2 max-w-sm mx-auto leading-relaxed">
           After each trade, you'll be prompted to record your strategy and mindset.
@@ -51,8 +52,8 @@ export default function TradeJournalView() {
     <div>
       {/* Pattern Insights */}
       {(Object.keys(strategyStats).length > 1 || Object.keys(emotionStats).length > 1) && (
-        <div className="rounded-xl border border-[#00ffa3]/15 p-4 mb-5" style={{ background: 'rgba(0,255,163,.03)' }}>
-          <div className="text-[.6rem] font-mono font-bold text-[#00ffa3] uppercase tracking-wider mb-3">
+        <div className="rounded-xl border border-sea/15 p-4 mb-5" style={{ background: 'color-mix(in srgb, var(--color-sea) 3%, transparent)' }}>
+          <div className="text-[.6rem] font-mono font-bold text-sea uppercase tracking-wider mb-3">
             Pattern Insights
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -115,12 +116,12 @@ export default function TradeJournalView() {
             {/* Journal content */}
             <div className="flex flex-wrap gap-1.5 mb-1.5">
               {t.journal.strategy && (
-                <span className="text-[.6rem] font-mono px-2 py-0.5 rounded-full border border-[#00ffa3]/20 bg-[#00ffa3]/5 text-[#00ffa3]">
+                <span className="text-[.6rem] font-mono px-2 py-0.5 rounded-full border border-sea/20 bg-sea/5 text-sea">
                   {t.journal.strategy}
                 </span>
               )}
               {t.journal.emotion && (
-                <span className="text-[.6rem] font-mono px-2 py-0.5 rounded-full border border-[#FFCA3A]/20 bg-[#FFCA3A]/5 text-[#FFCA3A]">
+                <span className="text-[.6rem] font-mono px-2 py-0.5 rounded-full border border-sun/20 bg-sun/5 text-sun">
                   {t.journal.emotion}
                 </span>
               )}

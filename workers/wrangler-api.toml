@@ -7,6 +7,7 @@
 #   wrangler secret put HELIUS_API_KEY        -c wrangler-api.toml   # Helius RPC + DAS
 #   wrangler secret put FMP_API_KEY           -c wrangler-api.toml   # Financial Modeling Prep
 #   wrangler secret put FINNHUB_API_KEY       -c wrangler-api.toml   # Finnhub market data
+#   wrangler secret put COINGECKO_API_KEY     -c wrangler-api.toml   # CoinGecko Demo tier (30 rpm / 10k per month)
 #   wrangler secret put ANTHROPIC_API_KEY     -c wrangler-api.toml   # Claude API (AI briefs)
 #   wrangler secret put SENTRY_DSN            -c wrangler-api.toml   # Worker error telemetry
 #   wrangler secret put FAUCET_KEYPAIR_JSON   -c wrangler-api.toml   # Devnet mTTDC faucet signer

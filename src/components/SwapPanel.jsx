@@ -16,7 +16,7 @@ import {
  *
  * Uses wallet-standard (via @solana/react useSelectedWalletAccount) and
  * @anchor-lang/core through the helpers in src/solana/amm-swap.js. Matches
- * JupiterSwap's visual language (unified variant: #C46CFF accent, same
+ * JupiterSwap's visual language (unified variant: --color-coral-lt accent, same
  * input / status banner styles).
  *
  * Design:
@@ -83,8 +83,8 @@ export default function SwapPanel() {
 // the connected variant so the layout doesn't shift on connect/disconnect.
 function SwapPanelDisconnected() {
   return (
-    <div className="rounded-2xl border border-[#C46CFF]/20 bg-black/30 backdrop-blur-sm p-5">
-      <h3 className="text-base font-semibold" style={{ color: '#C46CFF' }}>
+    <div className="rounded-2xl border border-coral-lt/20 bg-black/30 backdrop-blur-sm p-5">
+      <h3 className="text-base font-semibold" style={{ color: 'var(--color-coral-lt)' }}>
         Swap · Limer AMM
       </h3>
       <p className="text-xs text-white/50 mt-0.5 mb-6">
@@ -253,10 +253,10 @@ function SwapPanelInner({ selectedAccount }) {
 
   // ── Render ─────────────────────────────────────────────────────────
   return (
-    <div className="rounded-2xl border border-[#C46CFF]/20 bg-black/30 backdrop-blur-sm p-5">
+    <div className="rounded-2xl border border-coral-lt/20 bg-black/30 backdrop-blur-sm p-5">
       <div className="flex items-center justify-between gap-4 mb-3">
         <div>
-          <h3 className="text-base font-semibold" style={{ color: '#C46CFF' }}>
+          <h3 className="text-base font-semibold" style={{ color: 'var(--color-coral-lt)' }}>
             Swap · Limer AMM
           </h3>
           <p className="text-xs text-white/50 mt-0.5">
@@ -270,7 +270,7 @@ function SwapPanelInner({ selectedAccount }) {
               onClick={() => setSlippageBps(opt.bps)}
               className={`px-2 py-1 rounded border ${
                 slippageBps === opt.bps
-                  ? 'border-[#C46CFF]/60 bg-[#C46CFF]/15 text-[#C46CFF]'
+                  ? 'border-coral-lt/60 bg-coral-lt/15 text-coral-lt'
                   : 'border-white/10 text-white/40 hover:text-white/70'
               }`}
             >
@@ -316,7 +316,7 @@ function SwapPanelInner({ selectedAccount }) {
       <div className="flex justify-center my-1">
         <button
           onClick={handleFlip}
-          className="w-8 h-8 rounded-full border border-white/10 bg-black/50 text-white/60 hover:border-[#C46CFF]/60 hover:text-[#C46CFF] transition"
+          className="w-8 h-8 rounded-full border border-white/10 bg-black/50 text-white/60 hover:border-coral-lt/60 hover:text-coral-lt transition"
           title="Flip pay/receive"
         >
           ⇅
@@ -420,7 +420,7 @@ function SwapPanelInner({ selectedAccount }) {
         onClick={handleSwap}
         disabled={!canSwap}
         className="w-full py-3 rounded-xl font-semibold text-black transition disabled:opacity-40 disabled:cursor-not-allowed"
-        style={{ background: '#C46CFF' }}
+        style={{ background: 'var(--color-coral-lt)' }}
       >
         {!walletConnected
           ? 'Connect wallet to swap'

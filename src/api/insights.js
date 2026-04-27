@@ -1,12 +1,16 @@
-// Insights APIs — all free tier, no keys needed
-// CoinGecko Demo API: https://api.coingecko.com/api/v3 (rate limit: 30 calls/min)
+// Insights APIs. CoinGecko calls are routed through the Cloudflare Worker
+// proxy so the Demo API key (server-side secret COINGECKO_API_KEY) is injected
+// as x-cg-demo-api-key. Paths follow the proxy's /coingecko/* alias — upstream
+// /coins/markets is exposed as /coingecko/markets, /search/trending as
+// /coingecko/trending, etc. See workers/api-proxy.js ROUTES block.
 
-const CG = 'https://api.coingecko.com/api/v3';
+const API_PROXY_URL = import.meta.env.VITE_API_PROXY_URL || 'https://limer-api-proxy.solanacaribbean-team.workers.dev';
+const CG = `${API_PROXY_URL}/coingecko`;
 
 // ─── CoinGecko: Top crypto by market cap ─────────────────────────────────────
 export async function fetchCryptoMarket() {
   const res = await fetch(
-    `${CG}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=false&price_change_percentage=1h,24h,7d`
+    `${CG}/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=false&price_change_percentage=1h,24h,7d`
   );
   if (!res.ok) throw new Error(`CoinGecko error: ${res.status}`);
   return (await res.json()).map(c => ({
@@ -22,7 +26,7 @@ export async function fetchCryptoMarket() {
 // ─── CoinGecko: RWA tokens ───────────────────────────────────────────────────
 export async function fetchRWATokens() {
   const res = await fetch(
-    `${CG}/coins/markets?vs_currency=usd&category=real-world-assets-rwa&order=market_cap_desc&per_page=10&page=1&sparkline=false&price_change_percentage=24h`
+    `${CG}/markets?vs_currency=usd&category=real-world-assets-rwa&order=market_cap_desc&per_page=10&page=1&sparkline=false&price_change_percentage=24h`
   );
   if (!res.ok) throw new Error(`CoinGecko RWA error: ${res.status}`);
   return (await res.json()).map(c => ({
@@ -35,7 +39,7 @@ export async function fetchRWATokens() {
 // ─── CoinGecko: Layer 1 tokens ───────────────────────────────────────────────
 export async function fetchL1Tokens() {
   const res = await fetch(
-    `${CG}/coins/markets?vs_currency=usd&category=layer-1&order=market_cap_desc&per_page=10&page=1&sparkline=false&price_change_percentage=24h,7d`
+    `${CG}/markets?vs_currency=usd&category=layer-1&order=market_cap_desc&per_page=10&page=1&sparkline=false&price_change_percentage=24h,7d`
   );
   if (!res.ok) throw new Error(`CoinGecko L1 error: ${res.status}`);
   return (await res.json()).map(c => ({
@@ -50,7 +54,7 @@ export async function fetchL1Tokens() {
 // ─── CoinGecko: DeFi category data ──────────────────────────────────────────
 export async function fetchDeFiMarket() {
   const res = await fetch(
-    `${CG}/coins/markets?vs_currency=usd&category=decentralized-finance-defi&order=market_cap_desc&per_page=10&page=1&sparkline=false&price_change_percentage=24h`
+    `${CG}/markets?vs_currency=usd&category=decentralized-finance-defi&order=market_cap_desc&per_page=10&page=1&sparkline=false&price_change_percentage=24h`
   );
   if (!res.ok) throw new Error(`CoinGecko DeFi error: ${res.status}`);
   return (await res.json()).map(c => ({
@@ -62,7 +66,7 @@ export async function fetchDeFiMarket() {
 
 // ─── CoinGecko: Trending coins & categories ─────────────────────────────────
 export async function fetchTrending() {
-  const res = await fetch(`${CG}/search/trending`);
+  const res = await fetch(`${CG}/trending`);
   if (!res.ok) throw new Error(`CoinGecko trending error: ${res.status}`);
   const json = await res.json();
   return {
@@ -126,7 +130,7 @@ export async function fetchSolanaDexVolume() {
 // ─── CoinGecko: Stablecoins on Solana (by market cap) ───────────────────────
 export async function fetchSolanaStablecoins() {
   const res = await fetch(
-    `${CG}/coins/markets?vs_currency=usd&category=stablecoins&order=market_cap_desc&per_page=10&page=1&sparkline=false`
+    `${CG}/markets?vs_currency=usd&category=stablecoins&order=market_cap_desc&per_page=10&page=1&sparkline=false`
   );
   if (!res.ok) throw new Error(`CoinGecko stablecoin error: ${res.status}`);
   const data = await res.json();
@@ -198,20 +202,8 @@ export async function fetchCaribFXRates() {
     .map(code => ({ code, rate: json.rates[code], name: names[code] || code }));
 }
 
-// ─── CoinGecko: Crypto news feed (free, no key) ──────────────────────────────
-export async function fetchCryptoNews() {
-  const res = await fetch(`${CG}/news?page=1`);
-  if (!res.ok) throw new Error(`News error: ${res.status}`);
-  const data = await res.json();
-  return (data.data || []).slice(0, 9).map(n => ({
-    id: n.id,
-    title: n.title,
-    url: n.url,
-    source: n.news_site,
-    publishedOn: typeof n.created_at === 'number' ? n.created_at : Math.floor(new Date(n.created_at).getTime() / 1000),
-    imageUrl: n.thumb_2x,
-  }));
-}
+// Crypto news: previously CoinGecko /news, which moved to the Pro tier in 2023.
+// InsightsPage now uses fetchMarketNews('crypto') from ./finnhub.js directly.
 
 // ─── World Bank: Caribbean GDP growth ────────────────────────────────────────
 export async function fetchCaribbeanGDP() {

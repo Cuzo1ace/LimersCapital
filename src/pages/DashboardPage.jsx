@@ -26,6 +26,24 @@ import SocialProofBar from '../components/SocialProofBar';
 import WaitlistModal from '../components/WaitlistModal';
 import AnimatedCounter from '../components/ui/AnimatedCounter';
 import useScrollReveal from '../hooks/useScrollReveal';
+import TierMark from '../components/ui/TierMark';
+import LimerLogo from '../components/brand/LimerLogo';
+import LimerMark from '../components/brand/LimerMark';
+import {
+  CheckIcon,
+  ChartIcon,
+  InsightIcon,
+  LearnIcon,
+  LimerIcon,
+  LinkIcon,
+  ShieldIcon,
+  StreakIcon,
+  TargetIcon,
+  TickerIcon,
+  TrendUpIcon,
+  TrophyIcon,
+  WalletIcon,
+} from '../components/icons';
 
 export default function DashboardPage() {
   const { t } = useTranslation();
@@ -79,14 +97,14 @@ export default function DashboardPage() {
   // Next suggested action
   const nextAction = (() => {
     if (!walletConnected)
-      return { icon: '🔗', title: 'Connect Your Wallet', desc: 'Unlock on-chain features and earn +50 LP.', cta: 'Connect', tab: null };
+      return { Icon: LinkIcon, iconClass: 'text-sea', title: 'Connect Your Wallet', desc: 'Unlock on-chain features and earn +50 LP.', cta: 'Connect', tab: null };
     if (modulesCompleted.length === 0)
-      return { icon: '📚', title: 'Complete Module 1', desc: 'Finish Solana Basics to unlock trading features and earn 200 XP.', cta: 'Go Learn', tab: 'learn' };
+      return { Icon: LearnIcon, iconClass: 'text-sea', title: 'Complete Module 1', desc: 'Finish Solana Basics to unlock trading features and earn 200 XP.', cta: 'Go Learn', tab: 'learn' };
     if (trades.length === 0)
-      return { icon: '💹', title: 'Make Your First Trade', desc: 'Paper trade any Solana token risk-free. Earn your First Trade badge.', cta: 'Start Trading', tab: 'trade' };
+      return { Icon: TickerIcon, iconClass: 'text-sea', title: 'Make Your First Trade', desc: 'Paper trade any Solana token risk-free. Earn your First Trade badge.', cta: 'Start Trading', tab: 'trade' };
     if (earnedBadges.length < 5)
-      return { icon: '🎖️', title: 'Collect More Badges', desc: `You've earned ${earnedBadges.length}/25 badges. Keep learning and trading.`, cta: 'View Badges', tab: 'learn' };
-    return { icon: '🏆', title: 'Check Your LP Rank', desc: `${fmtNum(limerPoints)} LP accumulated → $LIMER airdrop allocation.`, cta: 'View Points', tab: 'points' };
+      return { Icon: TrophyIcon, iconClass: 'text-sun', title: 'Collect More Badges', desc: `You've earned ${earnedBadges.length}/25 badges. Keep learning and trading.`, cta: 'View Badges', tab: 'learn' };
+    return { Icon: TrophyIcon, iconClass: 'text-sun', title: 'Check Your LP Rank', desc: `${fmtNum(limerPoints)} LP accumulated → $LIMER airdrop allocation.`, cta: 'View Points', tab: 'points' };
   })();
 
   const [showWaitlist, setShowWaitlist] = useState(false);
@@ -103,10 +121,14 @@ export default function DashboardPage() {
 
       {/* Start Here banner — guides new users to their first action */}
       {trades.length === 0 && modulesCompleted.length === 0 && (
-        <div className="rounded-xl border border-sea/25 p-6 mb-6"
-          style={{ background: 'linear-gradient(135deg, rgba(0,255,163,.08) 0%, rgba(0,255,163,.02) 100%)' }}>
+        <div
+          className="rounded-xl border border-sea/25 p-6 mb-6"
+          style={{
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-sea) 8%, transparent) 0%, color-mix(in srgb, var(--color-sea) 2%, transparent) 100%)',
+          }}
+        >
           <div className="flex items-start gap-5 flex-wrap">
-            <div className="text-[2.5rem]">🎯</div>
+            <TargetIcon size={40} className="text-sea flex-shrink-0" />
             <div className="flex-1 min-w-[200px]">
               <h2 className="font-headline text-[1.2rem] font-black text-txt mb-1">Welcome! Start Here</h2>
               <p className="text-[.8rem] text-txt-2 leading-relaxed mb-4">
@@ -117,36 +139,24 @@ export default function DashboardPage() {
               <div className="flex gap-3 flex-wrap">
                 <LiquidMetalButton
                   label="Start Foundations Course"
-                  icon="📚"
+                  icon={<LearnIcon size={16} />}
                   onClick={() => setActiveTab('learn')}
                   width={260}
                 />
-                <button onClick={() => setActiveTab('faq')}
-                  className="px-4 py-2 rounded-xl text-[.78rem] font-bold
-                    bg-transparent border border-border text-muted cursor-pointer
-                    hover:text-txt hover:border-white/20 transition-colors">
+                <button
+                  onClick={() => setActiveTab('faq')}
+                  className="px-4 py-2 rounded-xl text-[.78rem] font-bold bg-transparent border border-border text-muted cursor-pointer hover:text-txt hover:border-txt/20 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sea/40 focus-visible:ring-offset-2 focus-visible:ring-offset-night"
+                >
                   New to Digital Assets? Read the FAQ
                 </button>
               </div>
             </div>
             <div className="hidden md:flex flex-col gap-1 text-[.68rem] text-muted">
-              <div className="flex items-center gap-2">
-                <span className={`w-5 h-5 rounded-full text-[.55rem] flex items-center justify-center
-                  ${modulesCompleted.length > 0 ? 'bg-up/20 text-up' : 'bg-white/8 text-muted'}`}>
-                  {modulesCompleted.length > 0 ? '✓' : '1'}
-                </span> Learn basics
-              </div>
-              <div className="w-px h-3 bg-white/10 ml-2.5" />
-              <div className="flex items-center gap-2">
-                <span className={`w-5 h-5 rounded-full text-[.55rem] flex items-center justify-center
-                  ${trades.length > 0 ? 'bg-up/20 text-up' : 'bg-white/8 text-muted'}`}>
-                  {trades.length > 0 ? '✓' : '2'}
-                </span> Paper trade
-              </div>
-              <div className="w-px h-3 bg-white/10 ml-2.5" />
-              <div className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full text-[.55rem] flex items-center justify-center bg-white/8 text-muted">3</span> Earn badges
-              </div>
+              <StepDot done={modulesCompleted.length > 0} n={1} label="Learn basics" />
+              <div className="w-px h-3 bg-txt/10 ml-2.5" />
+              <StepDot done={trades.length > 0} n={2} label="Paper trade" />
+              <div className="w-px h-3 bg-txt/10 ml-2.5" />
+              <StepDot done={false} n={3} label="Earn badges" />
             </div>
           </div>
         </div>
@@ -171,18 +181,29 @@ export default function DashboardPage() {
         <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
           <div>
             <div className="text-[.66rem] text-muted uppercase tracking-widest mb-1 font-headline">{t('dashboard.yourStatus')}</div>
-            <h2 className="font-headline text-[1.6rem] font-black leading-tight" style={{ color: tier.color }}>
-              {tier.icon} {tier.name}
+            <h2 className="font-headline text-[1.6rem] font-black leading-tight inline-flex items-center gap-2" style={{ color: tier.color }}>
+              <TierMark tier={tier} size={22} />
+              {tier.name}
             </h2>
             <div className="text-[.73rem] text-txt-2 mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-              {currentStreak > 0 && <span>🔥 {t('dashboard.streak', { count: currentStreak })}</span>}
-              {streakShields > 0 && <span>🛡️ {t('dashboard.shield', { count: streakShields })}</span>}
+              {currentStreak > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <StreakIcon size={12} className="text-warn" />
+                  {t('dashboard.streak', { count: currentStreak })}
+                </span>
+              )}
+              {streakShields > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <ShieldIcon size={12} className="text-coral" />
+                  {t('dashboard.shield', { count: streakShields })}
+                </span>
+              )}
               {sessionCount > 0 && <span className="text-muted">· {t('dashboard.sessions', { count: sessionCount })}</span>}
               {firstSessionDate && <span className="text-muted">· {t('dashboard.since', { date: firstSessionDate })}</span>}
             </div>
           </div>
           <div className="text-right flex-shrink-0">
-            <div className="font-headline text-[1.9rem] font-black" style={{ color: '#2D9B56' }}>
+            <div className="font-headline text-[1.9rem] font-black text-palm">
               <AnimatedCounter value={limerPoints} format="number" />
               <Tooltip term="LP" def="Limer Points — loyalty points earned from learning, trading, and daily activity. LP will convert to $LIMER tokens during the airdrop." inline>
                 <span className="text-[.88rem] ml-1 font-body font-bold text-muted">LP</span>
@@ -199,11 +220,19 @@ export default function DashboardPage() {
         <div>
           <div className="flex justify-between text-[.64rem] text-muted mb-1.5 font-headline">
             <span>{xp} XP</span>
-            {nextTier
-              ? <span>{nextTier.icon} {nextTier.name} in {nextTier.xp - xp} XP</span>
-              : <span>👑 Max Tier Reached</span>}
+            {nextTier ? (
+              <span className="inline-flex items-center gap-1.5">
+                <TierMark tier={nextTier} size={11} />
+                {nextTier.name} in {nextTier.xp - xp} XP
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5">
+                <TrophyIcon size={11} className="text-sun" />
+                Max Tier Reached
+              </span>
+            )}
           </div>
-          <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,.08)' }}>
+          <div className="h-2 rounded-full overflow-hidden bg-txt/8">
             <div
               className="h-full rounded-full transition-all duration-700"
               style={{ width: `${xpProgress}%`, background: `linear-gradient(90deg, ${tier.color}, ${nextTier?.color || tier.color})` }}
@@ -237,16 +266,16 @@ export default function DashboardPage() {
 
       <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6" {...statsReveal}>
         <motion.div variants={statsChildV}>
-          <QuickStat icon="💹" label={t('dashboard.trades')} numericValue={trades.length} color="#00ffa3" onClick={() => setActiveTab('trade')} />
+          <QuickStat Icon={TickerIcon} label={t('dashboard.trades')} numericValue={trades.length} colorClass="text-sea" onClick={() => setActiveTab('trade')} />
         </motion.div>
         <motion.div variants={statsChildV}>
-          <QuickStat icon="🎖️" label={t('dashboard.badges')} value={`${earnedBadges.length}/25`} color="#FFCA3A" onClick={() => setActiveTab('learn')} />
+          <QuickStat Icon={TrophyIcon} label={t('dashboard.badges')} value={`${earnedBadges.length}/25`} colorClass="text-sun" onClick={() => setActiveTab('learn')} />
         </motion.div>
         <motion.div variants={statsChildV}>
-          <QuickStat icon="📚" label={t('dashboard.modules')} value={`${modulesCompleted.length}/4`} color="#2D9B56" onClick={() => setActiveTab('learn')} />
+          <QuickStat Icon={LearnIcon} label={t('dashboard.modules')} value={`${modulesCompleted.length}/4`} colorClass="text-palm" onClick={() => setActiveTab('learn')} />
         </motion.div>
         <motion.div variants={statsChildV}>
-          <QuickStat icon="💰" label={t('dashboard.usdBalance')} numericValue={balanceUSD} prefix="$" color="#9945FF" onClick={() => setActiveTab('portfolio')} />
+          <QuickStat Icon={WalletIcon} label={t('dashboard.usdBalance')} numericValue={balanceUSD} prefix="$" colorClass="text-coral" onClick={() => setActiveTab('portfolio')} />
         </motion.div>
       </motion.div>
 
@@ -274,46 +303,55 @@ export default function DashboardPage() {
 
         {/* Market Pulse */}
         <GlowCard className="rounded-xl border border-border p-5" style={{ background: 'var(--color-card)' }} proximity={100}>
-          <div className="text-[.66rem] text-muted uppercase tracking-widest mb-4 font-headline">📊 {t('dashboard.marketPulse')}</div>
+          <div className="text-[.66rem] text-muted uppercase tracking-widest mb-4 font-headline inline-flex items-center gap-2">
+            <ChartIcon size={12} className="text-sea" />
+            {t('dashboard.marketPulse')}
+          </div>
           {pricesQ.isLoading ? (
             <div className="flex flex-col gap-3">
               {[1,2,3,4].map(i => (
-                <div key={i} className="h-7 rounded-lg animate-pulse" style={{ background: 'rgba(255,255,255,.05)' }} />
+                <div key={i} className="h-7 rounded-lg animate-pulse bg-txt/5" />
               ))}
             </div>
           ) : pricesQ.isError ? (
             <div className="flex flex-col items-center gap-2 py-4">
               <div className="text-down text-[.78rem]">Failed to load market data</div>
-              <button onClick={() => pricesQ.refetch()}
-                className="bg-transparent border border-down/30 text-down text-[.7rem] px-3 py-1 rounded-lg cursor-pointer hover:bg-down/10 transition-colors font-mono">
+              <button
+                onClick={() => pricesQ.refetch()}
+                className="bg-transparent border border-down/30 text-down text-[.7rem] px-3 py-1 rounded-lg cursor-pointer hover:bg-down/10 transition-colors duration-150 font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-down/40"
+              >
                 ↻ Retry
               </button>
             </div>
           ) : topMovers.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-4">
               <div className="text-muted text-[.78rem]">{t('dashboard.noPrice')}</div>
-              <button onClick={() => pricesQ.refetch()}
-                className="bg-transparent border border-border text-muted text-[.7rem] px-3 py-1 rounded-lg cursor-pointer hover:text-txt hover:border-sea/40 transition-colors font-mono">
+              <button
+                onClick={() => pricesQ.refetch()}
+                className="bg-transparent border border-border text-muted text-[.7rem] px-3 py-1 rounded-lg cursor-pointer hover:text-txt hover:border-sea/40 transition-colors duration-150 font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sea/40"
+              >
                 ↻ Refresh
               </button>
             </div>
           ) : (
             <div>
-              {topMovers.map(t => (
-                <div key={t.symbol}
+              {topMovers.map(mover => (
+                <div key={mover.symbol}
                   className="flex items-center justify-between py-2.5 border-b border-border last:border-0">
-                  <span className="font-mono text-[.8rem] text-txt font-bold">{t.symbol}</span>
+                  <span className="font-mono text-[.8rem] text-txt font-bold">{mover.symbol}</span>
                   <div className="flex items-center gap-3">
-                    <span className="text-[.78rem] text-txt-2 font-mono">{fmtUSD(t.current_price)}</span>
+                    <span className="text-[.78rem] text-txt-2 font-mono">{fmtUSD(mover.current_price)}</span>
                     <span className={`text-[.72rem] font-mono font-bold px-1.5 py-0.5 rounded
-                      ${t.price_change_percentage_24h >= 0 ? 'text-up bg-up/10' : 'text-down bg-down/10'}`}>
-                      {fmtPct(t.price_change_percentage_24h)}
+                      ${mover.price_change_percentage_24h >= 0 ? 'text-up bg-up/10' : 'text-down bg-down/10'}`}>
+                      {fmtPct(mover.price_change_percentage_24h)}
                     </span>
                   </div>
                 </div>
               ))}
-              <button onClick={() => setActiveTab('market')}
-                className="mt-3 w-full text-[.72rem] text-sea font-headline bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity text-left">
+              <button
+                onClick={() => setActiveTab('market')}
+                className="mt-3 w-full text-[.72rem] text-sea font-headline bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity duration-150 text-left focus-visible:outline-none focus-visible:underline"
+              >
                 View full market →
               </button>
             </div>
@@ -321,13 +359,21 @@ export default function DashboardPage() {
         </GlowCard>
 
         {/* Next Action */}
-        <GlowCard className="rounded-xl border border-sea/25 p-5 flex flex-col gap-4" proximity={100}
-          style={{ background: 'linear-gradient(135deg, rgba(0,255,163,.07), rgba(0,255,163,.02))' }}>
-          <div className="text-[.66rem] text-sea uppercase tracking-widest font-headline">🎯 {t('dashboard.yourNextMove')}</div>
+        <GlowCard
+          className="rounded-xl border border-sea/25 p-5 flex flex-col gap-4"
+          proximity={100}
+          style={{
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-sea) 7%, transparent), color-mix(in srgb, var(--color-sea) 2%, transparent))',
+          }}
+        >
+          <div className="text-[.66rem] text-sea uppercase tracking-widest font-headline inline-flex items-center gap-2">
+            <TargetIcon size={12} />
+            {t('dashboard.yourNextMove')}
+          </div>
 
           <div className="flex-1 flex flex-col justify-between">
             <div>
-              <div className="text-[1.4rem] mb-2">{nextAction.icon}</div>
+              <nextAction.Icon size={28} className={`mb-2 ${nextAction.iconClass}`} />
               <div className="font-body font-bold text-[.95rem] text-txt mb-2">{nextAction.title}</div>
               <div className="text-[.75rem] text-txt-2 leading-relaxed">{nextAction.desc}</div>
             </div>
@@ -344,12 +390,17 @@ export default function DashboardPage() {
 
           {/* Tier progression dots */}
           <div className="flex items-center gap-1.5 pt-2 border-t border-sea/15">
-            {TIERS.map((t, i) => (
-              <div key={t.level} className="flex-1 h-1.5 rounded-full transition-all"
-                title={t.name}
-                style={{ background: xp >= t.xp ? t.color : 'rgba(255,255,255,.1)' }} />
+            {TIERS.map((tt) => (
+              <div
+                key={tt.level}
+                className="flex-1 h-1.5 rounded-full transition-colors duration-150"
+                title={tt.name}
+                style={{
+                  background: xp >= tt.xp ? tt.color : 'color-mix(in srgb, var(--color-txt) 10%, transparent)',
+                }}
+              />
             ))}
-            <span className="text-[.6rem] text-muted ml-1 font-headline">{tier.level}/6</span>
+            <span className="text-[.6rem] text-muted ml-1 font-headline">{tier.level}/{TIERS.length}</span>
           </div>
         </GlowCard>
       </div>
@@ -358,7 +409,10 @@ export default function DashboardPage() {
       {trades.length > 0 && (
         <div className="rounded-xl border border-border p-5 mb-5" style={{ background: 'var(--color-card)' }}>
           <div className="flex items-center justify-between mb-4">
-            <div className="text-[.66rem] text-muted uppercase tracking-widest font-headline">⏱ {t('dashboard.recentTrades')}</div>
+            <div className="text-[.66rem] text-muted uppercase tracking-widest font-headline inline-flex items-center gap-2">
+              <TickerIcon size={12} className="text-sea" />
+              {t('dashboard.recentTrades')}
+            </div>
             {holdings.length > 0 && (
               <div className={`text-[.72rem] font-mono font-bold px-2 py-0.5 rounded ${paperPnL >= 0 ? 'text-up bg-up/10' : 'text-down bg-down/10'}`}>
                 P&L {paperPnL >= 0 ? '+' : ''}{fmtUSD(paperPnL)}
@@ -366,25 +420,27 @@ export default function DashboardPage() {
             )}
           </div>
           <div>
-            {trades.slice(0, 5).map(t => (
-              <div key={t.id} className="flex items-center justify-between py-2.5 border-b border-border last:border-0 text-[.76rem]">
+            {trades.slice(0, 5).map(trade => (
+              <div key={trade.id} className="flex items-center justify-between py-2.5 border-b border-border last:border-0 text-[.76rem]">
                 <div className="flex items-center gap-2.5">
                   <span className={`font-bold text-[.65rem] px-1.5 py-0.5 rounded font-mono
-                    ${t.side === 'buy' ? 'text-up bg-up/10' : 'text-down bg-down/10'}`}>
-                    {t.side.toUpperCase()}
+                    ${trade.side === 'buy' ? 'text-up bg-up/10' : 'text-down bg-down/10'}`}>
+                    {trade.side.toUpperCase()}
                   </span>
-                  <span className="text-txt font-mono font-bold">{t.symbol}</span>
-                  <span className="text-muted">×{t.qty}</span>
+                  <span className="text-txt font-mono font-bold">{trade.symbol}</span>
+                  <span className="text-muted">×{trade.qty}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-txt-2 font-mono">{fmtUSD(t.total)}</span>
-                  <span className="text-muted text-[.64rem]">{new Date(t.timestamp).toLocaleDateString()}</span>
+                  <span className="text-txt-2 font-mono">{fmtUSD(trade.total)}</span>
+                  <span className="text-muted text-[.64rem]">{new Date(trade.timestamp).toLocaleDateString()}</span>
                 </div>
               </div>
             ))}
           </div>
-          <button onClick={() => setActiveTab('portfolio')}
-            className="mt-3 w-full text-[.72rem] text-sea font-headline bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity text-left">
+          <button
+            onClick={() => setActiveTab('portfolio')}
+            className="mt-3 w-full text-[.72rem] text-sea font-headline bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity duration-150 text-left focus-visible:outline-none focus-visible:underline"
+          >
             Full portfolio & analytics →
           </button>
         </div>
@@ -394,9 +450,14 @@ export default function DashboardPage() {
       {recentBadgeData.length > 0 && (
         <div className="rounded-xl border border-border p-5" style={{ background: 'var(--color-card)' }}>
           <div className="flex items-center justify-between mb-4">
-            <div className="text-[.66rem] text-muted uppercase tracking-widest font-headline">🎖 {t('dashboard.recentBadges')}</div>
-            <button onClick={() => setActiveTab('learn')}
-              className="text-[.68rem] text-sea font-headline bg-transparent border-none cursor-pointer hover:opacity-70">
+            <div className="text-[.66rem] text-muted uppercase tracking-widest font-headline inline-flex items-center gap-2">
+              <TrophyIcon size={12} className="text-sun" />
+              {t('dashboard.recentBadges')}
+            </div>
+            <button
+              onClick={() => setActiveTab('learn')}
+              className="text-[.68rem] text-sea font-headline bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity duration-150 focus-visible:outline-none focus-visible:underline"
+            >
               All badges →
             </button>
           </div>
@@ -418,7 +479,7 @@ export default function DashboardPage() {
       {/* Empty state for brand-new users */}
       {trades.length === 0 && earnedBadges.length === 0 && (
         <div className="rounded-xl border border-border p-8 text-center" style={{ background: 'var(--color-card)' }}>
-          <div className="text-[3rem] mb-3">🌴</div>
+          <LimerMark size={52} className="mx-auto mb-3" />
           <div className="font-body font-bold text-[1rem] text-txt mb-2">{t('onboarding.welcome')}</div>
           <div className="text-[.78rem] text-txt-2 mb-5 max-w-sm mx-auto leading-relaxed">
             The Caribbean's Solana-native investment platform. Learn, paper trade, earn <Tooltip term="LP" def="Limer Points — loyalty points earned from all platform activity. LP will convert to $LIMER tokens during the airdrop." inline>LP</Tooltip> points, and get
@@ -427,13 +488,13 @@ export default function DashboardPage() {
           <div className="flex gap-4 justify-center flex-wrap">
             <LiquidMetalButton
               label={t('onboarding.startLearning')}
-              icon="📚"
+              icon={<LearnIcon size={16} />}
               onClick={() => setActiveTab('learn')}
               width={180}
             />
             <LiquidMetalButton
               label={t('common.viewAll')}
-              icon="📊"
+              icon={<ChartIcon size={16} />}
               onClick={() => setActiveTab('market')}
               width={180}
             />
@@ -447,14 +508,20 @@ export default function DashboardPage() {
       </div>
 
       {/* Waitlist CTA */}
-      <div className="mt-4 rounded-xl border border-sea/20 p-5 flex items-center justify-between flex-wrap gap-3"
-        style={{ background: 'linear-gradient(135deg, rgba(0,255,163,.04), rgba(153,69,255,.04))' }}>
+      <div
+        className="mt-4 rounded-xl border border-sea/20 p-5 flex items-center justify-between flex-wrap gap-3"
+        style={{
+          background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-sea) 4%, transparent), color-mix(in srgb, var(--color-coral) 4%, transparent))',
+        }}
+      >
         <div>
           <div className="font-body font-bold text-[.88rem] text-txt">Get Early Access to $LIMER</div>
           <div className="text-[.74rem] text-txt-2 mt-0.5">Join the waitlist for token launch, exclusive airdrops, and Caribbean DeFi updates.</div>
         </div>
-        <button onClick={() => setShowWaitlist(true)}
-          className="px-5 py-2.5 rounded-xl font-body font-bold text-[.82rem] cursor-pointer border-none bg-sea text-night hover:brightness-90 transition-all">
+        <button
+          onClick={() => setShowWaitlist(true)}
+          className="px-5 py-2.5 rounded-xl font-body font-bold text-[.82rem] cursor-pointer border-none bg-sea text-night hover:brightness-90 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sea focus-visible:ring-offset-2 focus-visible:ring-offset-night"
+        >
           Join Waitlist
         </button>
       </div>
@@ -464,22 +531,23 @@ export default function DashboardPage() {
   );
 }
 
-function QuickStat({ icon, label, value, numericValue, prefix = '', color, onClick }) {
+function QuickStat({ Icon, label, value, numericValue, prefix = '', colorClass = 'text-txt', onClick }) {
   return (
     <GlowCard
       as="button"
       onClick={onClick}
-      className="rounded-[14px] p-4 border border-border text-left w-full cursor-pointer transition-all hover:-translate-y-0.5 bg-transparent gpu-accelerated"
+      className="rounded-[14px] p-4 border border-border text-left w-full cursor-pointer transition-all duration-150 hover:-translate-y-0.5 hover:border-sea/30 bg-transparent gpu-accelerated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sea/40 focus-visible:ring-offset-2 focus-visible:ring-offset-night"
       style={{ background: 'var(--color-card)' }}
       proximity={80}
       spread={40}
       blur={0}
-      aria-label={`${label}: ${typeof numericValue === 'number' ? numericValue : value}`}>
+      aria-label={`${label}: ${typeof numericValue === 'number' ? numericValue : value}`}
+    >
       <div className="flex items-center gap-1.5 mb-2">
-        <span className="text-base" aria-hidden="true">{icon}</span>
+        {Icon && <Icon size={14} className={colorClass} />}
         <span className="text-[.62rem] text-muted uppercase tracking-widest font-headline">{label}</span>
       </div>
-      <div className="font-headline text-[1.35rem] font-black" style={{ color }}>
+      <div className={`font-headline text-[1.35rem] font-black ${colorClass}`}>
         {typeof numericValue === 'number' ? (
           <AnimatedCounter value={numericValue} prefix={prefix} format="number" />
         ) : (
@@ -487,5 +555,19 @@ function QuickStat({ icon, label, value, numericValue, prefix = '', color, onCli
         )}
       </div>
     </GlowCard>
+  );
+}
+
+function StepDot({ done, n, label }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span
+        className={`w-5 h-5 rounded-full text-[.55rem] flex items-center justify-center
+          ${done ? 'bg-up/20 text-up' : 'bg-txt/8 text-muted'}`}
+      >
+        {done ? <CheckIcon size={11} /> : n}
+      </span>
+      {label}
+    </div>
   );
 }

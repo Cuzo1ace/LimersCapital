@@ -15,11 +15,11 @@ function TokenLogo({ src, symbol, col }) {
   const onErr = useCallback(() => setErr(true), []);
   if (src && !err) {
     return <img src={src} alt={symbol} onError={onErr}
-      className="w-6 h-6 rounded-full object-cover flex-shrink-0 bg-white/5" />;
+      className="w-6 h-6 rounded-full object-cover flex-shrink-0 bg-txt/5" />;
   }
   return (
     <div className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-[.6rem] font-bold text-white"
-      style={{ background: col || '#555' }}>
+      style={{ background: col || 'var(--color-muted)' }}>
       {symbol?.[0]}
     </div>
   );
@@ -47,11 +47,26 @@ import PostTradeInsight from '../components/gamification/PostTradeInsight';
 import TradeJournalPrompt from '../components/TradeJournalPrompt';
 import PracticeChallengePanel from '../components/PracticeChallengePanel';
 import { TradingViewChart, TradingViewTechnicalAnalysis, TV_SYMBOL_MAP } from '../components/charts';
+import CoinGeckoOHLCChart from '../components/charts/CoinGeckoOHLCChart';
 import PaperTradingModal from '../components/PaperTradingModal';
 import WalletSetupWizard from '../components/WalletSetupWizard';
 import ContextualHelp from '../components/ContextualHelp';
 import Tooltip from '../components/ui/Tooltip';
 import MicroLesson from '../components/MicroLesson';
+import {
+  AlertIcon,
+  BoltIcon,
+  ChartIcon,
+  CheckIcon,
+  InsightIcon,
+  LinkIcon,
+  LockIcon,
+  StarIcon,
+  SunIcon,
+  TickerIcon,
+  TrendUpIcon,
+  WalletIcon,
+} from '../components/icons';
 
 // Inline SL/TP editor for positions table
 function SLTPEditor({ pos, curPrice, onSave, onCancel }) {
@@ -84,7 +99,7 @@ function SLTPEditor({ pos, curPrice, onSave, onCancel }) {
         </button>
         <button onClick={() => { if (slOk && tpOk) onSave(slNum, tpNum); }}
           disabled={!slOk || !tpOk}
-          className="flex-1 py-0.5 rounded border-none bg-[#FFA500]/20 text-[#FFA500] text-[.56rem] font-bold cursor-pointer hover:bg-[#FFA500]/30 disabled:opacity-30 transition-all">
+          className="flex-1 py-0.5 rounded border-none bg-sun/20 text-sun text-[.56rem] font-bold cursor-pointer hover:bg-sun/30 disabled:opacity-30 transition-all">
           Save
         </button>
       </div>
@@ -120,7 +135,7 @@ function generateOrderBook(price, depth = 6) {
 }
 
 const SOLFLARE_LINK = 'https://www.solflare.com/?af_qr=true&shortlink=carribean&c=Carribean&pid=Solana%20Carribean&af_xp=qr&source_caller=ui';
-const SOLFLARE_ORANGE = '#FC5602';
+const SOLFLARE_ORANGE = 'var(--color-solflare)';
 const WAM_LINK = 'https://wam.money/';
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 
@@ -406,8 +421,12 @@ export default function TradePage() {
       {market !== 'jupiter' && <PaperTradingModal />}
 
       {/* ── Risk Disclosure Banner ──────────────────────────── */}
-      <div className="flex items-start gap-2.5 rounded-xl px-4 py-3 mb-5 border border-[rgba(251,146,60,.25)] bg-[rgba(251,146,60,.06)] text-[.76rem] text-[#FB923C] font-body">
-        <span className="flex-shrink-0 mt-0.5">&#9888;&#65039;</span>
+      <div
+        className="flex items-start gap-2.5 rounded-xl px-4 py-3 mb-5 border border-warn/25 text-[.76rem] text-warn font-body"
+        style={{ background: 'color-mix(in srgb, var(--color-warn) 6%, transparent)' }}
+        role="note"
+      >
+        <AlertIcon size={14} className="flex-shrink-0 mt-0.5" />
         <span>{RISK_BANNER.trade}</span>
       </div>
 
@@ -440,7 +459,7 @@ export default function TradePage() {
         <div
           role="dialog" aria-modal="true" aria-label="Confirm trade"
           className="fixed inset-0 z-[500] flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(6px)' }}
+          style={{ background: 'color-mix(in srgb, var(--color-night) 70%, transparent)', backdropFilter: 'blur(6px)' }}
           onClick={e => { if (e.target === e.currentTarget) setConfirmPending(null); }}
         >
           <div className="rounded-xl border border-border max-w-sm w-full p-5 flex flex-col gap-4"
@@ -469,7 +488,7 @@ export default function TradePage() {
               </button>
               <ShatterButton
                 onClick={handleConfirm}
-                shatterColor={confirmPending.side === 'buy' ? '#00ffa3' : '#ff716c'}
+                shatterColor={confirmPending.side === 'buy' ? 'var(--color-up)' : 'var(--color-down)'}
                 shardCount={18}
               >
                 Confirm {confirmPending.side === 'buy' ? 'Buy' : 'Sell'}
@@ -484,12 +503,12 @@ export default function TradePage() {
         className="no-underline block mb-4">
         <div className="rounded-xl border p-4 flex items-center gap-4 transition-all hover:brightness-110 cursor-pointer"
           style={{
-            background: 'linear-gradient(135deg, rgba(252,86,2,.12) 0%, rgba(252,86,2,.04) 100%)',
-            borderColor: 'rgba(252,86,2,.35)',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-solflare) 12%, transparent) 0%, color-mix(in srgb, var(--color-solflare) 4%, transparent) 100%)',
+            borderColor: 'color-mix(in srgb, var(--color-solflare) 35%, transparent)',
           }}>
           <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ background: SOLFLARE_ORANGE }}>
-            <span className="text-white font-black text-[1rem]">☀</span>
+            <SunIcon size={16} className="text-txt" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-body font-bold text-[.88rem]" style={{ color: SOLFLARE_ORANGE }}>
@@ -501,7 +520,11 @@ export default function TradePage() {
           </div>
           <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
             <span className="text-[.68rem] uppercase tracking-widest font-headline px-3 py-1.5 rounded-lg border font-bold"
-              style={{ color: SOLFLARE_ORANGE, borderColor: 'rgba(252,86,2,.4)', background: 'rgba(252,86,2,.08)' }}>
+              style={{
+                color: SOLFLARE_ORANGE,
+                borderColor: 'color-mix(in srgb, var(--color-solflare) 40%, transparent)',
+                background: 'color-mix(in srgb, var(--color-solflare) 8%, transparent)',
+              }}>
               Free Download ↗
             </span>
           </div>
@@ -514,8 +537,10 @@ export default function TradePage() {
           <WalletSetupWizard onClose={() => setShowWalletWizard(false)} />
         ) : (
           <div className="rounded-xl border border-sea/30 p-4 md:p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-5"
-            style={{ background: 'linear-gradient(135deg, rgba(0,255,163,.06), rgba(252,92,62,.04))' }}>
-            <div className="text-3xl">🔗</div>
+            style={{
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-sea) 6%, transparent), color-mix(in srgb, var(--color-solflare) 4%, transparent))',
+            }}>
+            <LinkIcon size={28} className="text-sea" />
             <div className="flex-1">
               <div className="font-body font-bold text-[.92rem] text-txt mb-1">Connect your Solflare wallet to trade</div>
               <div className="text-[.75rem] text-txt-2 leading-relaxed">
@@ -530,18 +555,19 @@ export default function TradePage() {
                 What is a wallet?
               </button>
               <a href={WAM_LINK} target="_blank" rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1.5 bg-[rgba(255,215,0,.08)] border border-[rgba(255,215,0,.28)]
-                  rounded-lg px-4 py-2.5 text-[.75rem] font-body font-bold text-[#FFD700] no-underline
-                  transition-all hover:bg-[rgba(255,215,0,.14)]">
-                <span className="w-4 h-4 rounded bg-[#FFD700] flex items-center justify-center text-[.5rem] font-black text-night">W</span>
+                className="flex items-center justify-center gap-1.5 bg-sun/8 border border-sun/30 rounded-lg px-4 py-2.5 text-[.75rem] font-body font-bold text-sun no-underline transition-colors duration-150 hover:bg-sun/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sun/40">
+                <span className="w-4 h-4 rounded bg-sun flex items-center justify-center text-[.5rem] font-black text-night" aria-hidden="true">W</span>
                 Top up with Wam
               </a>
               <a href={SOLFLARE_LINK} target="_blank" rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 border-none no-underline
                   text-white px-4 py-2.5 rounded-lg text-[.75rem] font-body font-extrabold cursor-pointer
                   transition-all hover:-translate-y-0.5"
-                style={{ background: `linear-gradient(135deg, ${SOLFLARE_ORANGE}, #FF8C42)`, boxShadow: '0 0 20px rgba(252,86,2,.35)' }}>
-                ☀ Get Solflare
+                style={{
+                  background: `linear-gradient(135deg, ${SOLFLARE_ORANGE}, var(--color-sun))`,
+                  boxShadow: '0 0 20px color-mix(in srgb, var(--color-solflare) 35%, transparent)',
+                }}>
+                <SunIcon size={14} className="inline-block mr-1 align-text-top text-sun" /> Get Solflare
               </a>
             </div>
           </div>
@@ -551,25 +577,32 @@ export default function TradePage() {
       {/* Dual Balance Bar */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div className={`rounded-xl p-6 border cursor-pointer transition-all ${market === 'solana' ? 'border-sea/40 ring-1 ring-sea/20' : 'border-border'}`}
-          style={{ background: 'linear-gradient(135deg, rgba(0,255,163,.1), rgba(45,155,86,.06))' }}
+          style={{
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-sea) 10%, transparent), color-mix(in srgb, var(--color-palm) 6%, transparent))',
+          }}
           onClick={() => { setMarket('solana'); setSelectedId(''); }}>
-          <div className="text-[.68rem] text-muted uppercase tracking-widest mb-2">💵 USD Balance — Solana</div>
+          <div className="text-[.68rem] text-muted uppercase tracking-widest mb-2 inline-flex items-center gap-1.5">
+            <WalletIcon size={12} className="text-palm" />
+            USD Balance — Solana
+          </div>
           <div className="font-headline text-[2.2rem] font-black text-txt">{fmtUSD(balanceUSD)}</div>
           <div className="text-[.72rem] text-muted mt-1">{solTokens.length} tokens available</div>
         </div>
-        <div className={`rounded-xl p-6 border cursor-pointer transition-all ${market === 'ttse' ? 'border-[#FF4D6D]/40 ring-1 ring-[#FF4D6D]/20' : 'border-border'}`}
-          style={{ background: 'linear-gradient(135deg, rgba(200,16,46,.08), rgba(13,14,16,1))' }}
+        <div className={`rounded-xl p-6 border cursor-pointer transition-all ${market === 'ttse' ? 'border-ttse/40 ring-1 ring-ttse/20' : 'border-border'}`}
+          style={{
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-ttse) 8%, transparent), var(--color-night))',
+          }}
           onClick={() => { setMarket('ttse'); setSelectedId(''); }}>
           <div className="text-[.68rem] text-muted uppercase tracking-widest mb-2">🇹🇹 TTD Balance — TTSE Tokenized</div>
-          <div className="font-headline text-[2.2rem] font-black text-[#FF4D6D]">{fmtTTD(balanceTTD)}</div>
+          <div className="font-headline text-[2.2rem] font-black text-ttse">{fmtTTD(balanceTTD)}</div>
           <div className="text-[.72rem] text-muted mt-1">{ttseStocks.length} stocks tokenized</div>
         </div>
       </div>
 
       {/* TTSE Stale Data Warning */}
       {isFallback && market === 'ttse' && (
-        <div role="alert" className="rounded-xl border border-[#92400E]/40 bg-[#92400E]/10 text-[#FCD34D] text-[.74rem] font-mono px-4 py-2.5 mb-4 flex items-center gap-2">
-          <span aria-hidden="true">⚠️</span>
+        <div role="alert" className="rounded-xl border border-warn/40 bg-warn/10 text-sun text-[.74rem] font-mono px-4 py-2.5 mb-4 flex items-center gap-2">
+          <AlertIcon size={14} aria-hidden="true" />
           <span>Showing cached TTSE data (last updated 17 Mar 2026) — live feed unavailable</span>
         </div>
       )}
@@ -582,25 +615,28 @@ export default function TradePage() {
         <button onClick={() => { setMarket('solana'); setSelectedId(''); }}
           className={`px-4 py-2 rounded-lg text-[.75rem] font-headline cursor-pointer border transition-all
             ${market === 'solana' ? 'bg-sea/12 border-sea/35 text-sea' : 'bg-transparent border-border text-muted hover:text-txt'}`}>
-          📊 {t('trade.solanaTokens')}
+          <ChartIcon size={14} className="inline-block mr-1.5 align-text-top text-sea" />
+          {t('trade.solanaTokens')}
         </button>
         <button onClick={() => { setMarket('perpetuals'); setSelectedId(''); }}
           className={`px-4 py-2 rounded-lg text-[.75rem] font-headline cursor-pointer border transition-all flex items-center gap-1.5
-            ${market === 'perpetuals' ? 'bg-[rgba(255,165,0,.1)] border-[#FFA500]/35 text-[#FFA500]' : 'bg-transparent border-border text-muted hover:text-txt'}`}>
-          📈 Perpetuals
-          <span className="text-[.55rem] bg-[#FFA500]/15 text-[#FFA500] rounded px-1.5 py-0.5 font-bold uppercase">Paper</span>
+            ${market === 'perpetuals' ? 'bg-sun/10 border-sun/35 text-sun' : 'bg-transparent border-border text-muted hover:text-txt'}`}>
+          <TrendUpIcon size={14} className="inline-block mr-1.5 align-text-top text-sea" />
+          Perpetuals
+          <span className="text-[.55rem] bg-sun/15 text-sun rounded px-1.5 py-0.5 font-bold uppercase">Paper</span>
         </button>
         <FeatureLock featureKey="ttse_trading" hint="Complete Module 2 (Caribbean Markets) in Learn to unlock TTSE trading">
           <button onClick={() => { setMarket('ttse'); setSelectedId(''); }}
             className={`px-4 py-2 rounded-lg text-[.75rem] font-headline cursor-pointer border transition-all
-              ${market === 'ttse' ? 'bg-[rgba(200,16,46,.1)] border-[#FF4D6D]/35 text-[#FF4D6D]' : 'bg-transparent border-border text-muted hover:text-txt'}`}>
+              ${market === 'ttse' ? 'bg-ttse/10 border-ttse/35 text-ttse' : 'bg-transparent border-border text-muted hover:text-txt'}`}>
             🇹🇹 {t('trade.ttseStocks')}
           </button>
         </FeatureLock>
         <button onClick={() => setMarket('jupiter')}
           className={`px-4 py-2 rounded-lg text-[.75rem] font-headline cursor-pointer border transition-all flex items-center gap-1.5
-            ${market === 'jupiter' ? 'bg-[rgba(196,108,255,.1)] border-[#C46CFF]/35 text-[#C46CFF]' : 'bg-transparent border-border text-muted hover:text-txt'}`}>
-          ⚡ {t('trade.realSwap')}
+            ${market === 'jupiter' ? 'bg-coral-lt/10 border-coral-lt/35 text-coral-lt' : 'bg-transparent border-border text-muted hover:text-txt'}`}>
+          <BoltIcon size={14} className="inline-block mr-1.5 align-text-top text-sun" />
+          {t('trade.realSwap')}
           <span className="text-[.55rem] bg-up/15 text-up rounded px-1.5 py-0.5 font-bold uppercase">{t('trade.live')}</span>
         </button>
       </div>
@@ -618,7 +654,7 @@ export default function TradePage() {
             </div>
             <div className="flex flex-col flex-shrink-0">
               <span className="text-[.58rem] text-muted leading-none">Aggregator</span>
-              <span className="text-[#C46CFF] font-mono font-bold text-[.82rem] leading-tight">Jupiter V6</span>
+              <span className="text-coral-lt font-mono font-bold text-[.82rem] leading-tight">Jupiter V6</span>
             </div>
             <div className="flex flex-col flex-shrink-0">
               <span className="text-[.58rem] text-muted leading-none">Wallet</span>
@@ -636,10 +672,10 @@ export default function TradePage() {
               <div className="rounded border border-border p-4" style={{ background: 'var(--color-card)' }}>
                 <h3 className="font-body font-bold text-[.82rem] text-txt mb-3">Real On-Chain Swaps</h3>
                 <div className="flex flex-col gap-2 text-[.72rem] text-txt-2">
-                  <div className="flex items-start gap-2"><span className="text-up mt-0.5">✓</span><span>Execute real token swaps on Solana mainnet via Jupiter aggregator</span></div>
-                  <div className="flex items-start gap-2"><span className="text-up mt-0.5">✓</span><span>Best price across all Solana DEXs (Raydium, Orca, Meteora, etc.)</span></div>
-                  <div className="flex items-start gap-2"><span className="text-up mt-0.5">✓</span><span>Sub-second settlement with transaction proof on Solscan</span></div>
-                  <div className="flex items-start gap-2"><span className="text-up mt-0.5">✓</span><span>Network fee: ~$0.00025 per transaction</span></div>
+                  <div className="flex items-start gap-2"><CheckIcon size={12} className="text-up mt-0.5 flex-shrink-0" /><span>Execute real token swaps on Solana mainnet via Jupiter aggregator</span></div>
+                  <div className="flex items-start gap-2"><CheckIcon size={12} className="text-up mt-0.5 flex-shrink-0" /><span>Best price across all Solana DEXs (Raydium, Orca, Meteora, etc.)</span></div>
+                  <div className="flex items-start gap-2"><CheckIcon size={12} className="text-up mt-0.5 flex-shrink-0" /><span>Sub-second settlement with transaction proof on Solscan</span></div>
+                  <div className="flex items-start gap-2"><CheckIcon size={12} className="text-up mt-0.5 flex-shrink-0" /><span>Network fee: ~$0.00025 per transaction</span></div>
                 </div>
               </div>
               <div className="rounded border border-border p-4" style={{ background: 'var(--color-card)' }}>
@@ -649,8 +685,8 @@ export default function TradePage() {
                     <div className="text-sea font-bold mb-0.5">Paper Trading</div>
                     <div className="text-muted">Practice · No risk · Earn XP</div>
                   </div>
-                  <div className="bg-[#C46CFF]/8 border border-[#C46CFF]/20 rounded p-2.5 text-center">
-                    <div className="text-[#C46CFF] font-bold mb-0.5">Real Swap</div>
+                  <div className="bg-coral-lt/8 border border-coral-lt/20 rounded p-2.5 text-center">
+                    <div className="text-coral-lt font-bold mb-0.5">Real Swap</div>
                     <div className="text-muted">On-chain · Real tokens · Jupiter</div>
                   </div>
                 </div>
@@ -674,7 +710,7 @@ export default function TradePage() {
               ].map(tab => (
                 <button key={tab.key} onClick={() => setJupiterTab(tab.key)}
                   className={`px-5 py-2.5 text-[.72rem] font-bold cursor-pointer border-none border-b-2 transition-all
-                    ${jupiterTab === tab.key ? 'border-b-[#C46CFF] text-txt bg-transparent' : 'border-b-transparent text-muted bg-transparent hover:text-txt'}`}>
+                    ${jupiterTab === tab.key ? 'border-b-coral-lt text-txt bg-transparent' : 'border-b-transparent text-muted bg-transparent hover:text-txt'}`}>
                   {tab.label}
                 </button>
               ))}
@@ -685,16 +721,16 @@ export default function TradePage() {
                 <h4 className="font-body font-bold text-[.82rem] text-txt mb-3">How Solflare Swap & Stake Works</h4>
                 <div className="flex flex-col gap-2 text-[.74rem] text-txt-2 mb-4">
                   <div className="text-[.62rem] text-muted uppercase tracking-widest">Swap</div>
-                  <div className="flex items-start gap-2"><span className="text-[#E8AC41] font-bold shrink-0">1.</span><span><strong>Connect Solflare</strong> — Link your Solflare wallet to access on-chain swaps with best-price routing.</span></div>
-                  <div className="flex items-start gap-2"><span className="text-[#E8AC41] font-bold shrink-0">2.</span><span><strong>Select tokens</strong> — Choose any Solana SPL token pair. Solflare routes across all major DEXs for the best price.</span></div>
-                  <div className="flex items-start gap-2"><span className="text-[#E8AC41] font-bold shrink-0">3.</span><span><strong>Review & confirm</strong> — Check price impact, route, and slippage. One-tap approval in your Solflare wallet.</span></div>
-                  <div className="flex items-start gap-2"><span className="text-[#E8AC41] font-bold shrink-0">4.</span><span><strong>Instant settlement</strong> — Tokens arrive in your wallet in under 1 second. Transaction proof on Solscan.</span></div>
+                  <div className="flex items-start gap-2"><span className="text-sun font-bold shrink-0">1.</span><span><strong>Connect Solflare</strong> — Link your Solflare wallet to access on-chain swaps with best-price routing.</span></div>
+                  <div className="flex items-start gap-2"><span className="text-sun font-bold shrink-0">2.</span><span><strong>Select tokens</strong> — Choose any Solana SPL token pair. Solflare routes across all major DEXs for the best price.</span></div>
+                  <div className="flex items-start gap-2"><span className="text-sun font-bold shrink-0">3.</span><span><strong>Review & confirm</strong> — Check price impact, route, and slippage. One-tap approval in your Solflare wallet.</span></div>
+                  <div className="flex items-start gap-2"><span className="text-sun font-bold shrink-0">4.</span><span><strong>Instant settlement</strong> — Tokens arrive in your wallet in under 1 second. Transaction proof on Solscan.</span></div>
                 </div>
                 <div className="flex flex-col gap-2 text-[.74rem] text-txt-2 mb-4">
                   <div className="text-[.62rem] text-muted uppercase tracking-widest">Stake SOL</div>
-                  <div className="flex items-start gap-2"><span className="text-[#E8AC41] font-bold shrink-0">1.</span><span><strong>Choose amount</strong> — Select how much SOL to stake directly from your Solflare wallet.</span></div>
-                  <div className="flex items-start gap-2"><span className="text-[#E8AC41] font-bold shrink-0">2.</span><span><strong>Pick a validator</strong> — Solflare recommends top-performing validators or you can choose your own.</span></div>
-                  <div className="flex items-start gap-2"><span className="text-[#E8AC41] font-bold shrink-0">3.</span><span><strong>Earn yield</strong> — Earn staking rewards (~7% APY) while keeping your SOL secure and liquid.</span></div>
+                  <div className="flex items-start gap-2"><span className="text-sun font-bold shrink-0">1.</span><span><strong>Choose amount</strong> — Select how much SOL to stake directly from your Solflare wallet.</span></div>
+                  <div className="flex items-start gap-2"><span className="text-sun font-bold shrink-0">2.</span><span><strong>Pick a validator</strong> — Solflare recommends top-performing validators or you can choose your own.</span></div>
+                  <div className="flex items-start gap-2"><span className="text-sun font-bold shrink-0">3.</span><span><strong>Earn yield</strong> — Earn staking rewards (~7% APY) while keeping your SOL secure and liquid.</span></div>
                 </div>
                 <div className="rounded border border-border p-3 text-[.68rem] mt-4" style={{ background: 'var(--color-card)' }}>
                   <div className="text-[.6rem] text-muted uppercase tracking-widest mb-2">Details</div>
@@ -707,8 +743,8 @@ export default function TradePage() {
                 </div>
                 <a href="https://www.solflare.com/?af_qr=true&shortlink=carribean&c=Carribean&pid=Solana%20Carribean&af_xp=qr&source_caller=ui"
                   target="_blank" rel="noopener noreferrer"
-                  className="mt-3 flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-[#E8AC41]/40 bg-[#E8AC41]/10 text-[#E8AC41] text-[.76rem] font-bold no-underline hover:bg-[#E8AC41]/20 transition-all cursor-pointer">
-                  <span>☀️</span> Get Solflare Wallet
+                  className="mt-3 flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-sun/40 bg-sun/10 text-sun text-[.76rem] font-bold no-underline hover:bg-sun/20 transition-all cursor-pointer">
+                  <SunIcon size={14} className="text-sun" /> Get Solflare Wallet
                 </a>
               </div>
             )}
@@ -854,7 +890,7 @@ export default function TradePage() {
               </div>
               <div className="flex flex-col flex-shrink-0">
                 <span className="text-[.58rem] text-muted leading-none">Positions</span>
-                <span className="text-[#FFA500] font-mono font-bold text-[.82rem] leading-tight">{openPositions.length}</span>
+                <span className="text-sun font-mono font-bold text-[.82rem] leading-tight">{openPositions.length}</span>
               </div>
               <div className="flex flex-col flex-shrink-0">
                 <span className="text-[.58rem] text-muted leading-none">Account P&L</span>
@@ -873,7 +909,11 @@ export default function TradePage() {
                   }`}
                   title={percolatorMode === 'paper' ? 'Switch to live on-chain perps (requires 5,000 XP)' : 'Switch back to paper trading'}
                 >
-                  {percolatorMode === 'live' ? '⚡ LIVE' : '📄 PAPER'}
+                  {percolatorMode === 'live' ? (
+                    <span className="inline-flex items-center gap-1"><BoltIcon size={11} /> LIVE</span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1"><TickerIcon size={11} /> PAPER</span>
+                  )}
                 </button>
                 {percolatorMode === 'live' && (
                   <span className="text-[.5rem] text-up/60 animate-pulse">
@@ -907,7 +947,7 @@ export default function TradePage() {
                     <button onClick={() => setChartSource('tradingview')}
                       className={`px-2.5 py-1 text-[.62rem] font-mono cursor-pointer border-none transition-all ${
                         chartSource === 'tradingview'
-                          ? 'bg-[#FFA500]/15 text-[#FFA500] font-bold'
+                          ? 'bg-sun/15 text-sun font-bold'
                           : 'bg-transparent text-muted hover:text-txt'
                       }`}>
                       TradingView
@@ -915,7 +955,7 @@ export default function TradePage() {
                     <button onClick={() => setChartSource('apex')}
                       className={`px-2.5 py-1 text-[.62rem] font-mono cursor-pointer border-none transition-all ${
                         chartSource === 'apex'
-                          ? 'bg-[#FFA500]/15 text-[#FFA500] font-bold'
+                          ? 'bg-sun/15 text-sun font-bold'
                           : 'bg-transparent text-muted hover:text-txt'
                       }`}>
                       Live Ticks
@@ -946,7 +986,7 @@ export default function TradePage() {
                   {['market', 'limit', 'stop'].map(ot => (
                     <button key={ot} onClick={() => setPerpOrderType(ot)}
                       className={`flex-1 py-1.5 rounded text-[.68rem] font-bold uppercase cursor-pointer border transition-all
-                        ${perpOrderType === ot ? 'border-border bg-white/5 text-txt' : 'border-transparent bg-transparent text-muted hover:text-txt'}`}>
+                        ${perpOrderType === ot ? 'border-border bg-txt/5 text-txt' : 'border-transparent bg-transparent text-muted hover:text-txt'}`}>
                       {ot}
                     </button>
                   ))}
@@ -958,7 +998,7 @@ export default function TradePage() {
                     <label className="text-[.6rem] text-muted uppercase tracking-wider">{perpOrderType === 'limit' ? 'Limit' : 'Stop'} Price</label>
                     <input type="number" value={perpLimitPrice} onChange={e => setPerpLimitPrice(e.target.value)}
                       placeholder={markPrice ? fmtUSD(markPrice).replace('$','') : '0.00'}
-                      className="bg-black/30 border border-border text-txt rounded px-2.5 py-1.5 font-mono text-[.76rem] outline-none focus:border-[#FFA500]/60" />
+                      className="bg-night-3/50 border border-border text-txt rounded px-2.5 py-1.5 font-mono text-[.76rem] outline-none focus:border-sun/60" />
                   </div>
                 )}
 
@@ -967,14 +1007,14 @@ export default function TradePage() {
                   <div className="flex items-center justify-between">
                     <MicroLesson concept="leverage"><span className="text-[.6rem] text-muted uppercase tracking-wider">Leverage</span></MicroLesson>
                     <span className={`font-mono font-bold text-[.78rem] ${
-                      perpLeverage <= 3 ? 'text-up' : perpLeverage <= 10 ? 'text-[#FFA500]' : 'text-down'
+                      perpLeverage <= 3 ? 'text-up' : perpLeverage <= 10 ? 'text-sun' : 'text-down'
                     }`}>{perpLeverage}x</span>
                   </div>
                   <div className="flex gap-1">
                     {[1, 2, 5, 10, 20].map(lv => (
                       <button key={lv} onClick={() => setPerpLeverage(lv)}
                         className={`flex-1 py-1.5 rounded text-[.68rem] font-mono font-bold cursor-pointer border transition-all
-                          ${perpLeverage === lv ? 'border-[#FFA500] bg-[#FFA500]/10 text-[#FFA500]' : 'border-border bg-transparent text-muted hover:text-txt'}`}>
+                          ${perpLeverage === lv ? 'border-sun bg-sun/10 text-sun' : 'border-border bg-transparent text-muted hover:text-txt'}`}>
                         {lv}x
                       </button>
                     ))}
@@ -982,7 +1022,9 @@ export default function TradePage() {
                   <input type="range" min="1" max="20" step="1" value={perpLeverage}
                     onChange={e => setPerpLeverage(Number(e.target.value))}
                     className="w-full h-1 rounded-lg appearance-none cursor-pointer opacity-60"
-                    style={{ background: `linear-gradient(to right, #00ffa3 0%, #FFA500 50%, #FF4D6D 100%)` }} />
+                    style={{
+                      background: 'linear-gradient(to right, var(--color-up) 0%, var(--color-sun) 50%, var(--color-down) 100%)',
+                    }} />
                 </div>
 
                 {/* Collateral Input */}
@@ -993,13 +1035,13 @@ export default function TradePage() {
                   </div>
                   <input type="number" value={perpCollateral} onChange={e => setPerpCollateral(e.target.value)}
                     placeholder="0.00" min="1" max={isLiveMode && liveState?.capital != null ? liveState.capital : balanceUSD} step="any"
-                    className="bg-black/30 border border-border text-txt rounded px-2.5 py-1.5 font-mono text-[.76rem] outline-none focus:border-[#FFA500]/60" />
+                    className="bg-night-3/50 border border-border text-txt rounded px-2.5 py-1.5 font-mono text-[.76rem] outline-none focus:border-sun/60" />
                   <div className="flex gap-1">
                     {[10, 25, 50, 100].map(pct => {
                       const maxBal = isLiveMode && liveState?.capital != null ? liveState.capital : balanceUSD;
                       return (
                       <button key={pct} onClick={() => setPerpCollateral(String((maxBal * pct / 100).toFixed(2)))}
-                        className="flex-1 py-1 rounded text-[.6rem] font-mono cursor-pointer border border-border bg-transparent text-muted hover:text-txt hover:border-[#FFA500]/40 transition-all">
+                        className="flex-1 py-1 rounded text-[.6rem] font-mono cursor-pointer border border-border bg-transparent text-muted hover:text-txt hover:border-sun/40 transition-all">
                         {pct}%
                       </button>
                     );})}
@@ -1014,22 +1056,22 @@ export default function TradePage() {
                       <label className="text-[.56rem] text-down uppercase tracking-wider"><MicroLesson concept="stop-loss">Stop Loss</MicroLesson></label>
                       <input type="number" value={perpStopLoss} onChange={e => setPerpStopLoss(e.target.value)}
                         placeholder={markPrice ? (perpSide === 'long' ? (markPrice * 0.95).toFixed(2) : (markPrice * 1.05).toFixed(2)) : '—'}
-                        className={`bg-black/30 border text-txt rounded px-2 py-1.5 font-mono text-[.72rem] outline-none focus:border-down/60
+                        className={`bg-night-3/50 border text-txt rounded px-2 py-1.5 font-mono text-[.72rem] outline-none focus:border-down/60
                           ${slNum && !slValid ? 'border-down/60' : 'border-border'}`} />
                     </div>
                     <div className="flex flex-col gap-0.5">
                       <label className="text-[.56rem] text-up uppercase tracking-wider"><MicroLesson concept="take-profit">Take Profit</MicroLesson></label>
                       <input type="number" value={perpTakeProfit} onChange={e => setPerpTakeProfit(e.target.value)}
                         placeholder={markPrice ? (perpSide === 'long' ? (markPrice * 1.10).toFixed(2) : (markPrice * 0.90).toFixed(2)) : '—'}
-                        className={`bg-black/30 border text-txt rounded px-2 py-1.5 font-mono text-[.72rem] outline-none focus:border-up/60
+                        className={`bg-night-3/50 border text-txt rounded px-2 py-1.5 font-mono text-[.72rem] outline-none focus:border-up/60
                           ${tpNum && !tpValid ? 'border-down/60' : 'border-border'}`} />
                     </div>
                   </div>
                   <div className="flex flex-col gap-0.5">
-                    <label className="text-[.56rem] text-[#FFA500] uppercase tracking-wider"><MicroLesson concept="trailing-stop">Trailing Stop (%)</MicroLesson></label>
+                    <label className="text-[.56rem] text-sun uppercase tracking-wider"><MicroLesson concept="trailing-stop">Trailing Stop (%)</MicroLesson></label>
                     <input type="number" value={perpTrailingStop} onChange={e => setPerpTrailingStop(e.target.value)}
                       placeholder="e.g. 3" min="0.5" max="50" step="0.5"
-                      className="bg-black/30 border border-border text-txt rounded px-2 py-1.5 font-mono text-[.72rem] outline-none focus:border-[#FFA500]/60" />
+                      className="bg-night-3/50 border border-border text-txt rounded px-2 py-1.5 font-mono text-[.72rem] outline-none focus:border-sun/60" />
                     {perpTrailingStop && <div className="text-[.5rem] text-muted">SL auto-adjusts as price moves {perpSide === 'long' ? 'up' : 'down'} — locks in profit</div>}
                   </div>
                   {slNum && !slValid && <div className="text-[.56rem] text-down">SL must be {perpSide === 'long' ? 'below' : 'above'} mark price</div>}
@@ -1068,7 +1110,7 @@ export default function TradePage() {
                   <div className="flex justify-between"><span className="text-muted">Fee (0.1%)</span><span className="text-muted font-mono">{fmtUSD(openFee)}</span></div>
                   {slNum && slValid && <div className="flex justify-between"><span className="text-down text-[.66rem]">Stop Loss</span><span className="text-down font-mono">{fmtUSD(slNum)}</span></div>}
                   {tpNum && tpValid && <div className="flex justify-between"><span className="text-up text-[.66rem]">Take Profit</span><span className="text-up font-mono">{fmtUSD(tpNum)}</span></div>}
-                  {perpTrailingStop && parseFloat(perpTrailingStop) > 0 && <div className="flex justify-between"><span className="text-[#FFA500] text-[.66rem]">Trail Stop</span><span className="text-[#FFA500] font-mono">{perpTrailingStop}%</span></div>}
+                  {perpTrailingStop && parseFloat(perpTrailingStop) > 0 && <div className="flex justify-between"><span className="text-sun text-[.66rem]">Trail Stop</span><span className="text-sun font-mono">{perpTrailingStop}%</span></div>}
                   <div className="flex justify-between"><span className="text-down text-[.66rem]">Liq. Price</span><span className="text-down font-mono font-bold">{liqPricePreview ? fmtUSD(Math.max(0, liqPricePreview)) : '—'}</span></div>
                 </div>
 
@@ -1097,7 +1139,7 @@ export default function TradePage() {
                     const equity = balanceUSD + totalCollateralInUse + totalUnrealizedPnl;
                     const exposurePct = equity > 0 ? (totalExposure / equity) * 100 : 0;
                     const riskLevel = exposurePct < 100 ? 'LOW' : exposurePct < 300 ? 'MEDIUM' : exposurePct < 600 ? 'HIGH' : 'EXTREME';
-                    const riskColor = riskLevel === 'LOW' ? 'text-up' : riskLevel === 'MEDIUM' ? 'text-[#FFA500]' : 'text-down';
+                    const riskColor = riskLevel === 'LOW' ? 'text-up' : riskLevel === 'MEDIUM' ? 'text-sun' : 'text-down';
                     return (
                       <div className="flex flex-col gap-1 text-[.68rem]">
                         <div className="flex justify-between"><span className="text-muted">Balance</span><span className="text-txt font-mono">{fmtUSD(balanceUSD)}</span></div>
@@ -1147,7 +1189,7 @@ export default function TradePage() {
                 ].map(tab => (
                   <button key={tab.key} onClick={() => setPerpTab(tab.key)}
                     className={`px-5 py-2.5 text-[.72rem] font-bold cursor-pointer border-none border-b-2 transition-all
-                      ${perpTab === tab.key ? 'border-b-[#FFA500] text-txt bg-transparent' : 'border-b-transparent text-muted bg-transparent hover:text-txt'}`}>
+                      ${perpTab === tab.key ? 'border-b-sun text-txt bg-transparent' : 'border-b-transparent text-muted bg-transparent hover:text-txt'}`}>
                     {tab.label}
                   </button>
                 ))}
@@ -1158,13 +1200,13 @@ export default function TradePage() {
                 <div className="overflow-x-auto">
                   {openPositions.length === 0 ? (
                     <div className="flex flex-col items-center gap-3 py-10 text-center">
-                      <div className="text-3xl opacity-40">📈</div>
+                      <TrendUpIcon size={28} className="opacity-40 text-sea" />
                       <div className="text-txt text-[.82rem] font-bold">No open positions</div>
                       <div className="text-muted text-[.72rem] max-w-xs leading-relaxed">
                         Open a perpetual position using the order panel — choose long or short with up to 20x leverage.
                       </div>
                       <div className="flex items-center gap-1.5 text-[.65rem] text-sea/70 mt-1">
-                        <span>💡</span>
+                        <InsightIcon size={12} className="text-sun" />
                         <span>Start with low leverage (2-3x) to manage risk while learning</span>
                       </div>
                     </div>
@@ -1204,7 +1246,7 @@ export default function TradePage() {
                                   {pos.side}
                                 </span>
                               </td>
-                              <td className="px-3 py-2.5 text-right text-[#FFA500] font-mono font-bold">{pos.leverage}x</td>
+                              <td className="px-3 py-2.5 text-right text-sun font-mono font-bold">{pos.leverage}x</td>
                               <td className="px-3 py-2.5 text-right text-txt font-mono">{fmtUSD(pos.size)}</td>
                               <td className="px-3 py-2.5 text-right text-txt font-mono">{fmtUSD(pos.entryPrice)}</td>
                               <td className="px-3 py-2.5 text-right text-txt font-mono">{fmtUSD(curPrice)}</td>
@@ -1236,7 +1278,7 @@ export default function TradePage() {
                               </td>
                               <td className="px-3 py-2.5 text-right text-down font-mono">
                                 {fmtUSD(pos.liquidationPrice)}
-                                {pos.trailingStop && <div className="text-[.5rem] text-[#FFA500]">Trail {(pos.trailingStop * 100).toFixed(1)}%</div>}
+                                {pos.trailingStop && <div className="text-[.5rem] text-sun">Trail {(pos.trailingStop * 100).toFixed(1)}%</div>}
                               </td>
                               <td className="px-4 py-2 text-right">
                                 <div className="flex flex-col gap-1 items-end">
@@ -1270,7 +1312,7 @@ export default function TradePage() {
                                           setClosePartial(null);
                                         }}
                                           className={`px-1.5 py-0.5 rounded border text-[.56rem] font-bold cursor-pointer transition-all
-                                            ${pct === 100 ? 'border-down/40 bg-down/15 text-down hover:bg-down/25' : 'border-border bg-white/5 text-muted hover:text-txt'}`}>
+                                            ${pct === 100 ? 'border-down/40 bg-down/15 text-down hover:bg-down/25' : 'border-border bg-txt/5 text-muted hover:text-txt'}`}>
                                           {pct}%
                                         </button>
                                       ))}
@@ -1286,7 +1328,7 @@ export default function TradePage() {
                                         Close
                                       </button>
                                       <button onClick={() => setMarginAdjust(marginAdjust?.posId === pos.id ? null : { posId: pos.id, amount: '' })}
-                                        className="px-1.5 py-1 rounded border border-border bg-transparent text-muted text-[.6rem] cursor-pointer hover:text-[#FFA500] hover:border-[#FFA500]/40 transition-all"
+                                        className="px-1.5 py-1 rounded border border-border bg-transparent text-muted text-[.6rem] cursor-pointer hover:text-sun hover:border-sun/40 transition-all"
                                         title="Adjust Margin">
                                         +/-
                                       </button>
@@ -1313,7 +1355,7 @@ export default function TradePage() {
                                         else { flash('success', `Margin ${amt > 0 ? 'added' : 'removed'} — new lev: ${r.newLeverage}x`); logPerpEvent('margin_adjust', { symbol: pos.symbol, amount: amt }); }
                                         setMarginAdjust(null);
                                       }}
-                                        className="px-1.5 py-0.5 rounded bg-[#FFA500]/15 text-[#FFA500] text-[.54rem] font-bold border-none cursor-pointer">
+                                        className="px-1.5 py-0.5 rounded bg-sun/15 text-sun text-[.54rem] font-bold border-none cursor-pointer">
                                         OK
                                       </button>
                                     </div>
@@ -1355,7 +1397,7 @@ export default function TradePage() {
                                 {pos.side}
                               </span>
                             </td>
-                            <td className="px-3 py-2.5 text-right text-[#FFA500] font-mono">{pos.leverage}x</td>
+                            <td className="px-3 py-2.5 text-right text-sun font-mono">{pos.leverage}x</td>
                             <td className="px-3 py-2.5 text-right">
                               <span className={`px-1.5 py-0.5 rounded text-[.58rem] font-bold uppercase
                                 ${pos.status === 'liquidated' ? 'bg-down/20 text-down' : (pos.unrealizedPnl || 0) >= 0 ? 'bg-up/12 text-up' : 'bg-down/12 text-down'}`}>
@@ -1391,7 +1433,7 @@ export default function TradePage() {
                       </thead>
                       <tbody>
                         {perpEventLog.map(ev => {
-                          const typeColors = { open: 'text-up', close: 'text-down', partial_close: 'text-[#FFA500]', liquidation: 'text-down', tp_triggered: 'text-up', sl_triggered: 'text-down', margin_adjust: 'text-[#FFA500]' };
+                          const typeColors = { open: 'text-up', close: 'text-down', partial_close: 'text-sun', liquidation: 'text-down', tp_triggered: 'text-up', sl_triggered: 'text-down', margin_adjust: 'text-sun' };
                           const typeLabels = { open: 'OPENED', close: 'CLOSED', partial_close: 'PARTIAL', liquidation: 'LIQUIDATED', tp_triggered: 'TP HIT', sl_triggered: 'SL HIT', margin_adjust: 'MARGIN' };
                           return (
                             <tr key={ev.id} className="border-b border-border/30 hover:bg-white/[.02]">
@@ -1404,11 +1446,11 @@ export default function TradePage() {
                               <td className="px-3 py-1.5 font-bold text-txt">{ev.symbol || '—'}</td>
                               <td className="px-3 py-1.5 text-muted">
                                 {ev.side && <span className={ev.side === 'long' ? 'text-up' : 'text-down'}>{ev.side.toUpperCase()} </span>}
-                                {ev.leverage && <span className="text-[#FFA500]">{ev.leverage}x </span>}
+                                {ev.leverage && <span className="text-sun">{ev.leverage}x </span>}
                                 {ev.price && <span>@ {fmtUSD(ev.price)} </span>}
                                 {ev.pnl != null && <span className={ev.pnl >= 0 ? 'text-up font-bold' : 'text-down font-bold'}>{ev.pnl >= 0 ? '+' : ''}{fmtUSD(ev.pnl)} </span>}
-                                {ev.fraction && <span className="text-[#FFA500]">({ev.fraction}) </span>}
-                                {ev.amount && <span className="text-[#FFA500]">{ev.amount > 0 ? '+' : ''}{fmtUSD(ev.amount)} margin </span>}
+                                {ev.fraction && <span className="text-sun">({ev.fraction}) </span>}
+                                {ev.amount && <span className="text-sun">{ev.amount > 0 ? '+' : ''}{fmtUSD(ev.amount)} margin </span>}
                                 {ev.target && <span>target: {fmtUSD(ev.target)} </span>}
                                 {ev.trigger && <span>trigger: {fmtUSD(ev.trigger)} </span>}
                               </td>
@@ -1426,14 +1468,14 @@ export default function TradePage() {
                 <div className="p-5 max-w-2xl">
                   <h4 className="font-body font-bold text-[.82rem] text-txt mb-3">How Perpetual Futures Work</h4>
                   <div className="flex flex-col gap-2 text-[.74rem] text-txt-2 mb-4">
-                    <div className="flex items-start gap-2"><span className="text-[#FFA500] font-bold shrink-0">1.</span><span><strong>Leverage</strong> — Multiply your exposure (2x-20x). $100 at 10x = $1,000 position size.</span></div>
-                    <div className="flex items-start gap-2"><span className="text-[#FFA500] font-bold shrink-0">2.</span><span><strong>Long vs Short</strong> — Long profits when price goes up. Short profits when price goes down.</span></div>
-                    <div className="flex items-start gap-2"><span className="text-[#FFA500] font-bold shrink-0">3.</span><span><strong>Liquidation</strong> — If losses exceed your collateral (5% maintenance margin), the position is forcefully closed.</span></div>
-                    <div className="flex items-start gap-2"><span className="text-[#FFA500] font-bold shrink-0">4.</span><span><strong>Funding Rate</strong> — A small periodic fee (0.01% / 8h) to keep perp prices aligned with spot.</span></div>
-                    <div className="flex items-start gap-2"><span className="text-[#FFA500] font-bold shrink-0">5.</span><span><strong>Stop Loss / Take Profit</strong> — Auto-close at target prices. SL limits losses, TP locks gains.</span></div>
-                    <div className="flex items-start gap-2"><span className="text-[#FFA500] font-bold shrink-0">6.</span><span><strong>Trailing Stop</strong> — SL that auto-adjusts as price moves in your favor. Set a %, and it follows the peak/trough.</span></div>
-                    <div className="flex items-start gap-2"><span className="text-[#FFA500] font-bold shrink-0">7.</span><span><strong>Partial Close</strong> — Close 25/50/75% of a position to take profits while keeping exposure.</span></div>
-                    <div className="flex items-start gap-2"><span className="text-[#FFA500] font-bold shrink-0">8.</span><span><strong>Margin Adjustment</strong> — Add collateral to avoid liquidation, or remove excess to free up capital.</span></div>
+                    <div className="flex items-start gap-2"><span className="text-sun font-bold shrink-0">1.</span><span><strong>Leverage</strong> — Multiply your exposure (2x-20x). $100 at 10x = $1,000 position size.</span></div>
+                    <div className="flex items-start gap-2"><span className="text-sun font-bold shrink-0">2.</span><span><strong>Long vs Short</strong> — Long profits when price goes up. Short profits when price goes down.</span></div>
+                    <div className="flex items-start gap-2"><span className="text-sun font-bold shrink-0">3.</span><span><strong>Liquidation</strong> — If losses exceed your collateral (5% maintenance margin), the position is forcefully closed.</span></div>
+                    <div className="flex items-start gap-2"><span className="text-sun font-bold shrink-0">4.</span><span><strong>Funding Rate</strong> — A small periodic fee (0.01% / 8h) to keep perp prices aligned with spot.</span></div>
+                    <div className="flex items-start gap-2"><span className="text-sun font-bold shrink-0">5.</span><span><strong>Stop Loss / Take Profit</strong> — Auto-close at target prices. SL limits losses, TP locks gains.</span></div>
+                    <div className="flex items-start gap-2"><span className="text-sun font-bold shrink-0">6.</span><span><strong>Trailing Stop</strong> — SL that auto-adjusts as price moves in your favor. Set a %, and it follows the peak/trough.</span></div>
+                    <div className="flex items-start gap-2"><span className="text-sun font-bold shrink-0">7.</span><span><strong>Partial Close</strong> — Close 25/50/75% of a position to take profits while keeping exposure.</span></div>
+                    <div className="flex items-start gap-2"><span className="text-sun font-bold shrink-0">8.</span><span><strong>Margin Adjustment</strong> — Add collateral to avoid liquidation, or remove excess to free up capital.</span></div>
                   </div>
                   <div className="rounded border border-border p-3 text-[.68rem]" style={{ background: 'var(--color-card)' }}>
                     <div className="text-[.6rem] text-muted uppercase tracking-widest mb-2">Contract Specs</div>
@@ -1454,7 +1496,7 @@ export default function TradePage() {
             {/* Confirmation Modal */}
             {perpConfirm && (
               <div role="dialog" aria-modal="true" className="fixed inset-0 z-[500] flex items-center justify-center p-4"
-                style={{ background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(6px)' }}
+                style={{ background: 'color-mix(in srgb, var(--color-night) 70%, transparent)', backdropFilter: 'blur(6px)' }}
                 onClick={e => { if (e.target === e.currentTarget) setPerpConfirm(null); }}>
                 <div className="rounded-xl border border-border max-w-sm w-full p-5 flex flex-col gap-4" style={{ background: 'var(--color-night-2)' }}>
                   <div className="font-body font-black text-[.92rem] text-txt text-center">
@@ -1463,14 +1505,14 @@ export default function TradePage() {
                   <div className="rounded border border-border p-3 text-[.74rem] flex flex-col gap-1.5" style={{ background: 'var(--color-card)' }}>
                     <div className="flex justify-between"><span className="text-muted">Asset</span><span className="text-txt font-bold">{perpConfirm.symbol}-PERP</span></div>
                     <div className="flex justify-between"><span className="text-muted">Direction</span><span className={perpConfirm.side === 'long' ? 'text-up font-bold' : 'text-down font-bold'}>{perpConfirm.side.toUpperCase()}</span></div>
-                    <div className="flex justify-between"><span className="text-muted">Leverage</span><span className="text-[#FFA500] font-bold">{perpConfirm.leverage}x</span></div>
+                    <div className="flex justify-between"><span className="text-muted">Leverage</span><span className="text-sun font-bold">{perpConfirm.leverage}x</span></div>
                     <div className="flex justify-between"><span className="text-muted">Collateral</span><span className="text-txt">{fmtUSD(perpConfirm.collateral)}</span></div>
                     <div className="flex justify-between"><span className="text-muted">Position Size</span><span className="text-txt font-bold">{fmtUSD(perpConfirm.size)}</span></div>
                     <div className="flex justify-between"><span className="text-muted">Entry Price</span><span className="text-txt">{fmtUSD(perpConfirm.price)}</span></div>
                     <div className="flex justify-between"><span className="text-muted">Fee</span><span className="text-muted">{fmtUSD(perpConfirm.fee)}</span></div>
                     {perpConfirm.stopLoss && <div className="flex justify-between"><span className="text-down text-[.68rem]">Stop Loss</span><span className="text-down font-mono">{fmtUSD(perpConfirm.stopLoss)}</span></div>}
                     {perpConfirm.takeProfit && <div className="flex justify-between"><span className="text-up text-[.68rem]">Take Profit</span><span className="text-up font-mono">{fmtUSD(perpConfirm.takeProfit)}</span></div>}
-                    {perpConfirm.trailingStop && <div className="flex justify-between"><span className="text-[#FFA500] text-[.68rem]">Trailing Stop</span><span className="text-[#FFA500] font-mono">{(perpConfirm.trailingStop * 100).toFixed(1)}%</span></div>}
+                    {perpConfirm.trailingStop && <div className="flex justify-between"><span className="text-sun text-[.68rem]">Trailing Stop</span><span className="text-sun font-mono">{(perpConfirm.trailingStop * 100).toFixed(1)}%</span></div>}
                     <div className="flex justify-between border-t border-border pt-1.5 mt-0.5">
                       <span className="text-down text-[.68rem]">Liquidation</span>
                       <span className="text-down font-bold">{liqPricePreview ? fmtUSD(liqPricePreview) : '—'}</span>
@@ -1480,7 +1522,7 @@ export default function TradePage() {
                     <button onClick={() => setPerpConfirm(null)} className="flex-1 py-2.5 rounded border border-border bg-transparent text-muted text-[.76rem] font-bold cursor-pointer hover:text-txt transition-all">Cancel</button>
                     <ShatterButton
                       onClick={handleConfirmPerp}
-                      shatterColor={perpConfirm.side === 'long' ? '#00ffa3' : '#ff716c'}
+                      shatterColor={perpConfirm.side === 'long' ? 'var(--color-up)' : 'var(--color-down)'}
                       shardCount={22}
                     >
                       Open {perpConfirm.side === 'long' ? 'Long' : 'Short'}
@@ -1495,7 +1537,7 @@ export default function TradePage() {
 
       {/* Paper Trading Views (Solana + TTSE) — Unified DEX-style layout */}
       {market !== 'jupiter' && market !== 'perpetuals' ? (() => {
-        const accentColor = isTTSE ? '#FF4D6D' : '#00ffa3';
+        const accentColor = isTTSE ? 'var(--color-ttse)' : 'var(--color-up)';
         const holdingsPnl = marketHoldings.reduce((sum, h) => {
           const a = assets.find(a => a.symbol === h.symbol);
           const cp = a?.price || h.avgPrice;
@@ -1551,7 +1593,7 @@ export default function TradePage() {
               <div className="flex items-center gap-1.5 px-4 pt-3 pb-2 overflow-x-auto no-scrollbar">
                 <button onClick={() => setAssetFilter('all')}
                   className={`flex-shrink-0 px-3 py-1 rounded text-[.65rem] font-bold cursor-pointer border transition-all
-                    ${assetFilter === 'all' ? 'border-border bg-white/5 text-txt' : 'border-transparent bg-transparent text-muted hover:text-txt'}`}>
+                    ${assetFilter === 'all' ? 'border-border bg-txt/5 text-txt' : 'border-transparent bg-transparent text-muted hover:text-txt'}`}>
                   All
                   {!isTTSE && assetCategoryCounts.all > 0 && (
                     <span className="ml-1.5 text-[.55rem] opacity-60 font-mono">{assetCategoryCounts.all}</span>
@@ -1560,8 +1602,9 @@ export default function TradePage() {
                 {watchlist.length > 0 && (
                   <button onClick={() => setAssetFilter('watchlist')}
                     className={`flex-shrink-0 px-3 py-1 rounded text-[.65rem] font-bold cursor-pointer border transition-all flex items-center gap-1
-                      ${assetFilter === 'watchlist' ? 'border-border bg-white/5 text-txt' : 'border-transparent bg-transparent text-muted hover:text-txt'}`}>
-                    ★ Watchlist ({watchlist.length})
+                      ${assetFilter === 'watchlist' ? 'border-border bg-txt/5 text-txt' : 'border-transparent bg-transparent text-muted hover:text-txt'}`}>
+                    <StarIcon filled size={12} className="inline-block mr-1 align-text-top text-sun" />
+                    Watchlist ({watchlist.length})
                   </button>
                 )}
                 {/* Category chips — Solana mode only */}
@@ -1573,7 +1616,7 @@ export default function TradePage() {
                     <button key={key} onClick={() => setAssetFilter(key)}
                       title={cat.description}
                       className={`flex-shrink-0 px-3 py-1 rounded text-[.65rem] font-bold cursor-pointer border transition-all flex items-center gap-1.5
-                        ${isActive ? 'border-border bg-white/5 text-txt' : 'border-transparent bg-transparent text-muted hover:text-txt'}`}>
+                        ${isActive ? 'border-border bg-txt/5 text-txt' : 'border-transparent bg-transparent text-muted hover:text-txt'}`}>
                       <span>{cat.label}</span>
                       <span className="text-[.55rem] opacity-60 font-mono">{count}</span>
                     </button>
@@ -1606,8 +1649,8 @@ export default function TradePage() {
                       {!isTTSE && (
                         <button onClick={e => { e.stopPropagation(); toggleWatchlist(a.symbol); }}
                           className="text-[.75rem] leading-none cursor-pointer bg-transparent border-none p-0 transition-all hover:scale-125"
-                          style={{ color: starred ? '#FFCA3A' : 'rgba(90,120,160,0.5)' }}>
-                          {starred ? '★' : '☆'}
+                          style={{ color: starred ? 'var(--color-sun)' : 'color-mix(in srgb, var(--color-muted) 50%, transparent)' }}>
+                          <StarIcon size={14} filled={starred} className={starred ? 'text-sun' : 'text-muted'} />
                         </button>
                       )}
                       {!isTTSE && <TokenLogo src={a.image} symbol={a.symbol} col={a.col} />}
@@ -1624,7 +1667,9 @@ export default function TradePage() {
                   );
                 })}
                 {assetFilter === 'watchlist' && visibleAssets.length === 0 && (
-                  <div className="px-4 py-6 text-center text-muted text-[.72rem]">No tokens starred yet — click ☆ to add</div>
+                  <div className="px-4 py-6 text-center text-muted text-[.72rem] inline-flex items-center justify-center gap-1 w-full">
+                    No tokens starred yet — click <StarIcon size={12} className="inline-block align-text-top" /> to add
+                  </div>
                 )}
               </div>
 
@@ -1738,7 +1783,8 @@ export default function TradePage() {
                             ? 'border-sea/40 text-sea bg-sea/10'
                             : 'border-border text-muted hover:text-txt bg-transparent'
                         }`}>
-                        {showTAWidget ? '📊 Signals ON' : '📊 Signals'}
+                        <ChartIcon size={11} className="inline-block mr-1 align-text-top" />
+                        {showTAWidget ? 'Signals ON' : 'Signals'}
                       </button>
                     </div>
                   )}
@@ -1748,6 +1794,15 @@ export default function TradePage() {
                     <TradingViewChart
                       symbol={TV_SYMBOL_MAP[selected.symbol.toUpperCase()]}
                       interval="D"
+                      height={620}
+                    />
+                  ) : !isTTSE && !TV_SYMBOL_MAP[selected.symbol.toUpperCase()] && selected.coinGeckoId ? (
+                    // CoinGecko OHLC gap-fill — real candles for tokens TradingView
+                    // doesn't carry (Jupiter-only mints like WETH-portal, zBTC, GOLD).
+                    <CoinGeckoOHLCChart
+                      coinGeckoId={selected.coinGeckoId}
+                      symbol={selected.symbol}
+                      name={selected.name}
                       height={620}
                     />
                   ) : (
@@ -1798,14 +1853,15 @@ export default function TradePage() {
                       return (
                         <button key={ot} onClick={() => flash('error', 'Complete Module 3 in Learn to unlock Limit Orders')}
                           className="flex-1 py-1.5 rounded text-[.68rem] font-bold uppercase cursor-pointer border border-transparent bg-transparent text-muted/50 flex items-center justify-center gap-1">
-                          🔒 Limit
+                          <LockIcon size={11} className="inline-block mr-1 align-text-top" />
+                          Limit
                         </button>
                       );
                     }
                     return (
                       <button key={ot} onClick={() => setOrderType(ot)}
                         className={`flex-1 py-1.5 rounded text-[.68rem] font-bold uppercase cursor-pointer border transition-all
-                          ${orderType === ot ? 'border-border bg-white/5 text-txt' : 'border-transparent bg-transparent text-muted hover:text-txt'}`}>
+                          ${orderType === ot ? 'border-border bg-txt/5 text-txt' : 'border-transparent bg-transparent text-muted hover:text-txt'}`}>
                         {ot}
                       </button>
                     );
@@ -1817,7 +1873,7 @@ export default function TradePage() {
               <div className="flex flex-col gap-1">
                 <span className="text-[.6rem] text-muted uppercase tracking-wider">{isTTSE ? 'Stock' : 'Token'}</span>
                 <select value={selectedId} onChange={e => setSelectedId(e.target.value)}
-                  className="bg-black/30 border border-border text-txt rounded px-2.5 py-1.5 font-mono text-[.76rem] outline-none">
+                  className="bg-night-3/50 border border-border text-txt rounded px-2.5 py-1.5 font-mono text-[.76rem] outline-none">
                   <option value="">— Select —</option>
                   {assets.map(a => (
                     <option key={a.id} value={a.id}>{a.symbol} — {fmtPrice(a.price)}</option>
@@ -1833,7 +1889,7 @@ export default function TradePage() {
                 </div>
                 <input type="number" value={qty} onChange={e => setQty(e.target.value)}
                   placeholder={isTTSE ? 'Shares' : '0.00'} min="0" step="any"
-                  className="bg-black/30 border border-border text-txt rounded px-2.5 py-1.5 font-mono text-[.76rem] outline-none focus:border-sea/60" />
+                  className="bg-night-3/50 border border-border text-txt rounded px-2.5 py-1.5 font-mono text-[.76rem] outline-none focus:border-sea/60" />
                 {tradeMode === 'advanced' && (
                   <div className="flex gap-1">
                     {[10, 25, 50, 100].map(pct => (
@@ -1853,12 +1909,12 @@ export default function TradePage() {
               {/* Limit Price */}
               {orderType === 'limit' && (
                 <div className="flex flex-col gap-1">
-                  <label className="text-[.6rem] text-[#FFCA3A] uppercase tracking-wider">
+                  <label className="text-[.6rem] text-sun uppercase tracking-wider">
                     Limit Price <span className="text-muted normal-case text-[.54rem]">({side === 'buy' ? '≤ market' : '≥ market'})</span>
                   </label>
                   <input type="number" value={limitPrice} onChange={e => setLimitPrice(e.target.value)}
                     placeholder={price ? price.toFixed(4) : '0.00'} min="0" step="any"
-                    className="bg-black/30 border border-[#FFCA3A]/40 text-txt rounded px-2.5 py-1.5 font-mono text-[.76rem] outline-none focus:border-[#FFCA3A]/60" />
+                    className="bg-night-3/50 border border-sun/40 text-txt rounded px-2.5 py-1.5 font-mono text-[.76rem] outline-none focus:border-sun/60" />
                   {price && limitPrice && (() => {
                     const lp = parseFloat(limitPrice);
                     if (!isFinite(lp) || lp <= 0) return null;
@@ -1938,7 +1994,11 @@ export default function TradePage() {
               <div className="overflow-x-auto">
                 {marketHoldings.length === 0 ? (
                   <div className="flex flex-col items-center gap-3 py-10 text-center">
-                    <div className="text-3xl opacity-40">{isTTSE ? '🇹🇹' : '📊'}</div>
+                    {isTTSE ? (
+                      <div className="text-3xl opacity-40" aria-hidden="true">🇹🇹</div>
+                    ) : (
+                      <ChartIcon size={28} className="opacity-40 text-sea" />
+                    )}
                     <div className="text-txt text-[.82rem] font-bold">No {isTTSE ? 'TTSE' : 'Solana'} holdings yet</div>
                     <div className="text-muted text-[.72rem] max-w-xs leading-relaxed">
                       {isTTSE
@@ -1946,7 +2006,7 @@ export default function TradePage() {
                         : 'Choose a token above, set your quantity, and execute your first paper trade — no real funds at risk.'}
                     </div>
                     <div className="flex items-center gap-1.5 text-[.65rem] text-sea/70 mt-1">
-                      <span>💡</span>
+                      <InsightIcon size={12} className="text-sun" />
                       <span>Paper trading helps you learn without risking real money</span>
                     </div>
                   </div>
@@ -2084,12 +2144,20 @@ export default function TradePage() {
                   <div className="flex flex-col gap-2 mt-4">
                     <a href={selected ? jupiterUrl(side, SOL_TOKENS[selected.symbol]) : 'https://jup.ag'} target="_blank" rel="noopener noreferrer"
                       className="no-underline flex items-center justify-center gap-2 rounded py-2.5 text-[.72rem] font-bold transition-all hover:brightness-110 border"
-                      style={{ background: 'rgba(0,255,163,.08)', borderColor: 'rgba(0,255,163,.3)', color: '#00ffa3' }}>
+                      style={{
+                        background: 'color-mix(in srgb, var(--color-up) 8%, transparent)',
+                        borderColor: 'color-mix(in srgb, var(--color-up) 30%, transparent)',
+                        color: 'var(--color-up)',
+                      }}>
                       Trade for real on Jupiter ↗
                     </a>
                     <a href={SOLFLARE_LINK} target="_blank" rel="noopener noreferrer"
                       className="no-underline flex items-center justify-center gap-2 rounded py-2.5 text-[.72rem] font-bold transition-all hover:brightness-110 border"
-                      style={{ background: 'rgba(252,86,2,.08)', borderColor: 'rgba(252,86,2,.3)', color: SOLFLARE_ORANGE }}>
+                      style={{
+                        background: 'color-mix(in srgb, var(--color-solflare) 8%, transparent)',
+                        borderColor: 'color-mix(in srgb, var(--color-solflare) 30%, transparent)',
+                        color: SOLFLARE_ORANGE,
+                      }}>
                       Get Solflare Wallet ↗
                     </a>
                   </div>

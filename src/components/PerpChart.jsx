@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import Chart from 'react-apexcharts';
+import { TrendUpIcon, SignalIcon } from './icons';
 
 /**
  * PerpChart — Real-time candlestick chart built from live price ticks.
@@ -27,11 +28,33 @@ const INTERVALS = [
 // Max ticks to keep in memory (avoids unbounded growth)
 const MAX_TICKS = 2000;
 
+// Apex consumes raw color strings — it can't read Tailwind classes.
+// Read the live computed values from CSS custom properties.
+function readChartTokens() {
+  if (typeof window === 'undefined') return {};
+  const s = getComputedStyle(document.documentElement);
+  const v = (name) => s.getPropertyValue(name).trim();
+  return {
+    up: v('--color-up'),
+    down: v('--color-down'),
+    sun: v('--color-sun'),
+    liq: v('--color-liquidation'),
+    label: v('--color-chart-label'),
+    labelMuted: v('--color-chart-label-2'),
+    grid: v('--color-chart-grid'),
+    axis: v('--color-chart-axis'),
+    title: v('--color-chart-title'),
+    txt: v('--color-txt'),
+  };
+}
+
 export default function PerpChart({ symbol, markPrice, positions = [] }) {
   const [interval, setInterval_] = useState('1m');
   const ticksRef = useRef([]); // { time: ms, price: number }[]
   const prevSymbolRef = useRef(symbol);
   const [, forceRender] = useState(0);
+
+  const tokens = useMemo(readChartTokens, []);
 
   // Reset ticks when symbol changes
   useEffect(() => {
@@ -108,18 +131,18 @@ export default function PerpChart({ symbol, markPrice, positions = [] }) {
     const yaxis = [];
     const symPositions = positions.filter(p => p.symbol === symbol && p.status === 'open');
 
-    symPositions.forEach((pos, i) => {
+    symPositions.forEach((pos) => {
       // Entry price line
       yaxis.push({
         y: pos.entryPrice,
-        borderColor: pos.side === 'long' ? '#00ffa3' : '#FF4A6B',
+        borderColor: pos.side === 'long' ? tokens.up : tokens.down,
         strokeDashArray: 4,
         label: {
           text: `${pos.side.toUpperCase()} Entry $${pos.entryPrice.toFixed(2)}`,
           position: 'left',
           style: {
-            color: '#fff',
-            background: pos.side === 'long' ? '#00ffa3' : '#FF4A6B',
+            color: tokens.txt,
+            background: pos.side === 'long' ? tokens.up : tokens.down,
             fontSize: '10px',
             padding: { left: 6, right: 6, top: 2, bottom: 2 },
           },
@@ -129,14 +152,14 @@ export default function PerpChart({ symbol, markPrice, positions = [] }) {
       // Liquidation price line
       yaxis.push({
         y: pos.liquidationPrice,
-        borderColor: '#FF4A6B',
+        borderColor: tokens.down,
         strokeDashArray: 2,
         label: {
           text: `LIQ $${pos.liquidationPrice.toFixed(2)}`,
           position: 'right',
           style: {
-            color: '#fff',
-            background: '#992233',
+            color: tokens.txt,
+            background: tokens.liq,
             fontSize: '10px',
             padding: { left: 6, right: 6, top: 2, bottom: 2 },
           },
@@ -145,7 +168,7 @@ export default function PerpChart({ symbol, markPrice, positions = [] }) {
     });
 
     return { yaxis };
-  }, [positions, symbol]);
+  }, [positions, symbol, tokens]);
 
   // Calculate stats
   const firstPrice = candles.length ? candles[0].y[0] : null;
@@ -166,27 +189,27 @@ export default function PerpChart({ symbol, markPrice, positions = [] }) {
     },
     plotOptions: {
       candlestick: {
-        colors: { upward: '#00ffa3', downward: '#FF4A6B' },
+        colors: { upward: tokens.up, downward: tokens.down },
         wick: { useFillColor: true },
       },
     },
     xaxis: {
       type: 'datetime',
       labels: {
-        style: { colors: '#5B7A9A', fontSize: '10px' },
+        style: { colors: tokens.labelMuted, fontSize: '10px' },
         datetimeFormatter: { hour: 'HH:mm', minute: 'HH:mm' },
       },
-      axisBorder: { color: 'rgba(255,165,0,.15)' },
-      axisTicks: { color: 'rgba(255,165,0,.15)' },
+      axisBorder: { color: tokens.axis },
+      axisTicks: { color: tokens.axis },
     },
     yaxis: {
       labels: {
-        style: { colors: '#A0BAD8', fontSize: '10px' },
+        style: { colors: tokens.label, fontSize: '10px' },
         formatter: v => '$' + v.toFixed(2),
       },
       tooltip: { enabled: true },
     },
-    grid: { borderColor: 'rgba(255,165,0,.08)', strokeDashArray: 3 },
+    grid: { borderColor: tokens.grid, strokeDashArray: 3 },
     tooltip: {
       theme: 'dark',
       x: { format: 'HH:mm:ss' },
@@ -194,41 +217,50 @@ export default function PerpChart({ symbol, markPrice, positions = [] }) {
     annotations,
     title: {
       text: `${symbol} — Live Perpetuals`,
-      style: { color: '#E6F0FF', fontSize: '13px', fontWeight: 700, fontFamily: 'Syne, sans-serif' },
+      style: { color: tokens.title, fontSize: '13px', fontWeight: 700, fontFamily: 'Syne, sans-serif' },
     },
     subtitle: {
       text: lastPrice
         ? `$${lastPrice.toFixed(2)}  ${sessionChange >= 0 ? '+' : ''}${sessionChange.toFixed(3)}% (session)`
         : 'Waiting for data...',
       style: {
-        color: sessionChange >= 0 ? '#00ffa3' : '#FF4A6B',
+        color: sessionChange >= 0 ? tokens.up : tokens.down,
         fontSize: '12px',
         fontFamily: 'DM Mono, monospace',
       },
     },
-  }), [symbol, lastPrice, sessionChange, annotations]);
+  }), [symbol, lastPrice, sessionChange, annotations, tokens]);
 
   if (!symbol || !markPrice) {
     return (
-      <div className="rounded-xl border border-border p-8 text-center text-muted text-[.8rem]" style={{ background: 'var(--color-card)' }}>
-        <div className="text-2xl mb-2">📈</div>
+      <div
+        className="rounded-xl border border-border p-8 text-center text-muted text-[.8rem]"
+        style={{ background: 'var(--color-card)' }}
+      >
+        <TrendUpIcon size={28} className="mx-auto mb-2 text-sun" />
         Select an asset to view the live price chart
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border overflow-hidden" style={{ background: 'var(--color-card)', borderColor: 'rgba(255,165,0,.22)' }}>
+    <div
+      className="rounded-xl border overflow-hidden"
+      style={{ background: 'var(--color-card)', borderColor: 'color-mix(in srgb, var(--color-sun) 22%, transparent)' }}
+    >
       {/* Interval selector + status */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-border">
         <div className="flex gap-1">
           {INTERVALS.map(i => (
-            <button key={i.key} onClick={() => setInterval_(i.key)}
+            <button
+              key={i.key}
+              onClick={() => setInterval_(i.key)}
               className={`px-3 py-1 rounded-md text-[.7rem] font-mono cursor-pointer border transition-all
                 ${interval === i.key
-                  ? 'border-[#FFA500]/40 text-[#FFA500] bg-[rgba(255,165,0,.12)]'
+                  ? 'border-sun/40 text-sun bg-sun/10'
                   : 'border-border text-muted hover:text-txt bg-transparent'
-                }`}>
+                }`}
+            >
               {i.label}
             </button>
           ))}
@@ -247,7 +279,7 @@ export default function PerpChart({ symbol, markPrice, positions = [] }) {
           <Chart options={options} series={[{ data: candles }]} type="candlestick" height={380} />
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-muted">
-            <div className="text-3xl mb-3 animate-pulse">📡</div>
+            <SignalIcon size={32} className="mb-3 text-sea animate-pulse" />
             <div className="text-[.82rem] font-body font-bold mb-1">Building live chart...</div>
             <div className="text-[.68rem]">Accumulating price ticks ({tickCount}/2 minimum). Updates every ~12s.</div>
             <div className="mt-4 flex items-center gap-3 text-[.78rem]">
@@ -261,12 +293,19 @@ export default function PerpChart({ symbol, markPrice, positions = [] }) {
 
       {/* Session stats strip */}
       <div className="px-5 py-3 border-t border-border flex gap-6 flex-wrap text-[.7rem]">
-        <StatItem label="Price" value={`$${(lastPrice || markPrice).toFixed(2)}`} color="#FFA500" />
-        <StatItem label="Session High" value={`$${(sessionHigh || markPrice).toFixed(2)}`} color="#00ffa3" />
-        <StatItem label="Session Low" value={`$${(sessionLow || markPrice).toFixed(2)}`} color="#FF4A6B" />
-        <StatItem label="Change" value={`${sessionChange >= 0 ? '+' : ''}${sessionChange.toFixed(3)}%`}
-          color={sessionChange >= 0 ? '#00ffa3' : '#FF4A6B'} />
-        <StatItem label="Spread" value={sessionHigh && sessionLow ? `$${(sessionHigh - sessionLow).toFixed(2)}` : '—'} color="#A0BAD8" />
+        <StatItem label="Price" value={`$${(lastPrice || markPrice).toFixed(2)}`} color={tokens.sun} />
+        <StatItem label="Session High" value={`$${(sessionHigh || markPrice).toFixed(2)}`} color={tokens.up} />
+        <StatItem label="Session Low" value={`$${(sessionLow || markPrice).toFixed(2)}`} color={tokens.down} />
+        <StatItem
+          label="Change"
+          value={`${sessionChange >= 0 ? '+' : ''}${sessionChange.toFixed(3)}%`}
+          color={sessionChange >= 0 ? tokens.up : tokens.down}
+        />
+        <StatItem
+          label="Spread"
+          value={sessionHigh && sessionLow ? `$${(sessionHigh - sessionLow).toFixed(2)}` : '—'}
+          color={tokens.label}
+        />
       </div>
 
       {/* Position overlay legend */}
@@ -274,15 +313,24 @@ export default function PerpChart({ symbol, markPrice, positions = [] }) {
         <div className="px-5 py-2.5 border-t border-border flex items-center gap-4 text-[.65rem]">
           <span className="text-muted">Chart overlays:</span>
           <span className="flex items-center gap-1">
-            <span className="inline-block w-4 h-[2px] bg-up" style={{ borderTop: '2px dashed #00ffa3' }} />
+            <span
+              className="inline-block w-4 h-[2px]"
+              style={{ borderTop: `2px dashed ${tokens.up}` }}
+            />
             <span className="text-up">Long Entry</span>
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block w-4 h-[2px] bg-down" style={{ borderTop: '2px dashed #FF4A6B' }} />
+            <span
+              className="inline-block w-4 h-[2px]"
+              style={{ borderTop: `2px dashed ${tokens.down}` }}
+            />
             <span className="text-down">Short Entry</span>
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block w-4 h-[2px]" style={{ borderTop: '2px dotted #992233' }} />
+            <span
+              className="inline-block w-4 h-[2px]"
+              style={{ borderTop: `2px dotted ${tokens.liq}` }}
+            />
             <span className="text-down">Liquidation</span>
           </span>
         </div>

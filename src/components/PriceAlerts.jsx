@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import useStore from '../store/useStore';
+import { AlertIcon } from './icons';
 
 const SOL_SYMBOLS = ['SOL', 'USDC', 'JUP', 'RAY', 'BONK', 'RENDER', 'HNT', 'GOLD', 'ZBTC', 'WETH', 'BILL', 'PERP', 'NVDAX', 'PREN'];
 
@@ -32,7 +33,10 @@ export default function PriceAlerts() {
         className="w-full flex items-center justify-between px-5 py-3 border-b border-border hover:bg-white/2 transition-colors cursor-pointer"
       >
         <div className="flex items-center gap-2">
-          <span className="text-[.82rem] font-body font-bold uppercase tracking-widest text-txt">🔔 Price Alerts</span>
+          <span className="text-[.82rem] font-body font-bold uppercase tracking-widest text-txt inline-flex items-center gap-2">
+            <AlertIcon size={14} className="text-sun" />
+            Price Alerts
+          </span>
           {active.length > 0 && (
             <span className="px-1.5 py-0.5 rounded-full text-[.6rem] font-mono bg-sea/15 text-sea border border-sea/25">
               {active.length} active

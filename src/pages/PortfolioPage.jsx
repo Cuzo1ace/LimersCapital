@@ -27,6 +27,14 @@ import PrivateModeToggle from '../components/ui/PrivateModeToggle';
 import ConfidentialBadge from '../components/ui/ConfidentialBadge';
 import PersonalEdgeCard from '../components/PersonalEdgeCard';
 import DevnetEdgeCard from '../components/DevnetEdgeCard';
+import {
+  AlertIcon,
+  ChartIcon,
+  ExchangeIcon,
+  InsightIcon,
+  TrendUpIcon,
+} from '../components/icons';
+import TierMark from '../components/ui/TierMark';
 
 const fmtUSD = n => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtTTD = n => n == null ? '—' : 'TT$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -54,6 +62,10 @@ function exportCSV(trades) {
   URL.revokeObjectURL(url);
 }
 
+const btnBase =
+  'cursor-pointer rounded-lg px-3 py-1 text-[.7rem] font-mono transition-colors duration-150 ' +
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-night';
+
 export default function PortfolioPage() {
   const [chartAsset, setChartAsset] = useState(null);
   const { balanceUSD, balanceTTD, holdings, trades, resetPortfolio } = useStore();
@@ -63,7 +75,6 @@ export default function PortfolioPage() {
   const tokens = marketQ.data || [];
   const stocks = ttseQ.data?.stocks || TTSE_FALLBACK;
 
-  // Calculate portfolio value
   const solHoldings = holdings.filter(h => h.market === 'solana');
   const ttseHoldings = holdings.filter(h => h.market === 'ttse');
 
@@ -101,7 +112,6 @@ export default function PortfolioPage() {
   // ── UX polish: scroll-reveal for sections + celebration on gains ──
   const { childVariants: statsChildV, ...statsReveal } = useScrollReveal({ stagger: 0.08 });
   const { childVariants: _chartCV, ...chartReveal } = useScrollReveal({ delay: 0.1 });
-  const { childVariants: holdingsChildV, ...holdingsReveal } = useScrollReveal({ stagger: 0.06, delay: 0.15 });
   const { fire: fireCelebration, CelebrationPortal } = useCelebration();
   const prevPnlRef = useRef(totalPnl);
 
@@ -113,12 +123,22 @@ export default function PortfolioPage() {
     prevPnlRef.current = totalPnl;
   }, [totalPnl]);
 
+  const onChainGradient =
+    'linear-gradient(135deg, color-mix(in srgb, var(--color-sea) 4%, transparent), color-mix(in srgb, var(--color-palm) 2%, transparent))';
+  const profileGradient =
+    'linear-gradient(135deg, color-mix(in srgb, var(--color-palm) 4%, transparent), color-mix(in srgb, var(--color-sea) 2%, transparent))';
+
   return (
     <div>
       <CelebrationPortal />
+
       {/* ── Risk Disclosure Banner ──────────────────────────── */}
-      <div className="flex items-start gap-2.5 rounded-xl px-4 py-3 mb-3 border border-[rgba(251,146,60,.25)] bg-[rgba(251,146,60,.06)] text-[.76rem] text-[#FB923C] font-body">
-        <span className="flex-shrink-0 mt-0.5">&#9888;&#65039;</span>
+      <div
+        className="flex items-start gap-2.5 rounded-xl px-4 py-3 mb-3 border border-warn/25 text-[.76rem] text-warn font-body"
+        style={{ background: 'color-mix(in srgb, var(--color-warn) 6%, transparent)' }}
+        role="note"
+      >
+        <AlertIcon size={14} className="flex-shrink-0 mt-0.5" />
         <span>{RISK_BANNER.portfolio}</span>
       </div>
 
@@ -150,120 +170,107 @@ export default function PortfolioPage() {
             storageKey="portfolio:onchain"
             headerRight={
               <>
-                <span className={`px-2 py-0.5 rounded text-[.6rem] font-mono uppercase tracking-wider
-                  ${cluster === 'devnet'
-                    ? 'bg-[rgba(255,179,71,.1)] text-[#FFB347] border border-[rgba(255,179,71,.25)]'
-                    : 'bg-up/10 text-up border border-up/25'
-                  }`}>
+                <span
+                  className={`px-2 py-0.5 rounded text-[.6rem] font-mono uppercase tracking-wider border
+                    ${cluster === 'devnet'
+                      ? 'bg-warn/10 text-warn border-warn/25'
+                      : 'bg-up/10 text-up border-up/25'
+                    }`}
+                >
                   {clusterLabel}
                 </span>
                 <a
                   href={getAccountExplorerUrl(walletAddress, cluster)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[.68rem] text-sea hover:text-txt no-underline transition-colors"
+                  className="text-[.68rem] text-sea hover:text-txt no-underline transition-colors duration-150 focus-visible:outline-none focus-visible:underline"
                 >
                   View on Solscan
                 </a>
               </>
             }
           >
-          <div className="rounded-xl border border-sea/20 p-5 mb-4" style={{ background: 'linear-gradient(135deg, rgba(0,255,163,.04), rgba(45,155,86,.02))' }}>
-            <WalletBalances walletAddress={walletAddress} solPrice={solPrice} />
-          </div>
-
-          <div className="mb-4">
-            <h3 className="font-headline text-[.78rem] font-bold uppercase tracking-widest mb-3 text-txt-2">Recent On-Chain Transactions</h3>
-            <TransactionHistory walletAddress={walletAddress} />
-          </div>
-
-          {/* Limer On-Chain Profile */}
-          {profile?.initialized && (
-            <div className="rounded-xl border border-[rgba(45,155,86,.2)] p-5 mb-4"
-              style={{ background: 'linear-gradient(135deg, rgba(45,155,86,.04), rgba(0,255,163,.02))' }}>
-              <div className="flex items-center gap-2 mb-3">
-                <h3 className="font-headline text-[.78rem] font-bold uppercase tracking-widest text-[#2D9B56]">
-                  Limer Profile (On-Chain)
-                </h3>
-                <a href={getAccountExplorerUrl(profile.address, cluster)}
-                  target="_blank" rel="noopener noreferrer"
-                  className="text-[.6rem] text-sea hover:text-txt no-underline transition-colors ml-auto">
-                  View PDA
-                </a>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="rounded-xl p-3 border border-border" style={{ background: 'var(--color-card)' }}>
-                  <div className="text-[.6rem] text-muted uppercase tracking-widest mb-1">XP</div>
-                  <div className="font-headline text-[1.2rem] font-black text-txt">
-                    {profile.xp.toLocaleString()}
-                  </div>
-                  <div className="text-[.6rem] text-txt-2">{getTier(profile.xp).name} {getTier(profile.xp).icon}</div>
-                </div>
-                <div className="rounded-xl p-3 border border-border" style={{ background: 'var(--color-card)' }}>
-                  <div className="text-[.6rem] text-muted uppercase tracking-widest mb-1">Limer Points</div>
-                  <div className="font-headline text-[1.2rem] font-black text-[#2D9B56]">
-                    {profile.limerPoints.toLocaleString()}
-                  </div>
-                  <div className="text-[.6rem] text-txt-2">LP</div>
-                </div>
-                <div className="rounded-xl p-3 border border-border" style={{ background: 'var(--color-card)' }}>
-                  <div className="text-[.6rem] text-muted uppercase tracking-widest mb-1">Streak</div>
-                  <div className="font-headline text-[1.2rem] font-black text-txt">
-                    {profile.currentStreak}
-                  </div>
-                  <div className="text-[.6rem] text-txt-2">longest: {profile.longestStreak}</div>
-                </div>
-                <div className="rounded-xl p-3 border border-border" style={{ background: 'var(--color-card)' }}>
-                  <div className="text-[.6rem] text-muted uppercase tracking-widest mb-1">Badges</div>
-                  <div className="font-headline text-[1.2rem] font-black text-txt">
-                    {/* Count set bits in bitmap */}
-                    {(profile.badgesEarned >>> 0).toString(2).split('').filter(b => b === '1').length}
-                  </div>
-                  <div className="text-[.6rem] text-txt-2">earned on-chain</div>
-                </div>
-              </div>
-              {tradeLog?.initialized && (
-                <div className="grid grid-cols-3 gap-3 mt-3">
-                  <div className="rounded-xl p-3 border border-border" style={{ background: 'var(--color-card)' }}>
-                    <div className="text-[.6rem] text-muted uppercase tracking-widest mb-1">Trades</div>
-                    <div className="font-mono text-[.9rem] text-txt">{tradeLog.tradeCount}</div>
-                  </div>
-                  <div className="rounded-xl p-3 border border-border" style={{ background: 'var(--color-card)' }}>
-                    <div className="text-[.6rem] text-muted uppercase tracking-widest mb-1">Volume</div>
-                    <div className="font-mono text-[.9rem] text-txt">{fmtUSD(tradeLog.totalVolumeUsd / 1e6)}</div>
-                  </div>
-                  <div className="rounded-xl p-3 border border-border" style={{ background: 'var(--color-card)' }}>
-                    <div className="text-[.6rem] text-muted uppercase tracking-widest mb-1">Fees Paid</div>
-                    <div className="font-mono text-[.9rem] text-txt">{fmtUSD(tradeLog.totalFees / 1e6)}</div>
-                  </div>
-                </div>
-              )}
+            <div
+              className="rounded-xl border border-sea/20 p-5 mb-4"
+              style={{ background: onChainGradient }}
+            >
+              <WalletBalances walletAddress={walletAddress} solPrice={solPrice} />
             </div>
-          )}
 
-          {/* Profile not initialized prompt */}
-          {walletConnected && !profile?.initialized && !profileQ.isLoading && (
-            <div className="rounded-xl border border-dashed border-[rgba(45,155,86,.3)] p-5 mb-4 text-center"
-              style={{ background: 'rgba(45,155,86,.03)' }}>
-              <div className="text-[.85rem] text-txt mb-1">No on-chain profile yet</div>
-              <div className="text-[.72rem] text-txt-2 mb-3">
-                Create your Limer profile on {clusterLabel} to track XP, badges, and trade history on-chain.
-              </div>
-              <button
-                onClick={() => limerActions.initializeUser.mutateAsync().then(() => profileQ.refetch())}
-                disabled={limerActions.initializeUser.isPending}
-                className="px-4 py-1.5 rounded-lg text-[.72rem] font-semibold bg-up/10 text-up border border-up/30
-                  hover:bg-up/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            <div className="mb-4">
+              <h3 className="font-headline text-[.78rem] font-bold uppercase tracking-widest mb-3 text-txt-2">
+                Recent On-Chain Transactions
+              </h3>
+              <TransactionHistory walletAddress={walletAddress} />
+            </div>
+
+            {/* Limer On-Chain Profile */}
+            {profile?.initialized && (
+              <div
+                className="rounded-xl border border-palm/20 p-5 mb-4"
+                style={{ background: profileGradient }}
               >
-                {limerActions.initializeUser.isPending ? 'Initializing…' : 'Initialize Profile on-chain'}
-              </button>
-            </div>
-          )}
+                <div className="flex items-center gap-2 mb-3">
+                  <h3 className="font-headline text-[.78rem] font-bold uppercase tracking-widest text-palm">
+                    Limer Profile (On-Chain)
+                  </h3>
+                  <a
+                    href={getAccountExplorerUrl(profile.address, cluster)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[.6rem] text-sea hover:text-txt no-underline transition-colors duration-150 ml-auto focus-visible:outline-none focus-visible:underline"
+                  >
+                    View PDA
+                  </a>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <ProfileStat label="XP" value={profile.xp.toLocaleString()} sub={
+                    <span className="inline-flex items-center gap-1">
+                      {getTier(profile.xp).name}
+                      <TierMark tier={getTier(profile.xp)} />
+                    </span>
+                  } />
+                  <ProfileStat label="Limer Points" value={profile.limerPoints.toLocaleString()} sub="LP" valueClass="text-palm" />
+                  <ProfileStat label="Streak" value={profile.currentStreak} sub={`longest: ${profile.longestStreak}`} />
+                  <ProfileStat
+                    label="Badges"
+                    value={(profile.badgesEarned >>> 0).toString(2).split('').filter(b => b === '1').length}
+                    sub="earned on-chain"
+                  />
+                </div>
+                {tradeLog?.initialized && (
+                  <div className="grid grid-cols-3 gap-3 mt-3">
+                    <ProfileStat label="Trades" value={tradeLog.tradeCount} dense />
+                    <ProfileStat label="Volume" value={fmtUSD(tradeLog.totalVolumeUsd / 1e6)} dense />
+                    <ProfileStat label="Fees Paid" value={fmtUSD(tradeLog.totalFees / 1e6)} dense />
+                  </div>
+                )}
+              </div>
+            )}
 
+            {/* Profile not initialized prompt */}
+            {walletConnected && !profile?.initialized && !profileQ.isLoading && (
+              <div
+                className="rounded-xl border border-dashed border-palm/30 p-5 mb-4 text-center"
+                style={{ background: 'color-mix(in srgb, var(--color-palm) 3%, transparent)' }}
+              >
+                <div className="text-[.85rem] text-txt mb-1">No on-chain profile yet</div>
+                <div className="text-[.72rem] text-txt-2 mb-3">
+                  Create your Limer profile on {clusterLabel} to track XP, badges, and trade history on-chain.
+                </div>
+                <button
+                  onClick={() => limerActions.initializeUser.mutateAsync().then(() => profileQ.refetch())}
+                  disabled={limerActions.initializeUser.isPending}
+                  className={`${btnBase} font-semibold bg-up/10 text-up border border-up/30 hover:bg-up/20 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-up`}
+                >
+                  {limerActions.initializeUser.isPending ? 'Initializing…' : 'Initialize Profile on-chain'}
+                </button>
+              </div>
+            )}
           </CollapsibleSection>
 
           {/* Separator between on-chain and paper */}
-          <div className="flex items-center gap-3 my-6">
+          <div className="flex items-center gap-3 my-6" aria-hidden="true">
             <div className="flex-1 h-px bg-border" />
             <span className="text-[.65rem] text-muted uppercase tracking-widest">Paper Portfolio</span>
             <div className="flex-1 h-px bg-border" />
@@ -277,7 +284,7 @@ export default function PortfolioPage() {
           <DashCard label="USD Cash" numericValue={balanceUSD} prefix="$" format="number" sub="Solana balance" />
         </motion.div>
         <motion.div variants={statsChildV}>
-          <DashCard label="TTD Cash" numericValue={balanceTTD} prefix="TT$" format="number" sub="TTSE balance" color="text-[#FF4D6D]" />
+          <DashCard label="TTD Cash" numericValue={balanceTTD} prefix="TT$" format="number" sub="TTSE balance" color="text-ttse" />
         </motion.div>
         <motion.div variants={statsChildV}>
           <DashCard label="Holdings (USD)" numericValue={solValue + ttseValue / TTD_RATE} prefix="$" format="number" sub={`${solHoldings.length + ttseHoldings.length} positions`} />
@@ -298,19 +305,17 @@ export default function PortfolioPage() {
         </motion.div>
       </motion.div>
 
-      {/* P&L Explainer for new users */}
+      {/* Quiet first-time hint (replaces the full 💡 card — dignified, inline) */}
       {trades.length === 0 && (
-        <div className="rounded-xl border border-border p-4 mb-6 flex items-start gap-3"
-          style={{ background: 'var(--color-card)' }}>
-          <span className="text-xl flex-shrink-0">💡</span>
-          <div>
-            <div className="font-body font-bold text-[.82rem] text-txt mb-1">Understanding Your Portfolio</div>
-            <div className="text-[.72rem] text-txt-2 leading-relaxed">
-              <strong>P&L</strong> stands for Profit & Loss — it shows whether your investments went up or down.
-              Green numbers mean you&apos;re in profit, red means a loss. Your <strong>Holdings</strong> show
-              which tokens you own. Start by making a paper trade to see your portfolio come alive!
-            </div>
-          </div>
+        <div
+          className="flex items-start gap-2.5 rounded-lg px-3.5 py-2.5 mb-6 border border-border text-[.72rem] text-txt-2 leading-relaxed"
+          style={{ background: 'var(--color-card)' }}
+        >
+          <InsightIcon size={14} className="flex-shrink-0 mt-0.5 text-sun" />
+          <span>
+            <strong className="text-txt">P&L</strong> = profit or loss on your investments.{' '}
+            <strong className="text-txt">Holdings</strong> are the tokens you own. Make a paper trade to see the numbers move.
+          </span>
         </div>
       )}
 
@@ -339,7 +344,10 @@ export default function PortfolioPage() {
       {/* Price Chart */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-headline text-[.88rem] font-bold uppercase tracking-widest text-txt">📈 Price Chart</h3>
+          <h3 className="font-headline text-[.88rem] font-bold uppercase tracking-widest text-txt inline-flex items-center gap-2">
+            <TrendUpIcon size={16} className="text-sea" />
+            Price Chart
+          </h3>
           {holdings.length > 0 && (
             <select
               value={chartAsset ? `${chartAsset.market}:${chartAsset.symbol}` : ''}
@@ -359,11 +367,13 @@ export default function PortfolioPage() {
                   });
                 }
               }}
-              className="bg-black/30 border border-border text-txt rounded-lg px-3 py-1.5 font-mono text-[.72rem] outline-none">
+              className="bg-night-3/50 border border-border text-txt rounded-lg px-3 py-1.5 font-mono text-[.72rem] outline-none transition-colors duration-150 hover:border-sea/40 focus-visible:border-sea focus-visible:ring-2 focus-visible:ring-sea/30"
+              aria-label="Select a holding to chart"
+            >
               <option value="">— Select holding —</option>
               {holdings.map(h => (
                 <option key={`${h.market}:${h.symbol}`} value={`${h.market}:${h.symbol}`}>
-                  {h.market === 'ttse' ? '🇹🇹' : '📊'} {h.symbol}
+                  {h.market === 'ttse' ? '🇹🇹 ' : '◈ '}{h.symbol}
                 </option>
               ))}
             </select>
@@ -382,7 +392,7 @@ export default function PortfolioPage() {
       {solHoldings.length > 0 && (
         <CollapsibleSection
           title="Solana Positions"
-          icon="📊"
+          icon={<ChartIcon size={13} className="text-sea inline-block" />}
           accent="text-txt"
           count={solHoldings.length}
           defaultOpen
@@ -394,13 +404,18 @@ export default function PortfolioPage() {
               const cur = t?.current_price || h.avgPrice;
               const pnl = ((cur - h.avgPrice) / h.avgPrice * 100);
               return (
-                <div key={`sol:${h.symbol}`} className="flex items-center gap-2 md:gap-4 rounded-xl px-2.5 md:px-4 py-2.5 border border-border text-[.76rem]"
-                  style={{ background: 'var(--color-card)' }}>
+                <div
+                  key={`sol:${h.symbol}`}
+                  className="flex items-center gap-2 md:gap-4 rounded-xl px-2.5 md:px-4 py-2.5 border border-border text-[.76rem] transition-colors duration-150 hover:border-sea/30 hover:bg-sea/3"
+                  style={{ background: 'var(--color-card)' }}
+                >
                   <span className="font-body font-bold w-14">{h.symbol}</span>
                   <span className="text-txt-2 tabular-nums"><PrivateValue width={5}>{h.qty.toFixed(4)}</PrivateValue></span>
                   <span className="hidden md:block text-txt-2"><PrivateValue width={6}>{fmtUSD(h.avgPrice)}</PrivateValue></span>
                   <span className="text-txt tabular-nums"><PrivateValue width={7}>{fmtUSD(h.qty * cur)}</PrivateValue></span>
-                  <span className={`ml-auto tabular-nums ${pnl >= 0 ? 'text-up' : 'text-down'}`}><PrivateValue width={5}>{pnl >= 0 ? '+' : ''}{pnl.toFixed(2)}%</PrivateValue></span>
+                  <span className={`ml-auto tabular-nums ${pnl >= 0 ? 'text-up' : 'text-down'}`}>
+                    <PrivateValue width={5}>{pnl >= 0 ? '+' : ''}{pnl.toFixed(2)}%</PrivateValue>
+                  </span>
                 </div>
               );
             })}
@@ -412,8 +427,8 @@ export default function PortfolioPage() {
       {ttseHoldings.length > 0 && (
         <CollapsibleSection
           title="TTSE Positions"
-          icon="🇹🇹"
-          accent="text-[#FF4D6D]"
+          icon={<ExchangeIcon size={13} className="text-ttse inline-block" />}
+          accent="text-ttse"
           count={ttseHoldings.length}
           defaultOpen
           storageKey="portfolio:ttse"
@@ -424,13 +439,20 @@ export default function PortfolioPage() {
               const cur = s?.close || h.avgPrice;
               const pnl = ((cur - h.avgPrice) / h.avgPrice * 100);
               return (
-                <div key={`ttse:${h.symbol}`} className="flex items-center gap-2 md:gap-4 rounded-xl px-2.5 md:px-4 py-2.5 border border-[rgba(200,16,46,.15)] text-[.76rem]"
-                  style={{ background: 'var(--color-card)' }}>
+                <div
+                  key={`ttse:${h.symbol}`}
+                  className="flex items-center gap-2 md:gap-4 rounded-xl px-2.5 md:px-4 py-2.5 border border-ttse/15 text-[.76rem] transition-colors duration-150 hover:border-ttse/35"
+                  style={{ background: 'var(--color-card)' }}
+                >
                   <span className="font-body font-bold w-14">{h.symbol}</span>
-                  <span className="text-txt-2 tabular-nums"><PrivateValue width={4}>{h.qty.toFixed(0)}</PrivateValue> <span className="hidden md:inline">shares</span></span>
+                  <span className="text-txt-2 tabular-nums">
+                    <PrivateValue width={4}>{h.qty.toFixed(0)}</PrivateValue> <span className="hidden md:inline">shares</span>
+                  </span>
                   <span className="hidden md:block text-txt-2"><PrivateValue width={6}>{fmtTTD(h.avgPrice)}</PrivateValue></span>
                   <span className="text-txt tabular-nums"><PrivateValue width={7}>{fmtTTD(h.qty * cur)}</PrivateValue></span>
-                  <span className={`ml-auto tabular-nums ${pnl >= 0 ? 'text-up' : 'text-down'}`}><PrivateValue width={5}>{pnl >= 0 ? '+' : ''}{pnl.toFixed(2)}%</PrivateValue></span>
+                  <span className={`ml-auto tabular-nums ${pnl >= 0 ? 'text-up' : 'text-down'}`}>
+                    <PrivateValue width={5}>{pnl >= 0 ? '+' : ''}{pnl.toFixed(2)}%</PrivateValue>
+                  </span>
                 </div>
               );
             })}
@@ -448,30 +470,42 @@ export default function PortfolioPage() {
         headerRight={
           <>
             {trades.length > 0 && (
-              <button onClick={() => exportCSV(trades)}
-                className="bg-transparent border border-sea/30 text-sea cursor-pointer rounded-lg px-3 py-1 text-[.7rem] font-mono transition-all hover:bg-sea/10">
+              <button
+                onClick={() => exportCSV(trades)}
+                className={`${btnBase} bg-transparent border border-sea/30 text-sea hover:bg-sea/10 focus-visible:ring-sea`}
+              >
                 ↓ Export CSV
               </button>
             )}
-            <button onClick={resetPortfolio}
-              className="bg-transparent border border-down/25 text-down cursor-pointer rounded-lg px-3 py-1 text-[.7rem] font-mono transition-all hover:bg-down/10">
+            <button
+              onClick={resetPortfolio}
+              className={`${btnBase} bg-transparent border border-down/25 text-down hover:bg-down/10 focus-visible:ring-down`}
+            >
               Reset Portfolio
             </button>
           </>
         }
       >
         {trades.length === 0 ? (
-          <div className="text-muted text-sm py-8 text-center border border-border rounded-xl" style={{ background: 'var(--color-card)' }}>
+          <div
+            className="text-muted text-sm py-8 text-center border border-border rounded-xl"
+            style={{ background: 'var(--color-card)' }}
+          >
             No trades yet. Head to Paper Trade to get started!
           </div>
         ) : (
           <div className="flex flex-col gap-1">
             {trades.map(t => (
-              <div key={t.id} className="flex items-center gap-3 rounded-xl px-4 py-2 border border-border text-[.74rem]"
-                style={{ background: 'var(--color-card)' }}>
+              <div
+                key={t.id}
+                className="flex items-center gap-3 rounded-xl px-4 py-2 border border-border text-[.74rem] transition-colors duration-150 hover:border-sea/25"
+                style={{ background: 'var(--color-card)' }}
+              >
                 <span className={`px-1.5 py-0.5 rounded text-[.62rem] font-semibold uppercase
-                  ${t.side === 'buy' ? 'bg-up/12 text-up' : 'bg-down/12 text-down'}`}>{t.side}</span>
-                <span className={`text-[.58rem] px-1.5 py-0.5 rounded ${t.market === 'ttse' ? 'bg-[rgba(200,16,46,.08)] text-[#FF4D6D]' : 'bg-sea/8 text-sea'}`}>
+                  ${t.side === 'buy' ? 'bg-up/12 text-up' : 'bg-down/12 text-down'}`}>
+                  {t.side}
+                </span>
+                <span className={`text-[.58rem] px-1.5 py-0.5 rounded ${t.market === 'ttse' ? 'bg-ttse/8 text-ttse' : 'bg-sea/8 text-sea'}`}>
                   {t.market === 'ttse' ? 'TTSE' : 'SOL'}
                 </span>
                 <span className="font-body font-bold flex-1">{t.symbol}</span>
@@ -484,6 +518,7 @@ export default function PortfolioPage() {
           </div>
         )}
       </CollapsibleSection>
+
       {/* Trading Journal */}
       <div className="mt-6 mb-6">
         <h2 className="font-headline text-[.92rem] font-bold uppercase tracking-widest text-txt mb-4">Trading Journal</h2>
@@ -501,6 +536,18 @@ export default function PortfolioPage() {
   );
 }
 
+function ProfileStat({ label, value, sub, valueClass = 'text-txt', dense = false }) {
+  return (
+    <div className="rounded-xl p-3 border border-border" style={{ background: 'var(--color-card)' }}>
+      <div className="text-[.6rem] text-muted uppercase tracking-widest mb-1">{label}</div>
+      <div className={`font-headline ${dense ? 'text-[.9rem] font-mono' : 'text-[1.2rem] font-black'} ${valueClass}`}>
+        {value}
+      </div>
+      {sub !== undefined && <div className="text-[.6rem] text-txt-2 mt-0.5">{sub}</div>}
+    </div>
+  );
+}
+
 function DashCard({ label, value, numericValue, prefix = '', format = 'number', sub, color, useAbsValue, confidentialAggregate = false }) {
   const privateMode = useStore(s => s.privateMode);
   const displayValue = useAbsValue ? Math.abs(numericValue ?? 0) : (numericValue ?? 0);
@@ -509,15 +556,18 @@ function DashCard({ label, value, numericValue, prefix = '', format = 'number', 
   // an Arcis MXE circuit would expose without leaking inputs.
   const masked = privateMode && !confidentialAggregate;
   return (
-    <div className={`rounded-[14px] p-5 border gpu-accelerated ${
-      privateMode && confidentialAggregate
-        ? 'border-[rgba(191,129,255,0.35)] shadow-[0_0_22px_rgba(191,129,255,0.08)]'
-        : 'border-border'
-    }`} style={{ background: 'var(--color-card)' }}>
+    <div
+      className={`rounded-[14px] p-5 border gpu-accelerated transition-colors duration-150 ${
+        privateMode && confidentialAggregate
+          ? 'border-coral/35 shadow-[0_0_22px_color-mix(in_srgb,var(--color-coral)_8%,transparent)]'
+          : 'border-border'
+      }`}
+      style={{ background: 'var(--color-card)' }}
+    >
       <div className="flex items-center gap-1.5 mb-1.5">
         <div className="text-[.66rem] text-muted uppercase tracking-widest">{label}</div>
         {privateMode && confidentialAggregate && (
-          <span className="text-[.52rem] font-mono uppercase tracking-widest text-purple/80">· conf</span>
+          <span className="text-[.52rem] font-mono uppercase tracking-widest text-coral/80">· conf</span>
         )}
       </div>
       <div className={`font-headline text-[1.6rem] font-black ${color || 'text-txt'}`}>

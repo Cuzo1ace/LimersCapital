@@ -4,6 +4,10 @@ import useStore from '../store/useStore';
 import { computeEdgeStats } from '../utils/edgeStats';
 import { TTD_RATE } from '../api/ttse';
 import PrivateValue from './ui/PrivateValue';
+import { SignalIcon } from './icons';
+
+const EDGE_BG = 'linear-gradient(135deg, color-mix(in srgb, var(--color-sea) 3%, transparent), color-mix(in srgb, var(--color-coral) 3%, transparent))';
+const EDGE_BG_STRONG = 'linear-gradient(135deg, color-mix(in srgb, var(--color-sea) 5%, transparent), color-mix(in srgb, var(--color-coral) 4%, transparent))';
 
 /**
  * PersonalEdgeCard — reflects the user's own trading patterns back to them.
@@ -30,11 +34,10 @@ const fmtUsdSigned = (n) => {
 
 function EmptyState() {
   return (
-    <div className="rounded-2xl border border-border p-5 mb-5"
-      style={{ background: 'linear-gradient(135deg, rgba(0,255,163,.03), rgba(92,38,175,.03))' }}>
+    <div className="rounded-2xl border border-border p-5 mb-5" style={{ background: EDGE_BG }}>
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-base">✶</span>
-        <div className="text-[.66rem] font-mono font-bold uppercase tracking-widest text-[#00ffa3]">
+        <SignalIcon size={14} className="text-sea" />
+        <div className="text-[.66rem] font-mono font-bold uppercase tracking-widest text-sea">
           Your Edge
         </div>
       </div>
@@ -65,8 +68,8 @@ function TagRow({ row, tone = 'strong' }) {
   if (!row) return null;
   const color =
     tone === 'strong'
-      ? 'border-[#00ffa3]/30 bg-[#00ffa3]/8 text-[#00ffa3]'
-      : 'border-[#FFCA3A]/30 bg-[#FFCA3A]/8 text-[#FFCA3A]';
+      ? 'border-sea/30 bg-sea/8 text-sea'
+      : 'border-sun/30 bg-sun/8 text-sun';
   return (
     <div className="flex items-center justify-between py-2 border-b border-border last:border-0">
       <div className="flex items-center gap-2">
@@ -115,18 +118,14 @@ export default function PersonalEdgeCard() {
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="rounded-2xl border p-5 mb-5"
-      style={{
-        background:
-          'linear-gradient(135deg, rgba(0,255,163,.05), rgba(92,38,175,.04))',
-        borderColor: 'rgba(0,255,163,.18)',
-      }}
+      className="rounded-2xl border border-sea/20 p-5 mb-5"
+      style={{ background: EDGE_BG_STRONG }}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-base">✶</span>
-          <div className="text-[.66rem] font-mono font-bold uppercase tracking-widest text-[#00ffa3]">
+          <SignalIcon size={14} className="text-sea" />
+          <div className="text-[.66rem] font-mono font-bold uppercase tracking-widest text-sea">
             Your Edge
           </div>
           <span className="text-[.55rem] text-muted font-mono">

@@ -1,4 +1,11 @@
 import { useState, useMemo } from 'react';
+import {
+  AlertIcon,
+  BoltIcon,
+  ExchangeIcon,
+  InsightIcon,
+  WalletIcon,
+} from './icons';
 
 /**
  * Caribbean Remittance Calculator
@@ -34,7 +41,8 @@ const SEND_COUNTRIES = [
 const TRADITIONAL_PROVIDERS = [
   {
     name: 'Western Union',
-    icon: '🟡',
+    Icon: AlertIcon,
+    iconClass: 'text-warn',
     getFee: (amount) => {
       if (amount <= 100) return 9.99;
       if (amount <= 200) return 14.99;
@@ -47,7 +55,8 @@ const TRADITIONAL_PROVIDERS = [
   },
   {
     name: 'MoneyGram',
-    icon: '🔵',
+    Icon: AlertIcon,
+    iconClass: 'text-sea',
     getFee: (amount) => {
       if (amount <= 100) return 7.99;
       if (amount <= 200) return 11.99;
@@ -60,7 +69,8 @@ const TRADITIONAL_PROVIDERS = [
   },
   {
     name: 'Bank Wire',
-    icon: '🏦',
+    Icon: ExchangeIcon,
+    iconClass: 'text-txt-2',
     getFee: (amount) => {
       return Math.max(25, amount * 0.01); // $25 min or 1%
     },
@@ -115,7 +125,8 @@ export default function RemittanceCalculator() {
   return (
     <div className="rounded-[14px] p-5 border border-border" style={{ background: 'var(--color-card)' }}>
       <div className="text-[.66rem] uppercase tracking-widest mb-1 flex items-center gap-2 text-palm">
-        💸 Caribbean Remittance Calculator
+        <WalletIcon size={14} />
+        Caribbean Remittance Calculator
         <span className="text-muted text-[.6rem] font-normal normal-case tracking-normal">Solana vs Traditional</span>
       </div>
       <p className="text-[.72rem] text-txt-2 mb-4 leading-relaxed">
@@ -136,7 +147,7 @@ export default function RemittanceCalculator() {
               onChange={e => setAmount(e.target.value)}
               min="1"
               max="10000"
-              className="w-full bg-black/30 border border-border text-txt rounded-lg pl-6 pr-3 py-2 font-mono text-[.8rem] outline-none focus:border-sea/50"
+              className="w-full bg-night-3/50 border border-border text-txt rounded-lg pl-6 pr-3 py-2 font-mono text-[.8rem] outline-none transition-colors duration-150 hover:border-sea/30 focus-visible:border-sea focus-visible:ring-2 focus-visible:ring-sea/30"
             />
           </div>
         </div>
@@ -147,7 +158,7 @@ export default function RemittanceCalculator() {
           <select
             value={fromCountry}
             onChange={e => setFromCountry(e.target.value)}
-            className="w-full bg-black/30 border border-border text-txt rounded-lg px-3 py-2 font-mono text-[.75rem] outline-none focus:border-sea/50"
+            className="w-full bg-night-3/50 border border-border text-txt rounded-lg px-3 py-2 font-mono text-[.75rem] outline-none transition-colors duration-150 hover:border-sea/30 focus-visible:border-sea focus-visible:ring-2 focus-visible:ring-sea/30"
           >
             {SEND_COUNTRIES.map(c => (
               <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
@@ -161,7 +172,7 @@ export default function RemittanceCalculator() {
           <select
             value={toCountry}
             onChange={e => setToCountry(e.target.value)}
-            className="w-full bg-black/30 border border-border text-txt rounded-lg px-3 py-2 font-mono text-[.75rem] outline-none focus:border-sea/50"
+            className="w-full bg-night-3/50 border border-border text-txt rounded-lg px-3 py-2 font-mono text-[.75rem] outline-none transition-colors duration-150 hover:border-sea/30 focus-visible:border-sea focus-visible:ring-2 focus-visible:ring-sea/30"
           >
             {CARIBBEAN_COUNTRIES.map(c => (
               <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
@@ -176,10 +187,11 @@ export default function RemittanceCalculator() {
           <button
             key={v}
             onClick={() => setAmount(v)}
-            className={`px-3 py-1 rounded-lg text-[.7rem] font-mono cursor-pointer border transition-all
+            className={`px-3 py-1 rounded-lg text-[.7rem] font-mono cursor-pointer border transition-colors duration-150
               ${parseFloat(amount) === v
                 ? 'bg-sea/15 border-sea/40 text-sea font-bold'
-                : 'bg-transparent border-border text-muted hover:text-txt hover:border-white/20'}`}
+                : 'bg-transparent border-border text-muted hover:text-txt hover:border-txt/20'}
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sea/40`}
           >
             ${v.toLocaleString()}
           </button>
@@ -191,13 +203,17 @@ export default function RemittanceCalculator() {
           {/* Solana USDC — highlighted winner */}
           <div
             className="rounded-xl p-4 mb-3 border border-up/30 relative overflow-hidden"
-            style={{ background: 'linear-gradient(135deg, rgba(0,255,163,.06) 0%, rgba(0,255,163,.02) 100%)' }}
+            style={{
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-up) 6%, transparent) 0%, color-mix(in srgb, var(--color-up) 2%, transparent) 100%)',
+            }}
           >
             <div className="absolute top-2 right-3 bg-up/15 border border-up/30 rounded-full px-2 py-0.5 text-[.55rem] text-up font-bold uppercase tracking-wider">
               Best Value
             </div>
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 rounded-full bg-up/15 flex items-center justify-center text-lg">⚡</div>
+              <div className="w-9 h-9 rounded-full bg-up/15 flex items-center justify-center">
+                <BoltIcon size={18} className="text-up" />
+              </div>
               <div>
                 <div className="font-body font-bold text-[.88rem] text-up">Solana USDC</div>
                 <div className="text-[.62rem] text-up/70">{SOLANA_SPEED} · Borderless · 24/7</div>
@@ -228,11 +244,14 @@ export default function RemittanceCalculator() {
           {/* Traditional providers */}
           <div className="flex flex-col gap-2">
             {results.traditional.map(p => (
-              <div key={p.name}
+              <div
+                key={p.name}
                 className="rounded-xl p-3.5 border border-border flex items-center gap-3"
-                style={{ background: 'rgba(0,0,0,.15)' }}
+                style={{ background: 'var(--color-card)' }}
               >
-                <div className="text-xl w-8 text-center flex-shrink-0">{p.icon}</div>
+                <div className="w-8 flex-shrink-0 flex justify-center">
+                  <p.Icon size={18} className={p.iconClass} />
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-body font-bold text-[.78rem] text-txt">{p.name}</div>
                   <div className="text-[.6rem] text-muted">{p.speed}</div>
@@ -254,18 +273,18 @@ export default function RemittanceCalculator() {
           {/* Expand details */}
           <button
             onClick={() => setShowDetails(!showDetails)}
-            className="mt-3 bg-transparent border-none text-sea text-[.7rem] cursor-pointer font-mono hover:underline p-0"
+            className="mt-3 bg-transparent border-none text-sea text-[.7rem] cursor-pointer font-mono hover:underline p-0 focus-visible:outline-none focus-visible:underline"
           >
             {showDetails ? '▾ Hide details' : '▸ Show fee breakdown'}
           </button>
 
           {showDetails && (
-            <div className="mt-2 rounded-lg border border-border p-3 text-[.7rem]" style={{ background: 'rgba(0,0,0,.2)' }}>
+            <div className="mt-2 rounded-lg border border-border p-3 text-[.7rem]" style={{ background: 'var(--color-card)' }}>
               <div className="grid grid-cols-5 gap-1 mb-2 text-[.58rem] text-muted uppercase tracking-widest">
                 <span>Provider</span><span>Transfer Fee</span><span>FX Markup</span><span>Total Cost</span><span>% of Send</span>
               </div>
               {results.traditional.map(p => (
-                <div key={p.name} className="grid grid-cols-5 gap-1 py-1 border-b border-white/5 text-txt-2">
+                <div key={p.name} className="grid grid-cols-5 gap-1 py-1 border-b border-border text-txt-2">
                   <span>{p.name}</span>
                   <span>${p.fee.toFixed(2)}</span>
                   <span>${p.fxLoss.toFixed(2)}</span>
@@ -288,8 +307,14 @@ export default function RemittanceCalculator() {
           )}
 
           {/* Annual savings projection */}
-          <div className="mt-4 rounded-xl p-4 border border-sea/15" style={{ background: 'rgba(56,189,248,.04)' }}>
-            <div className="text-[.65rem] text-sea uppercase tracking-widest mb-2">💡 Annual Savings Projection</div>
+          <div
+            className="mt-4 rounded-xl p-4 border border-sea/15"
+            style={{ background: 'color-mix(in srgb, var(--color-sea) 4%, transparent)' }}
+          >
+            <div className="text-[.65rem] text-sea uppercase tracking-widest mb-2 inline-flex items-center gap-1.5">
+              <InsightIcon size={11} />
+              Annual Savings Projection
+            </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <div className="text-[.58rem] text-muted mb-0.5">Monthly ({from?.flag}→{dest?.flag})</div>

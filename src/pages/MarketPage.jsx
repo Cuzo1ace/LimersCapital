@@ -9,10 +9,17 @@ import GlowCard from '../components/ui/GlowCard';
 import GradientDots from '../components/ui/GradientDots';
 import FinancialTable, { PerfPill, Sparkline, fmtCurrency } from '../components/ui/FinancialTable';
 import BasisSpreadBadge from '../components/BasisSpreadBadge';
+import TokenDetailModal from '../components/market/TokenDetailModal';
 import { TradingViewScreener } from '../components/charts';
 import useScrollReveal from '../hooks/useScrollReveal';
 import ParallaxCard from '../components/ui/ParallaxCard';
 import AttributionChip from '../components/ui/AttributionChip';
+import {
+  ChartIcon,
+  ExchangeIcon,
+  TrendUpIcon,
+  WalletIcon,
+} from '../components/icons';
 
 function fmt(n, decimals = 2) {
   if (n == null) return '—';
@@ -32,6 +39,12 @@ function ChgPill({ value }) {
   );
 }
 
+// Category → token-class mapping. Every accent comes from the brand palette.
+// Consolidations:
+//   Stock / ETF → palm (equity-adjacent green)
+//   Yield       → sun  (gold = yield)
+//   Metal       → muted (silver)
+//   Currency    → ink  (partner violet, close to the old ETH-blue)
 const CAT_CLS = {
   L1:       'text-sea border-border bg-sea/7',
   Stable:   'text-palm border-palm/30 bg-palm/7',
@@ -39,11 +52,11 @@ const CAT_CLS = {
   DeFi:     'text-sea border-border bg-sea/7',
   Meme:     'text-coral border-coral/30 bg-coral/7',
   Infra:    'text-coral border-coral/30 bg-coral/7',
-  Stock:    'text-[#76B900] border-[#76B900]/30 bg-[#76B900]/7',
-  ETF:      'text-[#6DBF4A] border-[#6DBF4A]/30 bg-[#6DBF4A]/7',
-  Yield:    'text-[#FFD700] border-[#FFD700]/30 bg-[#FFD700]/7',
-  Metal:    'text-[#C0C0C0] border-[#C0C0C0]/30 bg-[#C0C0C0]/7',
-  Currency: 'text-[#627EEA] border-[#627EEA]/30 bg-[#627EEA]/7',
+  Stock:    'text-palm border-palm/30 bg-palm/7',
+  ETF:      'text-sea border-sea/30 bg-sea/7',
+  Yield:    'text-sun border-sun/30 bg-sun/7',
+  Metal:    'text-muted border-muted/30 bg-muted/7',
+  Currency: 'text-ink border-ink/30 bg-ink/7',
 };
 
 // Map a market-table row to the canonical category key used by the filter bar.
@@ -85,6 +98,7 @@ export default function MarketPage() {
   const yieldsQ = useQuery({ queryKey: ['sol-yields'], queryFn: fetchSolanaYields, staleTime: 300000 });
   const [birdeyeToken, setBirdeyeToken] = useState('So11111111111111111111111111111111111111112');
   const [activeCategory, setActiveCategory] = useState('all');
+  const [activeRow, setActiveRow] = useState(null);
 
   // Tickers whose underlying we fetch from FMP for the basis-spread widget.
   // Driven by the catalog — adding a stock/ETF there automatically picks it up.
@@ -168,8 +182,13 @@ export default function MarketPage() {
   return (
     <div>
       {/* Hero — scroll-reveal entrance */}
-      <motion.div {...heroReveal} className="rounded-xl p-9 mb-7 grid grid-cols-1 md:grid-cols-2 gap-9 items-center overflow-hidden relative border border-border"
-        style={{ background: 'linear-gradient(135deg, var(--color-night-2) 0%, rgba(0,255,163,.05) 100%)' }}>
+      <motion.div
+        {...heroReveal}
+        className="rounded-xl p-9 mb-7 grid grid-cols-1 md:grid-cols-2 gap-9 items-center overflow-hidden relative border border-border"
+        style={{
+          background: 'linear-gradient(135deg, var(--color-night-2) 0%, color-mix(in srgb, var(--color-sea) 5%, transparent) 100%)',
+        }}
+      >
         <GradientDots
           dotSize={6}
           spacing={14}
@@ -215,16 +234,33 @@ export default function MarketPage() {
         <div className="rounded-xl border border-border p-5" style={{ background: 'var(--color-card)' }}>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="font-body font-bold text-[.88rem] text-txt">🏛️ Top Protocols by TVL</div>
+              <div className="font-body font-bold text-[.88rem] text-txt inline-flex items-center gap-2">
+                <ExchangeIcon size={14} className="text-coral" />
+                Top Protocols by TVL
+              </div>
               <div className="text-[.6rem] text-muted">Where the money is locked on Solana</div>
             </div>
-            <a href="https://defillama.com/chain/solana" target="_blank" rel="noopener"
-              className="text-[.58rem] text-sea no-underline hover:underline">DeFiLlama ↗</a>
+            <a
+              href="https://defillama.com/chain/solana"
+              target="_blank"
+              rel="noopener"
+              className="text-[.58rem] text-sea no-underline hover:underline transition-colors duration-150 focus-visible:outline-none focus-visible:underline"
+            >
+              DeFiLlama ↗
+            </a>
           </div>
           {protocolsQ.isLoading ? (
-            <div className="flex flex-col gap-2">{[1,2,3,4].map(i => <div key={i} className="h-8 rounded-lg animate-pulse" style={{ background: 'rgba(255,255,255,.04)' }} />)}</div>
+            <div className="flex flex-col gap-2">{[1,2,3,4].map(i => <div key={i} className="h-8 rounded-lg animate-pulse bg-txt/4" />)}</div>
           ) : protocolsQ.isError ? (
-            <div className="text-down text-[.75rem] text-center py-4">Failed to load <button onClick={() => protocolsQ.refetch()} className="text-sea underline bg-transparent border-none cursor-pointer">Retry</button></div>
+            <div className="text-down text-[.75rem] text-center py-4">
+              Failed to load{' '}
+              <button
+                onClick={() => protocolsQ.refetch()}
+                className="text-sea underline bg-transparent border-none cursor-pointer focus-visible:outline-none"
+              >
+                Retry
+              </button>
+            </div>
           ) : (
             <div>
               {(protocolsQ.data || []).map((p, i) => (
@@ -248,7 +284,10 @@ export default function MarketPage() {
         <div className="rounded-xl border border-border p-5" style={{ background: 'var(--color-card)' }}>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="font-body font-bold text-[.88rem] text-txt">📊 DEX Trading Volume</div>
+              <div className="font-body font-bold text-[.88rem] text-txt inline-flex items-center gap-2">
+                <ChartIcon size={14} className="text-sea" />
+                DEX Trading Volume
+              </div>
               <div className="text-[.6rem] text-muted">24h trading across Solana DEXs</div>
             </div>
             {dexQ.data && (
@@ -259,12 +298,17 @@ export default function MarketPage() {
             )}
           </div>
           {dexQ.isLoading ? (
-            <div className="flex flex-col gap-2">{[1,2,3,4].map(i => <div key={i} className="h-8 rounded-lg animate-pulse" style={{ background: 'rgba(255,255,255,.04)' }} />)}</div>
+            <div className="flex flex-col gap-2">{[1,2,3,4].map(i => <div key={i} className="h-8 rounded-lg animate-pulse bg-txt/4" />)}</div>
           ) : dexQ.isError ? (
-            <div className="text-down text-[.75rem] text-center py-4">Failed to load <button onClick={() => dexQ.refetch()} className="text-sea underline bg-transparent border-none cursor-pointer">Retry</button></div>
+            <div className="text-down text-[.75rem] text-center py-4">
+              Failed to load{' '}
+              <button onClick={() => dexQ.refetch()} className="text-sea underline bg-transparent border-none cursor-pointer focus-visible:outline-none">
+                Retry
+              </button>
+            </div>
           ) : (
             <div>
-              {(dexQ.data?.protocols || []).map((p, i) => {
+              {(dexQ.data?.protocols || []).map((p) => {
                 const maxVol = dexQ.data.protocols[0]?.volume24h || 1;
                 const pct = ((p.volume24h || 0) / maxVol) * 100;
                 return (
@@ -276,8 +320,8 @@ export default function MarketPage() {
                         {p.change != null && <ChgPill value={p.change} />}
                       </div>
                     </div>
-                    <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full bg-sea/40 transition-all" style={{ width: `${pct}%` }} />
+                    <div className="h-1 bg-txt/5 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bg-sea/40 transition-all duration-300" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                 );
@@ -290,17 +334,25 @@ export default function MarketPage() {
         <div className="rounded-xl border border-border p-5" style={{ background: 'var(--color-card)' }}>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="font-body font-bold text-[.88rem] text-txt">💵 Top Stablecoins</div>
+              <div className="font-body font-bold text-[.88rem] text-txt inline-flex items-center gap-2">
+                <WalletIcon size={14} className="text-palm" />
+                Top Stablecoins
+              </div>
               <div className="text-[.6rem] text-muted">USD-pegged tokens by market cap — key for remittances & trading</div>
             </div>
           </div>
           {stableQ.isLoading ? (
-            <div className="flex flex-col gap-2">{[1,2,3].map(i => <div key={i} className="h-8 rounded-lg animate-pulse" style={{ background: 'rgba(255,255,255,.04)' }} />)}</div>
+            <div className="flex flex-col gap-2">{[1,2,3].map(i => <div key={i} className="h-8 rounded-lg animate-pulse bg-txt/4" />)}</div>
           ) : stableQ.isError ? (
-            <div className="text-down text-[.75rem] text-center py-4">Failed to load <button onClick={() => stableQ.refetch()} className="text-sea underline bg-transparent border-none cursor-pointer">Retry</button></div>
+            <div className="text-down text-[.75rem] text-center py-4">
+              Failed to load{' '}
+              <button onClick={() => stableQ.refetch()} className="text-sea underline bg-transparent border-none cursor-pointer focus-visible:outline-none">
+                Retry
+              </button>
+            </div>
           ) : (
             <div>
-              {(stableQ.data || []).map((s, i) => {
+              {(stableQ.data || []).map((s) => {
                 const maxCirc = stableQ.data[0]?.circulating || 1;
                 const pct = (s.circulating / maxCirc) * 100;
                 return (
@@ -312,8 +364,14 @@ export default function MarketPage() {
                       </div>
                       <span className="font-mono font-bold text-[.8rem] text-txt">{fmt(s.circulating)}</span>
                     </div>
-                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #2D9B56, #00ffa3)' }} />
+                    <div className="h-1.5 bg-txt/5 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-300"
+                        style={{
+                          width: `${pct}%`,
+                          background: 'linear-gradient(90deg, var(--color-palm), var(--color-sea))',
+                        }}
+                      />
                     </div>
                   </div>
                 );
@@ -329,14 +387,22 @@ export default function MarketPage() {
         <div className="rounded-xl border border-border p-5" style={{ background: 'var(--color-card)' }}>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="font-body font-bold text-[.88rem] text-txt">🌾 Top Yield Opportunities</div>
+              <div className="font-body font-bold text-[.88rem] text-txt inline-flex items-center gap-2">
+                <TrendUpIcon size={14} className="text-sun" />
+                Top Yield Opportunities
+              </div>
               <div className="text-[.6rem] text-muted">Highest-TVL pools on Solana with APY</div>
             </div>
           </div>
           {yieldsQ.isLoading ? (
-            <div className="flex flex-col gap-2">{[1,2,3,4].map(i => <div key={i} className="h-8 rounded-lg animate-pulse" style={{ background: 'rgba(255,255,255,.04)' }} />)}</div>
+            <div className="flex flex-col gap-2">{[1,2,3,4].map(i => <div key={i} className="h-8 rounded-lg animate-pulse bg-txt/4" />)}</div>
           ) : yieldsQ.isError ? (
-            <div className="text-down text-[.75rem] text-center py-4">Failed to load <button onClick={() => yieldsQ.refetch()} className="text-sea underline bg-transparent border-none cursor-pointer">Retry</button></div>
+            <div className="text-down text-[.75rem] text-center py-4">
+              Failed to load{' '}
+              <button onClick={() => yieldsQ.refetch()} className="text-sea underline bg-transparent border-none cursor-pointer focus-visible:outline-none">
+                Retry
+              </button>
+            </div>
           ) : (
             <div>
               {(yieldsQ.data || []).slice(0, 8).map(p => (
@@ -367,12 +433,16 @@ export default function MarketPage() {
         <div className="rounded-xl border border-border overflow-hidden" style={{ background: 'var(--color-card)' }}>
           <div className="flex items-center gap-2 px-5 py-3 border-b border-border">
             {BIRDEYE_TOKENS.map(t => (
-              <button key={t.addr} onClick={() => setBirdeyeToken(t.addr)}
-                className={`px-3 py-1.5 rounded-lg text-[.72rem] font-mono font-bold cursor-pointer border transition-all
+              <button
+                key={t.addr}
+                onClick={() => setBirdeyeToken(t.addr)}
+                className={`px-3 py-1.5 rounded-lg text-[.72rem] font-mono font-bold cursor-pointer border transition-colors duration-150
                   ${birdeyeToken === t.addr
                     ? 'text-sea bg-sea/12 border-sea/30'
-                    : 'text-muted bg-transparent border-border hover:text-txt hover:border-white/15'
-                  }`}>
+                    : 'text-muted bg-transparent border-border hover:text-txt hover:border-txt/15'
+                  }
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sea/40`}
+              >
                 {t.sym}
               </button>
             ))}
@@ -401,7 +471,7 @@ export default function MarketPage() {
             <AttributionChip compact />
             <button
               onClick={() => marketQ.refetch()}
-              className={`bg-transparent border border-border text-sea cursor-pointer rounded-lg px-3 py-1 text-[.7rem] font-mono transition-all hover:bg-sea/10 ${marketQ.isFetching ? 'animate-spin' : ''}`}
+              className={`bg-transparent border border-border text-sea cursor-pointer rounded-lg px-3 py-1 text-[.7rem] font-mono transition-colors duration-150 hover:bg-sea/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sea/40 ${marketQ.isFetching ? 'animate-spin' : ''}`}
             >
               ↻ Refresh
             </button>
@@ -421,14 +491,15 @@ export default function MarketPage() {
               key={key}
               onClick={() => setActiveCategory(key)}
               title={cat.description}
-              className={`flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-[.72rem] font-headline uppercase tracking-widest cursor-pointer border transition-all
+              className={`flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-[.72rem] font-headline uppercase tracking-widest cursor-pointer border transition-colors duration-150
                 ${isActive
                   ? 'text-sea bg-sea/12 border-sea/40'
-                  : 'text-muted bg-transparent border-border hover:text-txt hover:border-white/20'
-                }`}
+                  : 'text-muted bg-transparent border-border hover:text-txt hover:border-txt/20'
+                }
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sea/40`}
             >
               <span>{cat.label}</span>
-              <span className={`font-mono text-[.6rem] px-1.5 py-0.5 rounded-md ${isActive ? 'bg-sea/20 text-sea' : 'bg-white/5 text-muted'}`}>
+              <span className={`font-mono text-[.6rem] px-1.5 py-0.5 rounded-md ${isActive ? 'bg-sea/20 text-sea' : 'bg-txt/5 text-muted'}`}>
                 {count}
               </span>
             </button>
@@ -456,6 +527,7 @@ export default function MarketPage() {
         <FinancialTable
           title="Token"
           getRowId={(r) => r.id}
+          onRowClick={(row) => setActiveRow(row)}
           rows={filteredMarketData}
           columns={[
             {
@@ -464,17 +536,26 @@ export default function MarketPage() {
               width: '2.6fr',
               render: (token) => {
                 const meta = TOKEN_META[token.id] || { sym: token.symbol.toUpperCase(), cat: token._cat || '—' };
-                const col = token._col || '#5B7A9A';
+                // Fallback logo color when the catalog didn't provide one. Hex values
+                // here come from token catalog data, not UI code, so they're allowed.
+                const col = token._col; // may be undefined
                 // Basis-spread info (only for tokens with an `underlying` field)
                 const sym = meta.sym.toUpperCase();
                 const underlyingRef = symbolToUnderlying[sym];
                 const underlyingData = underlyingRef ? underlyingByTicker[underlyingRef.underlying] : null;
+                const fallbackStyle = col
+                  ? { background: col + '22', color: col }
+                  : { background: 'var(--color-night-3)', color: 'var(--color-txt-2)' };
                 return (
                   <div className="flex items-center gap-3 min-w-0">
                     {token.image
                       ? <img src={token.image} alt={meta.sym} className="w-8 h-8 rounded-full flex-shrink-0" />
-                      : <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-[.6rem] font-extrabold"
-                          style={{ background: col + '22', color: col }}>{meta.sym.slice(0, 3)}</div>
+                      : <div
+                          className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-[.6rem] font-extrabold"
+                          style={fallbackStyle}
+                        >
+                          {meta.sym.slice(0, 3)}
+                        </div>
                     }
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -613,6 +694,12 @@ export default function MarketPage() {
         <SectionHead title="Live Crypto Screener" label="Powered by TradingView" />
         <TradingViewScreener height={500} defaultColumn="overview" />
       </div>
+
+      <TokenDetailModal
+        coinId={activeRow?.id || null}
+        fallback={activeRow}
+        onClose={() => setActiveRow(null)}
+      />
     </div>
   );
 }
@@ -633,7 +720,7 @@ function SectionHead({ title, label, action }) {
     <div className="flex items-center justify-between mb-4">
       <h2 className="font-headline text-[.92rem] font-bold uppercase tracking-widest text-txt">{title}</h2>
       <div className="flex gap-2 items-center">
-        {label && <span className="text-[.68rem] text-muted px-2.5 py-0.5 border border-white/8 rounded-full">{label}</span>}
+        {label && <span className="text-[.68rem] text-muted px-2.5 py-0.5 border border-border rounded-full">{label}</span>}
         {action}
       </div>
     </div>

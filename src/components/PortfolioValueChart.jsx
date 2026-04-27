@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import Chart from 'react-apexcharts';
+import { TrendUpIcon } from './icons';
 
 const TTD_RATE = 6.79;
 
@@ -72,7 +73,7 @@ export default function PortfolioValueChart({ trades, holdings, solTokens, ttseS
   if (!series) {
     return (
       <div className="rounded-2xl border border-border p-10 text-center" style={{ background: 'var(--color-card)' }}>
-        <div className="text-3xl mb-3">📈</div>
+        <TrendUpIcon size={28} className="mx-auto mb-3 text-sea" />
         <div className="text-[.82rem] text-muted">Make your first trade to see your portfolio chart</div>
       </div>
     );

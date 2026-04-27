@@ -4,6 +4,7 @@ import {
   WEEKEND_TEASER_POINTS,
   BLOCKWORKS_HOME,
 } from '../data/blockworks';
+import { MoonIcon } from './icons';
 
 /**
  * WeekendMarketsCard — Dashboard widget surfacing Blockworks' Weekend
@@ -26,20 +27,22 @@ export default function WeekendMarketsCard() {
   const setActiveTab = useStore((s) => s.setActiveTab);
   const isPro = userTier === 'pro';
 
+  const ctaClass =
+    'text-[.72rem] font-bold px-4 py-1.5 rounded-lg border border-sun/30 bg-sun/10 text-sun transition-colors duration-150 cursor-pointer no-underline hover:bg-sun/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sun/40';
+
   return (
     <div
-      className="rounded-2xl border p-5"
+      className="rounded-2xl border border-sun/22 p-5"
       style={{
         background:
-          'linear-gradient(135deg, rgba(255,202,58,.05), rgba(196,108,255,.04))',
-        borderColor: 'rgba(255,202,58,.22)',
+          'linear-gradient(135deg, color-mix(in srgb, var(--color-sun) 5%, transparent), color-mix(in srgb, var(--color-coral) 4%, transparent))',
       }}
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <span className="text-base">🌙</span>
-          <div className="text-[.66rem] font-mono font-bold uppercase tracking-widest text-[#FFCA3A]">
+          <MoonIcon size={14} className="text-sun" />
+          <div className="text-[.66rem] font-mono font-bold uppercase tracking-widest text-sun">
             Weekend Session
           </div>
         </div>
@@ -47,7 +50,7 @@ export default function WeekendMarketsCard() {
           href={BLOCKWORKS_HOME}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[.56rem] font-mono uppercase tracking-widest text-txt-2 hover:text-[#C46CFF] transition-colors no-underline"
+          className="text-[.56rem] font-mono uppercase tracking-widest text-txt-2 hover:text-coral-lt transition-colors duration-150 no-underline focus-visible:outline-none focus-visible:underline"
           title="Curated by Blockworks"
         >
           via Blockworks ↗
@@ -90,12 +93,7 @@ export default function WeekendMarketsCard() {
             href={WEEKEND_MARKETS_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[.72rem] font-bold px-4 py-1.5 rounded-lg border transition-all cursor-pointer no-underline"
-            style={{
-              color: '#FFCA3A',
-              background: 'rgba(255,202,58,.1)',
-              borderColor: 'rgba(255,202,58,.3)',
-            }}
+            className={ctaClass}
           >
             Open full chart →
           </a>
@@ -103,12 +101,7 @@ export default function WeekendMarketsCard() {
           <>
             <button
               onClick={() => setActiveTab('terminal')}
-              className="text-[.72rem] font-bold px-4 py-1.5 rounded-lg border transition-all cursor-pointer"
-              style={{
-                color: '#FFCA3A',
-                background: 'rgba(255,202,58,.1)',
-                borderColor: 'rgba(255,202,58,.3)',
-              }}
+              className={ctaClass}
             >
               Unlock full surface →
             </button>

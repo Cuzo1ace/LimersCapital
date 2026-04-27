@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import useStore from '../store/useStore';
 import { PRACTICE_CHALLENGES } from '../data/practiceChallenges';
+import { TargetIcon, CheckIcon, InsightIcon } from './icons';
 
 const DIFF_COLORS = {
-  beginner: { bg: 'bg-up/10', text: 'text-up', border: 'border-up/20' },
-  intermediate: { bg: 'bg-[#FFA500]/10', text: 'text-[#FFA500]', border: 'border-[#FFA500]/20' },
-  advanced: { bg: 'bg-[#bf81ff]/10', text: 'text-[#bf81ff]', border: 'border-[#bf81ff]/20' },
+  beginner:     { bg: 'bg-up/10',    text: 'text-up',    border: 'border-up/20' },
+  intermediate: { bg: 'bg-sun/10',   text: 'text-sun',   border: 'border-sun/20' },
+  advanced:     { bg: 'bg-coral/10', text: 'text-coral', border: 'border-coral/20' },
 };
 
 /**
@@ -25,10 +26,10 @@ export default function PracticeChallengePanel() {
 
   return (
     <div
-      className="rounded-xl border overflow-hidden mb-4"
+      className="rounded-xl border border-sea/15 overflow-hidden mb-4"
       style={{
-        background: 'linear-gradient(135deg, rgba(0,255,163,.03), rgba(0,255,163,.01))',
-        borderColor: 'rgba(0,255,163,.15)',
+        background:
+          'linear-gradient(135deg, color-mix(in srgb, var(--color-sea) 3%, transparent), color-mix(in srgb, var(--color-sea) 1%, transparent))',
       }}
     >
       {/* Header — always visible */}
@@ -37,8 +38,8 @@ export default function PracticeChallengePanel() {
         className="w-full flex items-center justify-between px-4 py-3 cursor-pointer bg-transparent border-none"
       >
         <div className="flex items-center gap-2">
-          <span className="text-sm">🎯</span>
-          <span className="text-[.66rem] font-mono font-bold text-[#00ffa3] uppercase tracking-wider">
+          <TargetIcon size={14} className="text-sea" />
+          <span className="text-[.66rem] font-mono font-bold text-sea uppercase tracking-wider">
             Practice Challenges
           </span>
           <span className="text-[.6rem] font-mono text-muted">
@@ -47,11 +48,14 @@ export default function PracticeChallengePanel() {
         </div>
         <div className="flex items-center gap-2">
           {activeChallenge && !completedChallenges.includes(activeChallenge.id) && (
-            <span className="text-[.58rem] text-[#FFCA3A] font-mono">
+            <span className="text-[.58rem] text-sun font-mono">
               Active: {activeChallenge.title}
             </span>
           )}
-          <span className="text-muted text-[.7rem] transition-transform" style={{ transform: expanded ? 'rotate(180deg)' : 'none' }}>
+          <span
+            className="text-muted text-[.7rem] transition-transform"
+            style={{ transform: expanded ? 'rotate(180deg)' : 'none' }}
+          >
             ▾
           </span>
         </div>
@@ -61,7 +65,10 @@ export default function PracticeChallengePanel() {
       {!expanded && activeChallenge && !completedChallenges.includes(activeChallenge.id) && (
         <div className="px-4 pb-3 border-t border-border/50">
           <div className="text-[.72rem] text-txt mt-2">{activeChallenge.objective}</div>
-          <div className="text-[.6rem] text-muted mt-1">💡 {activeChallenge.hint}</div>
+          <div className="text-[.6rem] text-muted mt-1 flex items-center gap-1">
+            <InsightIcon size={11} className="text-sun" />
+            {activeChallenge.hint}
+          </div>
         </div>
       )}
 
@@ -79,7 +86,7 @@ export default function PracticeChallengePanel() {
                   key={ch.id}
                   className={`rounded-lg border p-3 transition-all ${
                     isCompleted ? 'border-up/20 opacity-60' :
-                    isActive ? 'border-[#00ffa3]/30 bg-[#00ffa3]/5' :
+                    isActive ? 'border-sea/30 bg-sea/5' :
                     'border-border hover:border-txt/20'
                   }`}
                 >
@@ -89,17 +96,21 @@ export default function PracticeChallengePanel() {
                         <span className={`text-[.55rem] font-mono px-1.5 py-0.5 rounded-full border ${dc.bg} ${dc.text} ${dc.border}`}>
                           {ch.difficulty}
                         </span>
-                        <span className="font-body font-bold text-[.76rem] text-txt">
-                          {isCompleted ? '✓ ' : ''}{ch.title}
+                        <span className="font-body font-bold text-[.76rem] text-txt inline-flex items-center gap-1">
+                          {isCompleted && <CheckIcon size={12} className="text-up" />}
+                          {ch.title}
                         </span>
                       </div>
                       <div className="text-[.68rem] text-txt-2 leading-relaxed">{ch.objective}</div>
                       {!isCompleted && isActive && (
-                        <div className="text-[.6rem] text-muted mt-1">💡 {ch.hint}</div>
+                        <div className="text-[.6rem] text-muted mt-1 flex items-center gap-1">
+                          <InsightIcon size={11} className="text-sun" />
+                          {ch.hint}
+                        </div>
                       )}
                       <div className="flex items-center gap-2 mt-1.5">
-                        <span className="text-[.55rem] text-[#00ffa3]">+{ch.xpReward} XP</span>
-                        <span className="text-[.55rem] text-[#2D9B56]">+{ch.lpReward} LP</span>
+                        <span className="text-[.55rem] text-sea">+{ch.xpReward} XP</span>
+                        <span className="text-[.55rem] text-palm">+{ch.lpReward} LP</span>
                       </div>
                     </div>
 
@@ -109,7 +120,7 @@ export default function PracticeChallengePanel() {
                         className={`text-[.62rem] font-bold px-3 py-1.5 rounded-lg border cursor-pointer transition-all flex-shrink-0
                           ${isActive
                             ? 'border-muted text-muted hover:text-txt'
-                            : 'border-[#00ffa3]/25 bg-[#00ffa3]/10 text-[#00ffa3] hover:bg-[#00ffa3]/20'
+                            : 'border-sea/25 bg-sea/10 text-sea hover:bg-sea/20'
                           }`}
                       >
                         {isActive ? 'Deselect' : 'Start'}
@@ -125,9 +136,9 @@ export default function PracticeChallengePanel() {
 
       {/* Progress bar */}
       <div className="px-4 pb-3">
-        <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,.06)' }}>
+        <div className="h-1 rounded-full overflow-hidden bg-txt/5">
           <div
-            className="h-full rounded-full bg-[#00ffa3] transition-all duration-500"
+            className="h-full rounded-full bg-sea transition-all duration-500"
             style={{ width: `${(completedCount / totalCount) * 100}%` }}
           />
         </div>

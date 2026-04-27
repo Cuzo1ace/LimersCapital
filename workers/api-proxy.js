@@ -17,6 +17,10 @@
  *   ANTHROPIC_API_KEY     — Claude API key for AI market briefs
  *   FINNHUB_API_KEY       — Finnhub financial data API key
  *   FMP_API_KEY           — Financial Modeling Prep API key
+ *   COINGECKO_API_KEY     — CoinGecko Demo tier (30 rpm, 10k/month).
+ *                           Injected via x-cg-demo-api-key header on all
+ *                           /coingecko/* routes. Absence degrades gracefully
+ *                           to the anonymous 30-rpm pooled limit.
  *   SENTRY_DSN            — Error telemetry (audit C-02)
  *   FAUCET_KEYPAIR_JSON   — Devnet faucet signer (64-int JSON array) for
  *                           /faucet/mttdc. Holds 50K mTTDC + 0.1 SOL; devnet only.
@@ -709,10 +713,13 @@ async function handleAIRoute(path, request, env, origin) {
     // Fetch live market data to feed Claude
     let marketContext = '';
     try {
-      // Fetch SOL price + global market data
+      // Fetch SOL price + global market data (authed with CG demo key when set)
+      const cgAuth = env.COINGECKO_API_KEY
+        ? { headers: { 'x-cg-demo-api-key': env.COINGECKO_API_KEY } }
+        : undefined;
       const [solRes, globalRes] = await Promise.allSettled([
-        fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana,bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true'),
-        fetch('https://api.coingecko.com/api/v3/global'),
+        fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana,bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true', cgAuth),
+        fetch('https://api.coingecko.com/api/v3/global', cgAuth),
       ]);
 
       if (solRes.status === 'fulfilled') {
@@ -1444,18 +1451,101 @@ const ROUTES = {
     cacheTtl: 300, // 5 min — metadata rarely changes
     maxBodySize: 10_000,
   },
-  // CoinGecko market data (proxy to avoid CORS + rate limit sharing)
+  // CoinGecko market data. Demo-tier key injected via extraHeaders when
+  // COINGECKO_API_KEY is set; falls back to the pooled anonymous limit
+  // otherwise. Auth moves us from 30 rpm shared to 30 rpm per-key plus
+  // the 10k/month monthly cap — the high cacheTtl is what actually keeps
+  // us under the monthly budget, see plan §rate-limit math.
   '/coingecko/markets': {
     method: 'GET',
     buildUrl: () => 'https://api.coingecko.com/api/v3/coins/markets',
-    cacheTtl: 60,
+    extraHeaders: (env) => env.COINGECKO_API_KEY ? { 'x-cg-demo-api-key': env.COINGECKO_API_KEY } : {},
+    cacheTtl: 300,
     passQuery: true,
   },
-  '/coingecko/simple/price': {
+  '/coingecko/global': {
     method: 'GET',
-    buildUrl: () => 'https://api.coingecko.com/api/v3/simple/price',
-    cacheTtl: 30,
-    passQuery: true,
+    buildUrl: () => 'https://api.coingecko.com/api/v3/global',
+    extraHeaders: (env) => env.COINGECKO_API_KEY ? { 'x-cg-demo-api-key': env.COINGECKO_API_KEY } : {},
+    cacheTtl: 600,
+  },
+  '/coingecko/trending': {
+    method: 'GET',
+    buildUrl: () => 'https://api.coingecko.com/api/v3/search/trending',
+    extraHeaders: (env) => env.COINGECKO_API_KEY ? { 'x-cg-demo-api-key': env.COINGECKO_API_KEY } : {},
+    cacheTtl: 300,
+  },
+  '/coingecko/categories-list': {
+    method: 'GET',
+    buildUrl: () => 'https://api.coingecko.com/api/v3/coins/categories/list',
+    extraHeaders: (env) => env.COINGECKO_API_KEY ? { 'x-cg-demo-api-key': env.COINGECKO_API_KEY } : {},
+    cacheTtl: 3600,
+  },
+  // Dynamic-id routes: the coin id arrives as ?id=<slug>. The validate()
+  // hook rejects anything outside the CoinGecko id charset, so a path like
+  // ?id=../foo can't traverse into other upstream endpoints.
+  '/coingecko/coin': {
+    method: 'GET',
+    buildUrl: (env, url) => {
+      const id = url.searchParams.get('id');
+      // Strip id= so it doesn't tail onto the upstream URL. Remaining query
+      // params (localization, tickers, community_data, developer_data) are
+      // forwarded via passQuery.
+      const rest = new URLSearchParams(url.searchParams);
+      rest.delete('id');
+      const qs = rest.toString();
+      return `https://api.coingecko.com/api/v3/coins/${id}${qs ? '?' + qs : ''}`;
+    },
+    extraHeaders: (env) => env.COINGECKO_API_KEY ? { 'x-cg-demo-api-key': env.COINGECKO_API_KEY } : {},
+    cacheTtl: 600,
+    passQuery: false,
+    validate: (url) => {
+      const id = url.searchParams.get('id');
+      if (!id || !/^[a-z0-9-]+$/.test(id)) {
+        return { error: 'Invalid or missing id param (must match /^[a-z0-9-]+$/)', status: 400 };
+      }
+      return null;
+    },
+  },
+  '/coingecko/market-chart': {
+    method: 'GET',
+    buildUrl: (env, url) => {
+      const id = url.searchParams.get('id');
+      const rest = new URLSearchParams(url.searchParams);
+      rest.delete('id');
+      const qs = rest.toString();
+      return `https://api.coingecko.com/api/v3/coins/${id}/market_chart${qs ? '?' + qs : ''}`;
+    },
+    extraHeaders: (env) => env.COINGECKO_API_KEY ? { 'x-cg-demo-api-key': env.COINGECKO_API_KEY } : {},
+    cacheTtl: 600,
+    passQuery: false,
+    validate: (url) => {
+      const id = url.searchParams.get('id');
+      if (!id || !/^[a-z0-9-]+$/.test(id)) {
+        return { error: 'Invalid or missing id param (must match /^[a-z0-9-]+$/)', status: 400 };
+      }
+      return null;
+    },
+  },
+  '/coingecko/ohlc': {
+    method: 'GET',
+    buildUrl: (env, url) => {
+      const id = url.searchParams.get('id');
+      const rest = new URLSearchParams(url.searchParams);
+      rest.delete('id');
+      const qs = rest.toString();
+      return `https://api.coingecko.com/api/v3/coins/${id}/ohlc${qs ? '?' + qs : ''}`;
+    },
+    extraHeaders: (env) => env.COINGECKO_API_KEY ? { 'x-cg-demo-api-key': env.COINGECKO_API_KEY } : {},
+    cacheTtl: 600,
+    passQuery: false,
+    validate: (url) => {
+      const id = url.searchParams.get('id');
+      if (!id || !/^[a-z0-9-]+$/.test(id)) {
+        return { error: 'Invalid or missing id param (must match /^[a-z0-9-]+$/)', status: 400 };
+      }
+      return null;
+    },
   },
   // DeFiLlama (proxy for consistent caching)
   '/defillama/chains': {
@@ -1825,12 +1915,15 @@ export default {
         upstreamUrl += url.search;
       }
 
-      // Build fetch options
+      // Build fetch options. Per-route extraHeaders(env) lets authed upstreams
+      // (e.g. CoinGecko Demo key) inject their headers without a branch here.
+      const extraHeaders = typeof route.extraHeaders === 'function' ? route.extraHeaders(env) : {};
       const fetchOpts = {
         method: route.method,
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          ...extraHeaders,
         },
       };
 

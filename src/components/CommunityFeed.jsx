@@ -1,6 +1,19 @@
 import { useState, useEffect } from 'react';
 import { fetchActivityFeed, subscribeActivityFeed } from '../api/supabase';
 import { isSupabaseReady } from '../lib/supabase';
+import {
+  ChartIcon,
+  ConnectionIcon,
+  LearnIcon,
+  LinkIcon,
+  LockIcon,
+  StarIcon,
+  StreakIcon,
+  TickerIcon,
+  TrendUpIcon,
+  TrophyIcon,
+} from './icons';
+import LimerMark from './brand/LimerMark';
 
 /**
  * Community activity feed — shows REAL user events from Supabase.
@@ -14,17 +27,26 @@ const CARIBBEAN_COUNTRIES = [
 ];
 
 const ACTIVITY_TEMPLATES = [
-  { icon: '📚', template: (c) => `A user in ${c} just completed Blockchain Basics` },
-  { icon: '💹', template: (c) => `Someone in ${c} made their first paper trade` },
-  { icon: '🎖️', template: (c) => `A trader in ${c} earned the Diamond Hands badge` },
-  { icon: '🔥', template: (c) => `A user in ${c} hit a 7-day streak` },
-  { icon: '📈', template: (c) => `Someone in ${c} is exploring Solana DeFi protocols` },
-  { icon: '🗺️', template: (c) => `A user in ${c} checked their local crypto regulations` },
-  { icon: '🎓', template: (c) => `Someone in ${c} completed all Foundations lessons` },
-  { icon: '💎', template: (c) => `A user in ${c} reached Reef Spotter tier` },
-  { icon: '🔗', template: (c) => `Someone in ${c} connected their Solflare wallet` },
-  { icon: '📊', template: (c) => `A trader in ${c} is analyzing TTSE market data` },
+  { Icon: LearnIcon,      iconClass: 'text-sea',    template: (c) => `A user in ${c} just completed Blockchain Basics` },
+  { Icon: TickerIcon,     iconClass: 'text-sea',    template: (c) => `Someone in ${c} made their first paper trade` },
+  { Icon: TrophyIcon,     iconClass: 'text-sun',    template: (c) => `A trader in ${c} earned the Diamond Hands badge` },
+  { Icon: StreakIcon,     iconClass: 'text-warn',   template: (c) => `A user in ${c} hit a 7-day streak` },
+  { Icon: TrendUpIcon,    iconClass: 'text-up',     template: (c) => `Someone in ${c} is exploring Solana DeFi protocols` },
+  { Icon: LockIcon,       iconClass: 'text-coral',  template: (c) => `A user in ${c} checked their local crypto regulations` },
+  { Icon: StarIcon,       iconClass: 'text-sun',    template: (c) => `Someone in ${c} completed all Foundations lessons` },
+  { Icon: LimerMark,      iconClass: '',            template: (c) => `A user in ${c} reached Reef Spotter tier` },
+  { Icon: LinkIcon,       iconClass: 'text-sea',    template: (c) => `Someone in ${c} connected their Solflare wallet` },
+  { Icon: ChartIcon,      iconClass: 'text-ttse',   template: (c) => `A trader in ${c} is analyzing TTSE market data` },
 ];
+
+// Map icon names coming from Supabase rows back to branded components.
+// Keeps the API stable (existing `icon` column stays a short string).
+const ICON_ALIASES = {
+  learn: LearnIcon, ticker: TickerIcon, trophy: TrophyIcon, streak: StreakIcon,
+  trend: TrendUpIcon, lock: LockIcon, star: StarIcon, palm: LimerMark,
+  link: LinkIcon, chart: ChartIcon, connect: ConnectionIcon,
+};
+const resolveIcon = (name) => ICON_ALIASES[name] || ConnectionIcon;
 
 function generateActivity() {
   const template = ACTIVITY_TEMPLATES[Math.floor(Math.random() * ACTIVITY_TEMPLATES.length)];
@@ -32,7 +54,8 @@ function generateActivity() {
   const minutesAgo = Math.floor(Math.random() * 45) + 1;
   return {
     id: Date.now() + Math.random(),
-    icon: template.icon,
+    Icon: template.Icon,
+    iconClass: template.iconClass,
     text: template.template(country),
     time: minutesAgo <= 1 ? 'just now' : `${minutesAgo}m ago`,
   };
@@ -63,7 +86,8 @@ export default function CommunityFeed({ limit = 5 }) {
       if (realData.length > 0) {
         setActivities(realData.map(a => ({
           id: a.id,
-          icon: a.icon,
+          Icon: resolveIcon(a.icon),
+          iconClass: 'text-sea',
           text: a.description,
           time: formatTime(a.created_at),
         })));
@@ -73,7 +97,8 @@ export default function CommunityFeed({ limit = 5 }) {
           setActivities(prev => [
             {
               id: newEvent.id,
-              icon: newEvent.icon,
+              Icon: resolveIcon(newEvent.icon),
+              iconClass: 'text-sea',
               text: newEvent.description,
               time: 'just now',
             },
@@ -101,11 +126,12 @@ export default function CommunityFeed({ limit = 5 }) {
   return (
     <div className="rounded-xl border border-border p-5" style={{ background: 'var(--color-card)' }}>
       <div className="flex items-center justify-between mb-4">
-        <div className="text-[.66rem] text-muted uppercase tracking-widest font-headline">
-          🌴 Caribbean Community
+        <div className="text-[.66rem] text-muted uppercase tracking-widest font-headline inline-flex items-center gap-2">
+          <LimerMark size={14} />
+          Caribbean Community
         </div>
         <div className="flex items-center gap-1.5">
-          <span className={`w-2 h-2 rounded-full ${isLive ? 'bg-up' : 'bg-sun'} animate-pulse`} />
+          <span className={`w-2 h-2 rounded-full ${isLive ? 'bg-up' : 'bg-sun'} animate-pulse`} aria-hidden="true" />
           <span className={`text-[.6rem] ${isLive ? 'text-up' : 'text-sun'}`}>
             {isLive ? 'Live' : 'Simulated'}
           </span>
@@ -114,10 +140,11 @@ export default function CommunityFeed({ limit = 5 }) {
 
       <div className="space-y-1">
         {activities.map(a => (
-          <div key={a.id}
-            className="flex items-center gap-2.5 py-2 border-b border-white/5 last:border-0
-              animate-in fade-in slide-in-from-top-1 duration-300">
-            <span className="text-base flex-shrink-0">{a.icon}</span>
+          <div
+            key={a.id}
+            className="flex items-center gap-2.5 py-2 border-b border-border last:border-0 animate-in fade-in slide-in-from-top-1 duration-300"
+          >
+            <a.Icon size={16} className={`flex-shrink-0 ${a.iconClass || 'text-sea'}`} />
             <span className="text-[.74rem] text-txt-2 flex-1">{a.text}</span>
             <span className="text-[.6rem] text-muted flex-shrink-0">{a.time}</span>
           </div>

@@ -23,6 +23,13 @@
  *   - `rwa`       — real-world-asset, other (Gold, Bitcoin, Ether tokenized)
  *   - `treasury`  — US Treasury / short-term government debt
  *   - `fiat`      — tokenized foreign fiat currency
+ *
+ * Optional per-token field:
+ *   - `coinGeckoId` — if the token (or its underlying) is listed on CoinGecko,
+ *                     this is the `id` slug used by /coins/{id}/ohlc. Consumed
+ *                     by CoinGeckoOHLCChart as a gap-fill for assets that have
+ *                     no TradingView symbol. Omit for tokens TV already covers
+ *                     or tokens that aren't on CoinGecko.
  */
 
 // ── Categories shown in the Market page filter (ordered) ─────────────────
@@ -91,6 +98,7 @@ export const TOKEN_CATALOG = [
     tags: ['l1', 'wrapped', 'bridge:portal'],
     disclaimer: 'Wrapped ETH via Portal/Wormhole — counterparty risk on the bridge custodian.',
     logoUrl: SL('7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs'),
+    coinGeckoId: 'weth',
   },
 
   // ── Stables ────────────────────────────────────────────────────────────
@@ -225,6 +233,7 @@ export const TOKEN_CATALOG = [
     tags: ['rwa', 'metal', 'precious'],
     logoUrl: CG('9519', 'paxgold.png'),
     jupiterOnly: true,
+    coinGeckoId: 'pax-gold',
   },
   {
     symbol: 'zBTC',
@@ -239,6 +248,7 @@ export const TOKEN_CATALOG = [
     tags: ['rwa', 'bitcoin', 'wrapped'],
     logoUrl: CG('1', 'bitcoin.png'),
     jupiterOnly: true,
+    coinGeckoId: 'bitcoin',
   },
 
   // ── Stocks (Backed xStocks) ────────────────────────────────────────────

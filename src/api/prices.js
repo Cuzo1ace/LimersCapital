@@ -1,6 +1,6 @@
 import {
   safeFloat, validatePythFeed, validateDexPair,
-  validateCGSimplePrice, validateCGMarketItem, validateJupiterPrice, validateDeFiLlamaTVL,
+  validateCGMarketItem, validateJupiterPrice, validateDeFiLlamaTVL,
 } from '../utils/validate';
 import {
   SOL_TOKENS,
@@ -21,8 +21,12 @@ const API_PROXY_URL =
   import.meta.env.VITE_API_PROXY_URL ||
   'https://limer-api-proxy.solanacaribbean-team.workers.dev';
 
-// CoinGecko free API — no key needed
-const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
+// CoinGecko — routed through the Worker proxy so the Demo tier key
+// (COINGECKO_API_KEY wrangler secret) is injected server-side as the
+// x-cg-demo-api-key header. Path aliases: /markets, /global, /trending,
+// /coin?id=, /market-chart?id=, /ohlc?id=, /categories-list. See
+// workers/api-proxy.js ROUTES for the full mapping.
+const COINGECKO_BASE = `${API_PROXY_URL}/coingecko`;
 
 // Pyth Hermes — oracle-grade prices, free, no key, CORS-enabled
 const HERMES_BASE = 'https://hermes.pyth.network/v2/updates/price/latest';
@@ -393,7 +397,7 @@ export async function fetchSolanaMarketData() {
   // CoinGecko IDs for the 8 tokens it covers (with market cap + 24h change)
   const ids = 'solana,usd-coin,ondo-finance,jupiter-exchange-solana,raydium,bonk,render-token,helium';
   const res = await fetch(
-    `${COINGECKO_BASE}/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&sparkline=false&price_change_percentage=24h`
+    `${COINGECKO_BASE}/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&sparkline=false&price_change_percentage=24h`
   );
   if (!res.ok) throw new Error(`CoinGecko API error: ${res.status}`);
   const cgData = await res.json();
@@ -437,11 +441,19 @@ export async function fetchSolanaMarketData() {
   return result;
 }
 
+// fetchSolPrice historically hit /simple/price, but we removed that proxy
+// route when we wired the Demo API key (it was the largest upstream burner
+// at the 30s TTL). The /markets route is edge-cached for 300s and returns
+// the same price + 24h change fields from a single array item.
 export async function fetchSolPrice() {
-  const res = await fetch(`${COINGECKO_BASE}/simple/price?ids=solana&vs_currency=usd&include_24hr_change=true`);
+  const res = await fetch(`${COINGECKO_BASE}/markets?vs_currency=usd&ids=solana&price_change_percentage=24h`);
   if (!res.ok) throw new Error(`CoinGecko API error: ${res.status}`);
   const json = await res.json();
-  return validateCGSimplePrice(json, 'solana');
+  const item = Array.isArray(json) ? json[0] : null;
+  if (!item) throw new TypeError('CoinGecko markets: empty response for solana');
+  const validated = validateCGMarketItem(item);
+  if (!validated) throw new TypeError('CoinGecko markets: invalid price data for solana');
+  return { price: validated.current_price, change24h: validated.price_change_percentage_24h };
 }
 
 // ─── Financial Modeling Prep — supply + ICO metadata ───────────────────

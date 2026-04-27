@@ -6,19 +6,44 @@ import useScrollReveal from '../hooks/useScrollReveal';
 import {
   fetchSolanaProtocols, fetchCryptoMarket, fetchRWATokens, fetchL1Tokens,
   fetchDeFiMarket, fetchTrending, fetchGlobalMarket,
-  fetchJupiterQuote, fetchCaribFXRates, fetchCaribbeanGDP, fetchCryptoNews,
+  fetchJupiterQuote, fetchCaribFXRates, fetchCaribbeanGDP,
   fetchMarketBrief,
 } from '../api/insights';
 import { SkeletonRows, SkeletonCard } from '../components/ui/Skeleton';
 import RemittanceCalculator from '../components/RemittanceCalculator';
 import Tooltip from '../components/ui/Tooltip';
 import ContextualHelp from '../components/ContextualHelp';
+import TokenDetailModal from '../components/market/TokenDetailModal';
+import { fetchTokenizedStocks, fetchTokenizedGold } from '../api/coingecko';
 import AttributionChip from '../components/ui/AttributionChip';
+import LimerMark from '../components/brand/LimerMark';
 import { BLOCKWORKS_HOME } from '../data/blockworks';
 import {
   fetchEconomicCalendar, fetchEarningsCalendar,
   fetchMarketNews, fetchCongressionalTrading,
 } from '../api/finnhub';
+import {
+  AlertIcon,
+  BoltIcon,
+  CheckIcon,
+  CloseIcon,
+  ConnectionIcon,
+  ExchangeIcon,
+  InsightIcon,
+  LimerIcon,
+  LockIcon,
+  ShieldIcon,
+  SignalIcon,
+  StarIcon,
+  StreakIcon,
+  TargetIcon,
+  TickerIcon,
+  TrendDownIcon,
+  TrendUpIcon,
+  TrophyIcon,
+  WalletIcon,
+  ChartIcon,
+} from '../components/icons';
 
 function fmt(n, dec = 2) {
   if (n == null) return '—';
@@ -50,11 +75,16 @@ function Chg({ value }) {
   return <span className={`font-body font-bold text-[.75rem] ${cls}`}>{value >= 0 ? '+' : ''}{value.toFixed(2)}%</span>;
 }
 
-function Card({ title, color, source, children }) {
+/**
+ * Card — data panel with an optional leading icon, an accent color (Tailwind class),
+ * and a right-aligned attribution source line.
+ */
+function Card({ icon: IconCmp, title, colorClass = 'text-txt', source, children }) {
   return (
     <div className="rounded-[14px] p-5 border border-border" style={{ background: 'var(--color-card)' }}>
-      <div className="text-[.66rem] uppercase tracking-widest mb-3 flex items-center gap-2" style={{ color }}>
-        {title}
+      <div className={`text-[.66rem] uppercase tracking-widest mb-3 flex items-center gap-2 ${colorClass}`}>
+        {IconCmp && <IconCmp size={14} />}
+        <span>{title}</span>
         <span className="text-muted text-[.6rem] font-normal normal-case tracking-normal">{source}</span>
       </div>
       {children}
@@ -62,9 +92,15 @@ function Card({ title, color, source, children }) {
   );
 }
 
-function TokenRow({ c, showVol }) {
+function TokenRow({ c, showVol, onClick }) {
+  const interactive = typeof onClick === 'function';
   return (
-    <div className="flex items-center gap-2.5 py-[5px] border-b border-white/5 last:border-b-0">
+    <div
+      onClick={interactive ? () => onClick(c) : undefined}
+      className={`flex items-center gap-2.5 py-[5px] border-b border-border last:border-b-0 ${
+        interactive ? 'cursor-pointer hover:bg-sea/5 rounded-md -mx-1 px-1 transition-colors duration-150' : ''
+      }`}
+    >
       <img src={c.image} alt={c.symbol} className="w-5 h-5 rounded-full flex-shrink-0" />
       <span className="text-[.76rem] flex-1 min-w-0">
         <span className="font-body font-bold text-txt">{c.symbol}</span>
@@ -85,12 +121,31 @@ export default function InsightsPage() {
   const rwaQ      = useQuery({ queryKey: ['cg-rwa'],      queryFn: fetchRWATokens,      staleTime: 90000 });
   const l1Q       = useQuery({ queryKey: ['cg-l1'],       queryFn: fetchL1Tokens,        staleTime: 90000 });
   const defiQ     = useQuery({ queryKey: ['cg-defi'],     queryFn: fetchDeFiMarket,      staleTime: 90000 });
+  const stocksQ   = useQuery({ queryKey: ['cg-tokenized-stocks'], queryFn: fetchTokenizedStocks, staleTime: 300000 });
+  const goldQ     = useQuery({ queryKey: ['cg-tokenized-gold'],   queryFn: fetchTokenizedGold,   staleTime: 300000 });
   const trendingQ = useQuery({ queryKey: ['cg-trending'], queryFn: fetchTrending,        staleTime: 120000 });
   const protocolsQ = useQuery({ queryKey: ['sol-protocols'], queryFn: fetchSolanaProtocols, staleTime: 300000 });
   const tvlQ      = useQuery({ queryKey: ['sol-tvl'],     queryFn: fetchSolanaTVL,       staleTime: 300000 });
   const fxQ       = useQuery({ queryKey: ['fx-rates'],    queryFn: fetchCaribFXRates,    staleTime: 300000 });
   const gdpQ      = useQuery({ queryKey: ['carib-gdp'],   queryFn: fetchCaribbeanGDP,    staleTime: 600000 });
-  const newsQ     = useQuery({ queryKey: ['crypto-news'], queryFn: fetchCryptoNews,      staleTime: 300000 });
+  // CoinGecko /news is Pro-only since 2023 — this card now pulls from Finnhub's
+  // crypto category via the existing fetchMarketNews proxy route. NewsItem below
+  // expects { title, source, publishedOn, url, imageUrl } so we remap here.
+  const newsQ     = useQuery({
+    queryKey: ['crypto-news'],
+    queryFn: async () => {
+      const items = await fetchMarketNews('crypto');
+      return items.map(n => ({
+        id: n.id,
+        title: n.headline,
+        source: n.source,
+        publishedOn: n.datetime,
+        url: n.url,
+        imageUrl: n.image,
+      }));
+    },
+    staleTime: 300000,
+  });
   const briefQ    = useQuery({ queryKey: ['ai-brief'],   queryFn: fetchMarketBrief,    staleTime: 3600000, retry: 1 });
   const fmpQ      = useQuery({ queryKey: ['fmp-crypto'], queryFn: fetchFMPCryptoList, staleTime: 300000, retry: 1 });
 
@@ -105,6 +160,8 @@ export default function InsightsPage() {
   const [jupAmt, setJupAmt] = useState('1');
   const [jupResult, setJupResult] = useState(null);
   const [jupLoading, setJupLoading] = useState(false);
+  const [activeCoin, setActiveCoin] = useState(null);
+  const openDetail = (c) => setActiveCoin(c);
 
   async function doQuote() {
     setJupLoading(true);
@@ -114,7 +171,7 @@ export default function InsightsPage() {
   }
 
   function refetchAll() {
-    [globalQ, rwaQ, l1Q, defiQ, trendingQ, protocolsQ, tvlQ, fxQ, gdpQ, newsQ].forEach(q => q.refetch());
+    [globalQ, rwaQ, l1Q, defiQ, stocksQ, goldQ, trendingQ, protocolsQ, tvlQ, fxQ, gdpQ, newsQ].forEach(q => q.refetch());
   }
 
   const g = globalQ.data;
@@ -132,8 +189,14 @@ export default function InsightsPage() {
   return (
     <div>
       {/* Hero with Global Stats — scroll-reveal */}
-      <motion.div {...heroReveal} className="rounded-xl p-9 mb-7 grid grid-cols-1 md:grid-cols-2 gap-9 items-center border border-border"
-        style={{ background: 'linear-gradient(135deg, var(--color-night-2) 0%, rgba(0,255,163,.05) 100%)' }}>
+      <motion.div
+        {...heroReveal}
+        className="rounded-xl p-9 mb-7 grid grid-cols-1 md:grid-cols-2 gap-9 items-center border border-border"
+        style={{
+          background:
+            'linear-gradient(135deg, var(--color-night-2) 0%, color-mix(in srgb, var(--color-sea) 5%, transparent) 100%)',
+        }}
+      >
         <div>
           <div className="inline-block bg-sea/12 border border-sea/30 rounded-full text-[.68rem] text-sea px-3 py-0.5 tracking-widest uppercase mb-3.5">
             L1 · DeFi · RWA Intelligence
@@ -147,7 +210,7 @@ export default function InsightsPage() {
               href={BLOCKWORKS_HOME}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#C46CFF] hover:text-[#C46CFF]/80 transition-colors no-underline"
+              className="text-coral-lt hover:text-coral-lt/80 transition-colors duration-150 no-underline focus-visible:outline-none focus-visible:underline"
             >
               Blockworks ↗
             </a>
@@ -167,40 +230,61 @@ export default function InsightsPage() {
       </motion.div>
 
       <div className="flex justify-end mb-5">
-        <button onClick={refetchAll}
-          className="bg-transparent border border-border text-sea cursor-pointer rounded-lg px-5 py-2 text-[.75rem] font-mono transition-all hover:bg-sea/10">
+        <button
+          onClick={refetchAll}
+          className="bg-transparent border border-border text-sea cursor-pointer rounded-lg px-5 py-2 text-[.75rem] font-mono transition-colors duration-150 hover:bg-sea/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sea/40 focus-visible:ring-offset-2 focus-visible:ring-offset-night"
+        >
           ↻ Refresh All
         </button>
       </div>
 
       {/* ── Tokens.xyz — Solana Token Discovery ─────────────────── */}
-      <div className="rounded-[14px] p-5 mb-4 border border-[rgba(139,92,246,.2)] relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, rgba(139,92,246,.06) 0%, var(--color-card) 100%)' }}>
-        <div className="absolute top-0 right-0 w-32 h-32 bg-[rgba(139,92,246,.08)] rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+      <div
+        className="rounded-[14px] p-5 mb-4 border border-ink/20 relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-ink) 6%, transparent) 0%, var(--color-card) 100%)',
+        }}
+      >
+        <div
+          className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"
+          style={{ background: 'color-mix(in srgb, var(--color-ink) 8%, transparent)' }}
+          aria-hidden="true"
+        />
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-9 h-9 rounded-full bg-[rgba(139,92,246,.15)] flex items-center justify-center text-lg">🪙</div>
+          <div className="w-9 h-9 rounded-full bg-ink/15 flex items-center justify-center">
+            <LimerIcon size={18} className="text-ink" />
+          </div>
           <div className="flex-1">
             <div className="text-[.78rem] font-body font-bold text-txt">Solana Token Discovery</div>
             <div className="text-[.62rem] text-muted">Real-world assets & crypto on Solana — powered by tokens.xyz</div>
           </div>
-          <a href="https://www.tokens.xyz/" target="_blank" rel="noopener noreferrer"
-            className="text-[.7rem] font-body font-bold px-3 py-1.5 rounded-lg bg-[rgba(139,92,246,.12)] border border-[rgba(139,92,246,.3)] text-[#8B5CF6] no-underline hover:bg-[rgba(139,92,246,.2)] transition-all">
+          <a
+            href="https://www.tokens.xyz/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[.7rem] font-body font-bold px-3 py-1.5 rounded-lg bg-ink/12 border border-ink/30 text-ink no-underline hover:bg-ink/20 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40"
+          >
             Explore →
           </a>
         </div>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
           {[
-            { label: 'Stocks',      count: 219, icon: '📈', path: 'AAPL' },
-            { label: 'ETFs',        count: 24,  icon: '🏦', path: 'SPY' },
-            { label: 'Treasuries',  count: 15,  icon: '🏛️', path: 'TBILL' },
-            { label: 'Currencies',  count: 14,  icon: '💱', path: 'EUR' },
-            { label: 'Crypto',      count: 13,  icon: '₿',  path: 'SOL' },
-            { label: 'Metals',      count: 4,   icon: '🥇', path: 'XAU' },
+            { label: 'Stocks',     count: 219, Icon: TrendUpIcon, path: 'AAPL' },
+            { label: 'ETFs',       count: 24,  Icon: ChartIcon,   path: 'SPY' },
+            { label: 'Treasuries', count: 15,  Icon: ExchangeIcon, path: 'TBILL' },
+            { label: 'Currencies', count: 14,  Icon: TickerIcon,  path: 'EUR' },
+            { label: 'Crypto',     count: 13,  Icon: LimerIcon,   path: 'SOL' },
+            { label: 'Metals',     count: 4,   Icon: StarIcon,    path: 'XAU' },
           ].map(cat => (
-            <a key={cat.label} href={`https://www.tokens.xyz/${cat.path}`} target="_blank" rel="noopener noreferrer"
-              className="rounded-xl border border-border bg-white/[.03] hover:bg-white/[.07] p-3 text-center no-underline transition-all cursor-pointer group">
-              <div className="text-lg mb-1">{cat.icon}</div>
-              <div className="text-[.92rem] font-headline font-black text-txt group-hover:text-[#8B5CF6] transition-colors">{cat.count}</div>
+            <a
+              key={cat.label}
+              href={`https://www.tokens.xyz/${cat.path}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-xl border border-border bg-txt/3 hover:bg-txt/6 p-3 text-center no-underline transition-colors duration-150 cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40"
+            >
+              <cat.Icon size={18} className="mx-auto mb-1 text-txt-2 group-hover:text-ink transition-colors" />
+              <div className="text-[.92rem] font-headline font-black text-txt group-hover:text-ink transition-colors duration-150">{cat.count}</div>
               <div className="text-[.58rem] text-muted uppercase tracking-wider">{cat.label}</div>
             </a>
           ))}
@@ -213,11 +297,15 @@ export default function InsightsPage() {
       {/* ── AI Market Intelligence ──────────────────────────────── */}
       {briefQ.data && (
         <div className="mb-4">
-          <div className="rounded-[14px] p-5 border border-sea/20 relative overflow-hidden"
-            style={{ background: 'linear-gradient(135deg, rgba(56,189,248,.06) 0%, var(--color-card) 100%)' }}>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-sea/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          <div
+            className="rounded-[14px] p-5 border border-sea/20 relative overflow-hidden"
+            style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-sea) 6%, transparent) 0%, var(--color-card) 100%)' }}
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-sea/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" aria-hidden="true" />
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 rounded-full bg-sea/15 flex items-center justify-center text-lg">🤖</div>
+              <div className="w-9 h-9 rounded-full bg-sea/15 flex items-center justify-center">
+                <SignalIcon size={18} className="text-sea" />
+              </div>
               <div className="flex-1">
                 <div className="text-[.66rem] uppercase tracking-widest text-sea flex items-center gap-2">
                   AI Market Intelligence
@@ -230,15 +318,21 @@ export default function InsightsPage() {
                   {briefQ.data.cached && ' · Cached'}
                 </div>
               </div>
-              {(briefQ.data.brief || briefQ.data.fallback)?.sentiment && (
-                <span className={`text-[.65rem] font-bold px-2.5 py-1 rounded-full border
-                  ${(briefQ.data.brief || briefQ.data.fallback).sentiment === 'bullish' ? 'bg-up/10 border-up/30 text-up' :
-                    (briefQ.data.brief || briefQ.data.fallback).sentiment === 'bearish' ? 'bg-down/10 border-down/30 text-down' :
-                    'bg-sun/10 border-sun/30 text-sun'}`}>
-                  {(briefQ.data.brief || briefQ.data.fallback).sentiment === 'bullish' ? '📈 Bullish' :
-                   (briefQ.data.brief || briefQ.data.fallback).sentiment === 'bearish' ? '📉 Bearish' : '➡️ Neutral'}
-                </span>
-              )}
+              {(() => {
+                const s = (briefQ.data.brief || briefQ.data.fallback)?.sentiment;
+                if (!s) return null;
+                const cfg = s === 'bullish'
+                  ? { cls: 'bg-up/10 border-up/30 text-up', Icon: TrendUpIcon, label: 'Bullish' }
+                  : s === 'bearish'
+                  ? { cls: 'bg-down/10 border-down/30 text-down', Icon: TrendDownIcon, label: 'Bearish' }
+                  : { cls: 'bg-sun/10 border-sun/30 text-sun', Icon: TargetIcon, label: 'Neutral' };
+                return (
+                  <span className={`inline-flex items-center gap-1 text-[.65rem] font-bold px-2.5 py-1 rounded-full border ${cfg.cls}`}>
+                    <cfg.Icon size={12} />
+                    {cfg.label}
+                  </span>
+                );
+              })()}
             </div>
 
             {(() => {
@@ -260,13 +354,19 @@ export default function InsightsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                     {b.caribbeanInsight && (
                       <div className="rounded-lg p-3 border border-palm/20 bg-palm/5">
-                        <div className="text-[.58rem] text-palm uppercase tracking-widest mb-1">🌴 Caribbean Insight</div>
+                        <div className="text-[.58rem] text-palm uppercase tracking-widest mb-1 inline-flex items-center gap-1.5">
+                          <LimerMark size={12} />
+                          Caribbean Insight
+                        </div>
                         <div className="text-[.74rem] text-txt-2 leading-relaxed">{b.caribbeanInsight}</div>
                       </div>
                     )}
                     {b.tradingNote && (
                       <div className="rounded-lg p-3 border border-sun/20 bg-sun/5">
-                        <div className="text-[.58rem] text-sun uppercase tracking-widest mb-1">💡 Trading Note</div>
+                        <div className="text-[.58rem] text-sun uppercase tracking-widest mb-1 inline-flex items-center gap-1.5">
+                          <InsightIcon size={11} />
+                          Trading Note
+                        </div>
                         <div className="text-[.74rem] text-txt-2 leading-relaxed">{b.tradingNote}</div>
                       </div>
                     )}
@@ -282,7 +382,7 @@ export default function InsightsPage() {
       )}
       {briefQ.isLoading && (
         <div className="mb-4">
-          <Card title="🤖 AI Market Intelligence" color="var(--color-sea)" source="Loading...">
+          <Card icon={SignalIcon} title="AI Market Intelligence" colorClass="text-sea" source="Loading...">
             <SkeletonRows count={5} cols={1} />
           </Card>
         </div>
@@ -290,8 +390,8 @@ export default function InsightsPage() {
 
       {/* ── Finnhub: Economic Calendar + Earnings ──────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <Card title="📅 Economic Calendar" color="#FF6B6B" source="Finnhub · next 7 days">
-          <div className="text-[.62rem] text-muted mb-3 leading-relaxed italic border-l-2 border-[#FF6B6B]/30 pl-2">
+        <Card icon={AlertIcon} title="Economic Calendar" colorClass="text-down" source="Finnhub · next 7 days">
+          <div className="text-[.62rem] text-muted mb-3 leading-relaxed italic border-l-2 border-down/30 pl-2">
             Major economic events (Fed rates, CPI, GDP, jobs data) drive market-wide volatility. Watch high-impact events closely.
           </div>
           {econCalQ.isLoading && <SkeletonRows count={6} cols={3} />}
@@ -300,10 +400,11 @@ export default function InsightsPage() {
             <div className="text-[.76rem] text-muted text-center py-4">No upcoming high-impact events</div>
           )}
           {econCalQ.data?.map((e, i) => (
-            <div key={i} className="flex items-start gap-2 py-2 border-b border-white/5 last:border-b-0 text-[.74rem]">
-              <span className={`flex-shrink-0 mt-0.5 px-1.5 py-0.5 rounded text-[.55rem] font-bold uppercase
+            <div key={i} className="flex items-start gap-2 py-2 border-b border-border last:border-b-0 text-[.74rem]">
+              <span className={`flex-shrink-0 mt-0.5 px-1.5 py-0.5 rounded text-[.55rem] font-bold uppercase inline-flex items-center gap-1
                 ${e.impact === 'high' ? 'bg-down/15 text-down' : 'bg-sun/15 text-sun'}`}>
-                {e.impact === 'high' ? '🔴 High' : '🟡 Med'}
+                <AlertIcon size={10} />
+                {e.impact === 'high' ? 'High' : 'Med'}
               </span>
               <div className="flex-1 min-w-0">
                 <div className="font-body font-bold text-txt truncate">{e.event}</div>
@@ -319,8 +420,8 @@ export default function InsightsPage() {
           ))}
         </Card>
 
-        <Card title="💰 Earnings Calendar" color="#00D4FF" source="Finnhub · next 14 days">
-          <div className="text-[.62rem] text-muted mb-3 leading-relaxed italic border-l-2 border-[#00D4FF]/30 pl-2">
+        <Card icon={WalletIcon} title="Earnings Calendar" colorClass="text-sea" source="Finnhub · next 14 days">
+          <div className="text-[.62rem] text-muted mb-3 leading-relaxed italic border-l-2 border-sea/30 pl-2">
             Companies report quarterly earnings. When EPS beats estimates, stock often rises; a miss often drops it. BMO = before market, AMC = after close.
           </div>
           {earningsQ.isLoading && <SkeletonRows count={6} cols={3} />}
@@ -331,13 +432,13 @@ export default function InsightsPage() {
           {earningsQ.data?.map((e, i) => {
             const beat = e.epsActual != null && e.epsEstimate != null ? e.epsActual > e.epsEstimate : null;
             return (
-              <div key={i} className="flex items-center gap-2 py-2 border-b border-white/5 last:border-b-0 text-[.74rem]">
+              <div key={i} className="flex items-center gap-2 py-2 border-b border-border last:border-b-0 text-[.74rem]">
                 <span className="font-body font-bold text-txt w-16 flex-shrink-0">{e.symbol}</span>
                 <div className="flex-1 min-w-0">
                   <div className="text-[.65rem] text-muted">{e.date}</div>
                 </div>
                 {e.hour && (
-                  <span className="text-[.55rem] px-1.5 py-0.5 rounded bg-white/5 text-muted uppercase font-mono">
+                  <span className="text-[.55rem] px-1.5 py-0.5 rounded bg-txt/5 text-muted uppercase font-mono">
                     {e.hour === 'bmo' ? 'BMO' : e.hour === 'amc' ? 'AMC' : e.hour}
                   </span>
                 )}
@@ -346,9 +447,11 @@ export default function InsightsPage() {
                     <div className="text-[.65rem] text-muted">Est: <span className="text-txt-2">${e.epsEstimate.toFixed(2)}</span></div>
                   )}
                   {e.epsActual != null && (
-                    <div className="text-[.65rem]">
+                    <div className="text-[.65rem] inline-flex items-center gap-1">
                       Actual: <span className={beat ? 'text-up font-bold' : 'text-down font-bold'}>${e.epsActual.toFixed(2)}</span>
-                      {beat != null && <span className="ml-1">{beat ? '✅' : '❌'}</span>}
+                      {beat != null && (
+                        beat ? <CheckIcon size={11} className="text-up" /> : <CloseIcon size={11} className="text-down" />
+                      )}
                     </div>
                   )}
                 </div>
@@ -360,8 +463,8 @@ export default function InsightsPage() {
 
       {/* ── Finnhub: Congressional Trading + Market News ───────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <Card title="🏛️ Congressional Trading" color="#B088F9" source="Finnhub · STOCK Act">
-          <div className="text-[.62rem] text-muted mb-3 leading-relaxed italic border-l-2 border-[#B088F9]/30 pl-2">
+        <Card icon={ExchangeIcon} title="Congressional Trading" colorClass="text-coral" source="Finnhub · STOCK Act">
+          <div className="text-[.62rem] text-muted mb-3 leading-relaxed italic border-l-2 border-coral/30 pl-2">
             Under the STOCK Act, US politicians must disclose stock trades. Tracking "smart money" reveals information asymmetry in markets.
           </div>
           {congressQ.isLoading && <SkeletonRows count={6} cols={3} />}
@@ -372,7 +475,7 @@ export default function InsightsPage() {
           {congressQ.data?.map((t, i) => {
             const isBuy = /purchase/i.test(t.transactionType);
             return (
-              <div key={i} className="flex items-start gap-2 py-2 border-b border-white/5 last:border-b-0 text-[.74rem]">
+              <div key={i} className="flex items-start gap-2 py-2 border-b border-border last:border-b-0 text-[.74rem]">
                 <span className={`flex-shrink-0 mt-0.5 px-1.5 py-0.5 rounded text-[.55rem] font-bold uppercase
                   ${isBuy ? 'bg-up/15 text-up' : 'bg-down/15 text-down'}`}>
                   {isBuy ? 'Buy' : 'Sell'}
@@ -392,14 +495,19 @@ export default function InsightsPage() {
           })}
         </Card>
 
-        <Card title="📰 Market News" color="var(--color-sea)" source="Finnhub · latest">
+        <Card icon={ConnectionIcon} title="Market News" colorClass="text-sea" source="Finnhub · latest">
           {fhNewsQ.isLoading && <SkeletonRows count={6} cols={2} />}
           {fhNewsQ.isError && <Err msg="Market news unavailable" retry={fhNewsQ.refetch} />}
           {fhNewsQ.data?.map(n => {
             const ago = fmtRelTime(n.datetime);
             return (
-              <a key={n.id} href={n.url} target="_blank" rel="noopener noreferrer"
-                className="flex items-start gap-2.5 py-2 border-b border-white/5 last:border-b-0 no-underline hover:bg-sea/5 transition-all rounded px-1 -mx-1">
+              <a
+                key={n.id}
+                href={n.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-start gap-2.5 py-2 border-b border-border last:border-b-0 no-underline hover:bg-sea/5 transition-colors duration-150 rounded px-1 -mx-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sea/40"
+              >
                 {n.image && (
                   <img src={n.image} alt="" loading="lazy"
                     className="w-12 h-12 rounded-lg object-cover flex-shrink-0 opacity-80" />
@@ -419,31 +527,56 @@ export default function InsightsPage() {
 
       {/* ── Row 1: RWA Tokens + L1 Chains ────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <Card title="🏦 RWA Tokens" color="var(--color-sun)" source="CoinGecko · real-world-assets">
+        <Card icon={WalletIcon} title="RWA Tokens" colorClass="text-sun" source="CoinGecko · real-world-assets">
           {rwaQ.isLoading && <SkeletonRows count={6} cols={4} />}
-          {rwaQ.data?.map(c => <TokenRow key={c.id} c={c} showVol />)}
+          {rwaQ.data?.map(c => <TokenRow key={c.id} c={c} showVol onClick={openDetail} />)}
           {rwaQ.isError && <Err msg={rwaQ.error.message} retry={rwaQ.refetch} />}
         </Card>
 
-        <Card title="⛓️ Layer 1 Chains" color="var(--color-coral)" source="CoinGecko · layer-1">
+        <Card icon={ConnectionIcon} title="Layer 1 Chains" colorClass="text-coral" source="CoinGecko · layer-1">
           {l1Q.isLoading && <SkeletonRows count={6} cols={4} />}
-          {l1Q.data?.map(c => <TokenRow key={c.id} c={c} showVol />)}
+          {l1Q.data?.map(c => <TokenRow key={c.id} c={c} showVol onClick={openDetail} />)}
           {l1Q.isError && <Err msg={l1Q.error.message} retry={l1Q.refetch} />}
+        </Card>
+      </div>
+
+      {/* ── Row 1b: Tokenized Stocks + Tokenized Gold ────────── */}
+      {/* Aligns with the TTSE equity-tokenization thesis: equities + gold are
+          two of the three asset classes the Caribbean exchange already trades. */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <Card icon={TrendUpIcon} title="Tokenized Stocks" colorClass="text-sea" source="CoinGecko · tokenized-stocks">
+          {stocksQ.isLoading && <SkeletonRows count={6} cols={4} />}
+          {stocksQ.data?.length > 0
+            ? stocksQ.data.map(c => <TokenRow key={c.id} c={c} showVol onClick={openDetail} />)
+            : !stocksQ.isLoading && !stocksQ.isError && (
+                <div className="text-[.7rem] text-muted py-3">No tokenized equities in this category yet.</div>
+              )}
+          {stocksQ.isError && <Err msg={stocksQ.error.message} retry={stocksQ.refetch} />}
+        </Card>
+
+        <Card icon={StarIcon} title="Tokenized Gold" colorClass="text-sun" source="CoinGecko · tokenized-gold">
+          {goldQ.isLoading && <SkeletonRows count={6} cols={4} />}
+          {goldQ.data?.length > 0
+            ? goldQ.data.map(c => <TokenRow key={c.id} c={c} showVol onClick={openDetail} />)
+            : !goldQ.isLoading && !goldQ.isError && (
+                <div className="text-[.7rem] text-muted py-3">No tokenized gold assets returned.</div>
+              )}
+          {goldQ.isError && <Err msg={goldQ.error.message} retry={goldQ.refetch} />}
         </Card>
       </div>
 
       {/* ── Row 2: DeFi + Solana Protocols ────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <Card title="💎 DeFi Tokens" color="var(--color-sea)" source="CoinGecko · defi">
+        <Card icon={LimerIcon} title="DeFi Tokens" colorClass="text-sea" source="CoinGecko · defi">
           {defiQ.isLoading && <SkeletonRows count={6} cols={4} />}
-          {defiQ.data?.map(c => <TokenRow key={c.id} c={c} showVol />)}
+          {defiQ.data?.map(c => <TokenRow key={c.id} c={c} showVol onClick={openDetail} />)}
           {defiQ.isError && <Err msg={defiQ.error.message} retry={defiQ.refetch} />}
         </Card>
 
-        <Card title="🔒 Solana DeFi TVL" color="var(--color-up)" source="DeFiLlama">
+        <Card icon={LockIcon} title="Solana DeFi TVL" colorClass="text-up" source="DeFiLlama">
           {protocolsQ.isLoading && <SkeletonRows count={6} cols={3} />}
           {protocolsQ.data?.map(p => (
-            <div key={p.name} className="flex justify-between items-center py-[5px] border-b border-white/5 last:border-b-0 text-[.76rem]">
+            <div key={p.name} className="flex justify-between items-center py-[5px] border-b border-border last:border-b-0 text-[.76rem]">
               <span className="text-txt-2">{p.name} <span className="text-muted text-[.6rem]">{p.category}</span></span>
               <div className="text-right">
                 <span className="font-body font-bold text-sea">{fmt(p.tvl)}</span>
@@ -457,10 +590,10 @@ export default function InsightsPage() {
 
       {/* ── Row 3: Trending + Jupiter Quote ───────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <Card title="🔥 Trending" color="var(--color-coral)" source="CoinGecko">
+        <Card icon={StreakIcon} title="Trending" colorClass="text-coral" source="CoinGecko">
           {trendingQ.isLoading && <SkeletonRows count={8} cols={3} />}
           {trendingQ.data?.coins?.map(c => (
-            <div key={c.id} className="flex items-center gap-2.5 py-[5px] border-b border-white/5 last:border-b-0">
+            <div key={c.id} className="flex items-center gap-2.5 py-[5px] border-b border-border last:border-b-0">
               <img src={c.thumb} alt={c.symbol} className="w-5 h-5 rounded-full" />
               <span className="text-[.76rem] flex-1">
                 <span className="font-body font-bold text-txt">{c.symbol}</span>
@@ -473,7 +606,7 @@ export default function InsightsPage() {
             </div>
           ))}
           {trendingQ.data?.categories?.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-white/5">
+            <div className="mt-3 pt-3 border-t border-border">
               <div className="text-[.6rem] text-muted uppercase tracking-widest mb-1.5">Trending Categories</div>
               {trendingQ.data.categories.map(cat => (
                 <div key={cat.id} className="flex justify-between py-1 text-[.74rem]">
@@ -486,21 +619,38 @@ export default function InsightsPage() {
           {trendingQ.isError && <Err msg={trendingQ.error.message} retry={trendingQ.refetch} />}
         </Card>
 
-        <Card title="⚡ Jupiter Swap Quote" color="var(--color-sea)" source="Jupiter v6">
+        <Card icon={BoltIcon} title="Jupiter Swap Quote" colorClass="text-sea" source="Jupiter v6">
           <div className="flex gap-1.5 mb-2.5 flex-wrap">
-            <select value={jupIn} onChange={e => setJupIn(e.target.value)}
-              className="flex-1 min-w-[80px] bg-black/30 border border-border text-txt rounded-lg px-2 py-1 font-mono text-[.7rem] outline-none">
+            <select
+              value={jupIn}
+              onChange={e => setJupIn(e.target.value)}
+              className="flex-1 min-w-[80px] bg-night-3/50 border border-border text-txt rounded-lg px-2 py-1 font-mono text-[.7rem] outline-none transition-colors duration-150 hover:border-sea/40 focus-visible:border-sea focus-visible:ring-2 focus-visible:ring-sea/30"
+              aria-label="From token"
+            >
               {SWAP_TOKENS.map(t => <option key={t.mint} value={t.mint}>{t.label}</option>)}
             </select>
-            <span className="self-center text-muted text-[.8rem]">→</span>
-            <select value={jupOut} onChange={e => setJupOut(e.target.value)}
-              className="flex-1 min-w-[80px] bg-black/30 border border-border text-txt rounded-lg px-2 py-1 font-mono text-[.7rem] outline-none">
+            <span className="self-center text-muted text-[.8rem]" aria-hidden="true">→</span>
+            <select
+              value={jupOut}
+              onChange={e => setJupOut(e.target.value)}
+              className="flex-1 min-w-[80px] bg-night-3/50 border border-border text-txt rounded-lg px-2 py-1 font-mono text-[.7rem] outline-none transition-colors duration-150 hover:border-sea/40 focus-visible:border-sea focus-visible:ring-2 focus-visible:ring-sea/30"
+              aria-label="To token"
+            >
               {SWAP_TOKENS.map(t => <option key={t.mint} value={t.mint}>{t.label}</option>)}
             </select>
-            <input type="number" value={jupAmt} onChange={e => setJupAmt(e.target.value)} min="0.001" step="0.1"
-              className="w-[65px] bg-black/30 border border-border text-txt rounded-lg px-2 py-1 font-mono text-[.7rem] outline-none" />
-            <button onClick={doQuote}
-              className="bg-transparent border border-border text-sea cursor-pointer rounded-lg px-2.5 py-1 text-[.7rem] font-mono hover:bg-sea/10">
+            <input
+              type="number"
+              value={jupAmt}
+              onChange={e => setJupAmt(e.target.value)}
+              min="0.001"
+              step="0.1"
+              className="w-[65px] bg-night-3/50 border border-border text-txt rounded-lg px-2 py-1 font-mono text-[.7rem] outline-none transition-colors duration-150 hover:border-sea/40 focus-visible:border-sea focus-visible:ring-2 focus-visible:ring-sea/30"
+              aria-label="Amount"
+            />
+            <button
+              onClick={doQuote}
+              className="bg-transparent border border-border text-sea cursor-pointer rounded-lg px-2.5 py-1 text-[.7rem] font-mono transition-colors duration-150 hover:bg-sea/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sea/40"
+            >
               Quote
             </button>
           </div>
@@ -519,10 +669,10 @@ export default function InsightsPage() {
 
       {/* ── Row 4: Caribbean FX + GDP ─────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <Card title="💱 Caribbean FX Rates" color="var(--color-sun)" source="ExchangeRate-API">
+        <Card icon={TickerIcon} title="Caribbean FX Rates" colorClass="text-sun" source="ExchangeRate-API">
           {fxQ.isLoading && <SkeletonRows count={6} cols={2} />}
           {fxQ.data?.map(fx => (
-            <div key={fx.code} className="flex justify-between items-center py-[5px] border-b border-white/5 last:border-b-0 text-[.76rem]">
+            <div key={fx.code} className="flex justify-between items-center py-[5px] border-b border-border last:border-b-0 text-[.76rem]">
               <span className="text-txt-2">USD → {fx.code} <span className="text-muted text-[.6rem]">{fx.name}</span></span>
               <span className="font-body font-bold text-sun">{fx.rate.toFixed(2)}</span>
             </div>
@@ -530,7 +680,7 @@ export default function InsightsPage() {
           {fxQ.isError && <Err msg={fxQ.error.message} retry={fxQ.refetch} />}
         </Card>
 
-        <Card title="🌍 Caribbean GDP Growth" color="var(--color-palm)" source="World Bank">
+        <Card icon={LimerMark} title="Caribbean GDP Growth" colorClass="text-palm" source="World Bank">
           {gdpQ.isLoading && <SkeletonRows count={5} cols={2} />}
           {gdpQ.data?.map(g => (
             <Row key={g.country} label={`${g.country} (${g.year})`}
@@ -548,7 +698,7 @@ export default function InsightsPage() {
 
       {/* ── Row 5b: Token Supply Metrics (FMP) ─────────────────── */}
       <div className="mb-4">
-        <Card title="📊 Token Supply Metrics" color="var(--color-coral)" source="Financial Modeling Prep">
+        <Card icon={ChartIcon} title="Token Supply Metrics" colorClass="text-coral" source="Financial Modeling Prep">
           {fmpQ.isLoading && <SkeletonRows count={8} cols={4} />}
           {fmpQ.isError && <Err msg="Supply data unavailable" retry={fmpQ.refetch} />}
           {fmpQ.data && (() => {
@@ -566,7 +716,7 @@ export default function InsightsPage() {
             return (
               <div>
                 {/* Header */}
-                <div className="grid items-center gap-2 px-2 py-1.5 text-[.58rem] text-muted uppercase tracking-widest border-b border-white/8 mb-1"
+                <div className="grid items-center gap-2 px-2 py-1.5 text-[.58rem] text-muted uppercase tracking-widest border-b border-border mb-1"
                   style={{ gridTemplateColumns: '1.2fr 1fr 1fr 1.2fr .8fr' }}>
                   <span>Token</span>
                   <span>Circulating</span>
@@ -575,12 +725,18 @@ export default function InsightsPage() {
                   <span className="hidden md:block">ICO Date</span>
                 </div>
                 {rows.map(r => (
-                  <div key={r.sym}
-                    className="grid items-center gap-2 px-2 py-2 border-b border-white/4 last:border-b-0 text-[.74rem]"
-                    style={{ gridTemplateColumns: '1.2fr 1fr 1fr 1.2fr .8fr' }}>
+                  <div
+                    key={r.sym}
+                    className="grid items-center gap-2 px-2 py-2 border-b border-border last:border-b-0 text-[.74rem]"
+                    style={{ gridTemplateColumns: '1.2fr 1fr 1fr 1.2fr .8fr' }}
+                  >
                     <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-[.5rem] font-bold text-white"
-                        style={{ background: r.col || '#555' }}>{r.sym.slice(0, 2)}</div>
+                      <div
+                        className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-[.5rem] font-bold text-txt"
+                        style={{ background: r.col || 'var(--color-muted)' }}
+                      >
+                        {r.sym.slice(0, 2)}
+                      </div>
                       <div className="min-w-0">
                         <span className="font-body font-bold text-txt">{r.sym}</span>
                         <span className="text-muted text-[.58rem] ml-1 hidden sm:inline">{r.name}</span>
@@ -614,7 +770,7 @@ export default function InsightsPage() {
 
       {/* ── Row 6: Crypto News Feed ────────────────────────────── */}
       <div className="mb-4">
-        <Card title="📰 Crypto News" color="var(--color-sea)" source="CoinGecko · latest">
+        <Card icon={ConnectionIcon} title="Crypto News" colorClass="text-sea" source="Finnhub · crypto">
           {newsQ.isLoading && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
@@ -632,21 +788,24 @@ export default function InsightsPage() {
       </div>
 
       {/* API Attribution */}
-      <div className="rounded-xl p-4 border border-white/6 flex flex-wrap gap-3 items-center" style={{ background: 'rgba(0,0,0,.2)' }}>
+      <div
+        className="rounded-xl p-4 border border-border flex flex-wrap gap-3 items-center"
+        style={{ background: 'var(--color-card)' }}
+      >
         <span className="text-[.65rem] text-muted">Powered by:</span>
         {['CoinGecko', 'DeFiLlama', 'Jupiter', 'ExchangeRate-API', 'World Bank', 'FMP', 'Finnhub'].map(s => (
-          <span key={s} className="text-[.65rem] text-txt-2 bg-white/4 border border-white/7 rounded px-2 py-0.5">{s}</span>
+          <span key={s} className="text-[.65rem] text-txt-2 bg-txt/4 border border-border rounded px-2 py-0.5">{s}</span>
         ))}
         <a
           href={BLOCKWORKS_HOME}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[.65rem] text-[#C46CFF] bg-[#C46CFF]/8 border border-[#C46CFF]/25 rounded px-2 py-0.5 hover:bg-[#C46CFF]/15 transition-colors no-underline"
+          className="text-[.65rem] text-coral-lt bg-coral-lt/8 border border-coral-lt/25 rounded px-2 py-0.5 hover:bg-coral-lt/15 transition-colors duration-150 no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral-lt/40"
           title="Editorial curation via Blockworks"
         >
           Curated by Blockworks ↗
         </a>
-        <span className="text-[.63rem] text-muted ml-auto">All free-tier · No API keys required</span>
+        <span className="text-[.63rem] text-muted ml-auto">Keys proxied via Cloudflare Worker</span>
       </div>
 
       {/* Contextual Help */}
@@ -658,6 +817,12 @@ export default function InsightsPage() {
         { title: 'What is BTC Dominance?', content: 'BTC Dominance shows what percentage of the total crypto market is Bitcoin. When it goes up, money is flowing into Bitcoin. When it drops, money is moving into alternative coins (altcoins).' },
         { title: 'Caribbean FX Rates', content: 'These show how local Caribbean currencies (TTD, JMD, BBD, etc.) compare to the US Dollar. Important for understanding the real cost of crypto in your local currency.' },
       ]} />
+
+      <TokenDetailModal
+        coinId={activeCoin?.id || null}
+        fallback={activeCoin}
+        onClose={() => setActiveCoin(null)}
+      />
     </div>
   );
 }
@@ -677,7 +842,7 @@ function HeroStat({ label, value, sub, info }) {
 
 function Row({ label, value, cls }) {
   return (
-    <div className="flex justify-between items-center py-1.5 border-b border-white/5 last:border-b-0 text-[.76rem]">
+    <div className="flex justify-between items-center py-1.5 border-b border-border last:border-b-0 text-[.76rem]">
       <span className="text-txt-2">{label}</span>
       <span className={`font-body font-bold ${cls || 'text-txt'}`}>{value}</span>
     </div>
@@ -706,23 +871,27 @@ function NewsItem({ item }) {
   })();
 
   return (
-    <a href={item.url} target="_blank" rel="noopener noreferrer"
-      className="flex flex-col gap-2 p-3 rounded-xl border border-white/6 hover:border-sea/30 hover:bg-sea/5 transition-all no-underline group"
-      style={{ background: 'rgba(0,0,0,.15)' }}>
+    <a
+      href={item.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex flex-col gap-2 p-3 rounded-xl border border-border hover:border-sea/30 hover:bg-sea/5 transition-colors duration-150 no-underline group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sea/40"
+      style={{ background: 'var(--color-card)' }}
+    >
       {item.imageUrl && (
         <img
           src={item.imageUrl}
           alt=""
           loading="lazy"
           decoding="async"
-          className="w-full h-[90px] object-cover rounded-lg opacity-80 group-hover:opacity-100 transition-opacity"
+          className="w-full h-[90px] object-cover rounded-lg opacity-80 group-hover:opacity-100 transition-opacity duration-150"
         />
       )}
       <div className="flex items-center gap-1.5">
         <span className="text-[.6rem] text-sea bg-sea/10 rounded px-1.5 py-0.5 font-mono font-bold truncate max-w-[80px]">{item.source}</span>
         <span className="text-[.6rem] text-muted ml-auto flex-shrink-0">{ago}</span>
       </div>
-      <p className="text-[.74rem] text-txt-2 leading-snug line-clamp-3 m-0 group-hover:text-txt transition-colors">{item.title}</p>
+      <p className="text-[.74rem] text-txt-2 leading-snug line-clamp-3 m-0 group-hover:text-txt transition-colors duration-150">{item.title}</p>
     </a>
   );
 }
