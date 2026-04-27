@@ -19,11 +19,13 @@ const BRANDS = {
   'Solana Foundation': {
     accent: '#14F195',
     glyph: '◎',
+    image: '/brand/solana.png',
     gradient: 'linear-gradient(135deg, #14F195 0%, #0B84FF 100%)',
   },
   'Solana Foundation blog': {
     accent: '#14F195',
     glyph: '◎',
+    image: '/brand/solana.png',
     gradient: 'linear-gradient(135deg, #14F195 0%, #0B84FF 100%)',
   },
   'CoinDesk — headlines': {
@@ -44,6 +46,7 @@ const BRANDS = {
   'Solflare — news': {
     accent: '#FE7B1E',
     glyph: '🔥',
+    image: '/brand/solflare.png',
     gradient: 'linear-gradient(135deg, #101010 0%, #FE7B1E 100%)',
   },
   "Limer's Capital": {
