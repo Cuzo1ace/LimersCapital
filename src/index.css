@@ -8,11 +8,16 @@
   --color-sea: #00ffa3;
   --color-sea-dk: #00ef99;
   --color-coral: #bf81ff;
+  --color-coral-lt: #c46cff; /* lighter coral — Jupiter / AMM swap visual language */
+  --color-ink: #8b5cf6; /* partner-integration violet — tokens.xyz surfaces */
+  --color-solflare: #fc5602; /* Solflare partner orange — wallet/stake flows */
   --color-sun: #FFCA3A;
   --color-gold: #D4AF37;
   --color-palm: #2D9B56;
   --color-up: #00ffa3;
   --color-down: #ff716c;
+  --color-warn: #fb923c; /* amber — pre-trade warnings, devnet badges */
+  --color-ttse: #ff4d6d; /* TT flag-aligned red — TTSE market accents (not loss state) */
   --color-muted: #ababad;
   --color-txt: #fdfbfe;
   --color-txt-2: #ababad;
@@ -21,6 +26,15 @@
   --color-surface-3: #181a1c;
   --color-surface-4: #242629;
   --color-purple: #bf81ff;
+
+  /* Chart semantics — consumed by Apex/Recharts/PerpChart which can't read Tailwind classes */
+  --color-chart-grid: rgba(255, 202, 58, 0.08);
+  --color-chart-axis: rgba(255, 202, 58, 0.15);
+  --color-chart-label: #a0bad8;
+  --color-chart-label-2: #5b7a9a;
+  --color-chart-title: #e6f0fe;
+  --color-liquidation: #992233;
+
   --font-headline: 'Space Grotesk', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'DM Mono', 'Courier New', monospace;
@@ -58,62 +72,39 @@ body::before {
   color: #0d0e10;
 }
 
-/* ── Light theme overrides ── */
-html.light body {
-  background-color: #fff;
-  background-image: radial-gradient(125% 125% at 50% 10%, #fff 40%, #6366f1 100%);
-  background-attachment: fixed;
-}
-html.light body::before {
-  background-image: radial-gradient(circle at 2px 2px, rgba(0,0,0,0.04) 1px, transparent 0);
-  background-size: 24px 24px;
-}
-/* Light mode body::after handled by BackgroundGradient component */
-html.light {
-  /* Backgrounds */
-  --color-night: #f5f5f5;
-  --color-night-2: #ebebeb;
-  --color-night-3: #d4d4d4;
-  --color-surface-3: #e8e8e8;
-  --color-surface-4: #dedede;
-
-  /* Text */
-  --color-txt: #1a1a1a;
-  --color-txt-2: #555555;
-  --color-muted: #777777;
-
-  /* Surfaces */
-  --color-card: rgba(255, 255, 255, 0.9);
-  --color-border: rgba(0, 0, 0, 0.12);
-
-  /* Accents — darkened for WCAG AA contrast on light backgrounds */
-  --color-sea: #00875a;
-  --color-sea-dk: #006b47;
-  --color-up: #0a8a5c;
-  --color-down: #d93535;
-  --color-sun: #c89b00;
-  --color-palm: #1d7a3f;
-  --color-coral: #8b4fcf;
-  --color-purple: #8b4fcf;
-}
-/* Light mode: header background */
-html.light header.sticky {
-  background: rgba(245, 245, 245, 0.93) !important;
-}
-/* Light mode: soften neon glow effects */
-html.light .neon-glow-primary {
-  box-shadow: 0 0 8px rgba(0, 135, 90, 0.15) !important;
-}
-/* Light mode: selection colors */
-html.light ::selection {
-  background: #00875a;
-  color: #ffffff;
-}
-
 /* Toast animation */
 @keyframes slideUp {
   from { transform: translateY(80px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+/* News-map selection halo — drives the animated ring overlay on the
+   currently active bubble. SVG SMIL doesn't run reliably in some Chrome
+   contexts; CSS keyframes are the portable choice. */
+@keyframes bubbleHaloShimmer {
+  0%, 100% { stroke-opacity: 0.85; }
+  50%      { stroke-opacity: 1; }
+}
+@keyframes bubbleHaloPing {
+  0%   { transform: scale(1);   stroke-opacity: 0.55; }
+  100% { transform: scale(1.7); stroke-opacity: 0; }
+}
+.bubble-halo-shimmer {
+  animation: bubbleHaloShimmer 2.2s ease-in-out infinite;
+}
+.bubble-halo-ping {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: bubbleHaloPing 1.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+.bubble-halo-ping--delayed {
+  animation-delay: 0.8s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bubble-halo-shimmer,
+  .bubble-halo-ping {
+    animation: none !important;
+  }
 }
 
 /* Price ticker scroll */
@@ -279,11 +270,6 @@ html.light ::selection {
 }
 .press-scale:active {
   transform: scale(0.97);
-}
-
-/* Light mode: reduce gradient blob visibility */
-html.light .bg-gradient-blob {
-  opacity: 0.5 !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

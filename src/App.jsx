@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
 import Header from './components/layout/Header';
@@ -145,17 +145,6 @@ function ReferralHandler() {
   return null;
 }
 
-function ThemeSync() {
-  const theme = useStore(s => s.theme);
-  const prev = useRef(theme);
-  useEffect(() => {
-    document.documentElement.classList.remove('light', 'dark');
-    if (theme === 'light') document.documentElement.classList.add('light');
-    prev.current = theme;
-  }, [theme]);
-  return null;
-}
-
 export default function App() {
   const activeTab = useStore(s => s.activeTab);
   const landingDismissed = useStore(s => s.landingDismissed);
@@ -167,7 +156,6 @@ export default function App() {
       <NetworkStatus />
       <StreakCheck />
       <ReferralHandler />
-      <ThemeSync />
       {landingDismissed ? (
         <>
           <NewUserRedirect />

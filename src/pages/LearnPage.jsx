@@ -4,7 +4,7 @@ import useStore from '../store/useStore';
 import { MODULES, LEVELS, LEVEL_ORDER } from '../data/modules';
 import { LESSONS } from '../data/lessons';
 import { QUIZZES } from '../data/quizzes';
-import { GLOSSARY } from '../data/glossary';
+import { GLOSSARY, GLOSSARY_CATEGORIES } from '../data/glossary';
 import { getTier, getNextTier } from '../data/gamification';
 import BadgeGrid from '../components/gamification/BadgeGrid';
 import SkillMap from '../components/gamification/SkillMap';
@@ -12,6 +12,9 @@ import DisclaimerBar from '../components/DisclaimerBar';
 import { submitQuizToServer } from '../api/game';
 import GlowTrackCard from '../components/ui/GlowTrackCard';
 import useScrollReveal from '../hooks/useScrollReveal';
+import GlossaryHeroCanvas from '../components/learn/GlossaryHeroCanvas';
+import GlossaryCategorySection from '../components/learn/GlossaryCategorySection';
+import GlossaryTermDetail from '../components/learn/GlossaryTermDetail';
 
 /**
  * Check if a module is accessible within a level.
@@ -500,29 +503,49 @@ function LevelOverview({ levelModules, lessonsRead, quizResults, modulesComplete
 
 // ─── Glossary Section ─────────────────────────────────────────────────────────
 function GlossarySection({ glossary, viewedTerms, onView }) {
-  const { childVariants: glossaryChildV, ...glossaryReveal } = useScrollReveal({ stagger: 0.04, distance: 16 });
+  const [activeTerm, setActiveTerm] = useState(null);
+
+  const termsByCategory = GLOSSARY_CATEGORIES.map(cat => ({
+    category: cat,
+    terms: glossary.filter(t => t.category === cat.key),
+  })).filter(({ terms }) => terms.length > 0);
+
+  // Catch any terms whose category key doesn't match an entry in
+  // GLOSSARY_CATEGORIES so we never silently drop them from the UI.
+  const knownKeys = new Set(GLOSSARY_CATEGORIES.map(c => c.key));
+  const orphans = glossary.filter(t => !t.category || !knownKeys.has(t.category));
+  if (orphans.length) {
+    termsByCategory.push({
+      category: { key: 'other', label: 'Other', icon: '📎', tagline: 'Uncategorised terms.' },
+      terms: orphans,
+    });
+  }
+
   return (
-    <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3" {...glossaryReveal}>
-      {glossary.map(g => {
-        const viewed = viewedTerms.includes(g.term);
-        return (
-          <motion.div key={g.term} variants={glossaryChildV}>
-            <GlowTrackCard
-              glowColor={viewed ? 'green' : 'purple'}
-              onClick={() => onView(g.term)}
-              className={`p-4 transition-all ${viewed ? 'bg-sea/3' : ''}`}
-            >
-              <div className="flex items-center gap-2">
-                <div className="font-body font-bold text-[.84rem] text-sea">{g.term}</div>
-                {!viewed && <span className="text-[.55rem] text-sea">+5 XP</span>}
-                {viewed && <span className="text-up text-[.7rem]">✓</span>}
-              </div>
-              <div className="text-[.76rem] text-txt-2 leading-relaxed mt-1">{g.def}</div>
-            </GlowTrackCard>
-          </motion.div>
-        );
-      })}
-    </motion.div>
+    <div>
+      <GlossaryHeroCanvas
+        termCount={glossary.length}
+        viewedCount={viewedTerms.length}
+        categoryCount={termsByCategory.length}
+      />
+
+      {termsByCategory.map(({ category, terms }) => (
+        <GlossaryCategorySection
+          key={category.key}
+          category={category}
+          terms={terms}
+          viewedTerms={viewedTerms}
+          onSelectTerm={setActiveTerm}
+        />
+      ))}
+
+      <GlossaryTermDetail
+        term={activeTerm}
+        isViewed={activeTerm ? viewedTerms.includes(activeTerm.term) : false}
+        onComplete={onView}
+        onClose={() => setActiveTerm(null)}
+      />
+    </div>
   );
 }
 

@@ -265,6 +265,10 @@ const useStore = create(
       viewedGlossaryTerms: [],
       modulesCompleted: [],
       pendingToasts: [],
+      // News bubble map — IDs of news items the user has clicked at least
+      // once. Drives the "visited" dim/check styling on bubbles so users
+      // can see at a glance which they've already navigated.
+      visitedNewsItems: [],
 
       // ── News & Feed (retention) ────────────────────────────
       // Timestamp (ISO) of last time user opened the /news tab.
@@ -652,6 +656,16 @@ const useStore = create(
         get()._checkBadges();
       },
 
+      markNewsItemVisited: (id) => {
+        if (!id) return;
+        const state = get();
+        if (state.visitedNewsItems.includes(id)) return;
+        // Cap at 500 most-recent IDs so the persisted array can't grow
+        // forever as the feed churns.
+        const next = [...state.visitedNewsItems, id].slice(-500);
+        set({ visitedNewsItems: next });
+      },
+
       dismissToast: (toastId) => {
         set({ pendingToasts: get().pendingToasts.filter(t => t.id !== toastId) });
       },
@@ -840,16 +854,12 @@ const useStore = create(
       setExperienceLevel: (level) => {
         set({ experienceLevel: level });
         if (level === 'beginner') {
-          set({ eli5Mode: true, theme: 'light', tradeMode: 'simple' });
+          set({ eli5Mode: true, tradeMode: 'simple' });
         }
       },
       setEli5Mode: (v) => set({ eli5Mode: v }),
       activeLevel: 'basics', // 'basics' | 'intermediate' | 'advanced'
       setActiveLevel: (level) => set({ activeLevel: level }),
-
-      // ── Theme ──────────────────────────────────────────────
-      theme: 'dark', // 'dark' | 'light'
-      setTheme: (t) => set({ theme: t }),
 
       // ── Limit Orders ───────────────────────────────────────
       limitOrders: [],
@@ -1507,6 +1517,7 @@ const useStore = create(
         xp: state.xp, lessonsRead: state.lessonsRead,
         quizResults: state.quizResults, quizStreak: state.quizStreak,
         earnedBadges: state.earnedBadges, unlockedFeatures: state.unlockedFeatures,
+        visitedNewsItems: state.visitedNewsItems,
         currentStreak: state.currentStreak, lastLoginDate: state.lastLoginDate,
         longestStreak: state.longestStreak, viewedGlossaryTerms: state.viewedGlossaryTerms,
         modulesCompleted: state.modulesCompleted,
@@ -1553,7 +1564,6 @@ const useStore = create(
         experienceLevel: state.experienceLevel,
         eli5Mode: state.eli5Mode,
         activeLevel: state.activeLevel,
-        theme: state.theme,
         streakShields: state.streakShields,
         lastShieldRefill: state.lastShieldRefill,
         firstSessionDate: state.firstSessionDate,
