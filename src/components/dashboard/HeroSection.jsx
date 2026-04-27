@@ -77,11 +77,11 @@ export default function HeroSection() {
         {/* Right floating stat cards */}
         <div className="flex flex-row md:flex-col gap-3 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
           <GlassCard variant="stat" delay={0.3} className="min-w-[120px] p-4 flex flex-col gap-1">
-            <span className="text-[.65rem] text-muted font-body uppercase tracking-wider">Users</span>
-            <span className="text-xl font-mono font-bold text-sea">
-              <CountUp end={1247} />
+            <span className="text-[.65rem] text-muted font-body uppercase tracking-wider">Fun Fact</span>
+            <span className="text-[.78rem] font-body font-bold text-sea leading-tight">
+              Sou-sou meets Solana
             </span>
-            <span className="text-[.58rem] text-muted">+12% this week</span>
+            <span className="text-[.58rem] text-muted">DeFi, explained in island metaphors.</span>
           </GlassCard>
 
           <GlassCard variant="stat" delay={0.4} className="min-w-[120px] p-4 flex flex-col gap-1">

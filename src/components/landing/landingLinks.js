@@ -33,7 +33,7 @@ export const HEADLINES = [
 
 // Section 1 hero subhead
 export const HERO_SUBHEAD =
-  'Learn crypto, trade smart, earn $LIMER — built for the islands, on Solana.';
+  'Learn crypto, trade smart, level up your tier — built for the islands, on Solana.';
 
 // Section 2 product showcase
 export const SHOWCASE_HEADLINE = 'Built for the Caribbean. Powered by Solana.';
@@ -54,7 +54,7 @@ export const SHOWCASE_FEATURES = [
   {
     icon: '🏆',
     title: 'Earn',
-    body: '$LIMER points convert to tokens at launch. Loyalty, rewarded.',
+    body: 'Earn LP and XP for every lesson, trade, and milestone. Loyalty, rewarded.',
   },
   {
     icon: '🌱',

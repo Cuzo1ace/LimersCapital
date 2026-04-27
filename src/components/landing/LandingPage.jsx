@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GradientText from '../ui/GradientText';
 import GlassCard from '../ui/GlassCard';
-import LiquidMetalButton from '../ui/LiquidMetalButton';
+import ShinyButton from '../ui/ShinyButton';
+import LimerLogoImage from '../brand/LimerLogoImage';
 import WaitlistModal from '../WaitlistModal';
 import { CAPITAL_MARKET_LAYERS } from '../../data/capitalMarkets';
 import {
@@ -17,27 +18,6 @@ import {
 } from './landingLinks';
 
 /* ─────────────────────────── Inline SVG Icons ─────────────────────────── */
-
-const SparkleIcon = ({ size = 28, className = '' }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    className={className}
-    aria-hidden="true"
-  >
-    <path
-      d="M12 2 L13.5 9 L21 10.5 L13.5 12 L12 19 L10.5 12 L3 10.5 L10.5 9 Z"
-      fill="currentColor"
-    />
-    <path
-      d="M19 4 L19.7 6.3 L22 7 L19.7 7.7 L19 10 L18.3 7.7 L16 7 L18.3 6.3 Z"
-      fill="currentColor"
-      opacity="0.6"
-    />
-  </svg>
-);
 
 const XIcon = ({ size = 22 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -107,8 +87,8 @@ function HeroSection({ onLaunch, headlineIdx }) {
     <section className="relative min-h-screen flex flex-col">
       {/* Top nav bar */}
       <nav className="relative z-20 flex items-center justify-between px-6 md:px-12 py-6">
-        <div className="flex items-center gap-2">
-          <SparkleIcon size={20} className="text-sea" />
+        <div className="flex items-center gap-2.5">
+          <LimerLogoImage size={32} />
           <span className="font-headline font-bold text-lg md:text-xl text-txt">
             Limer's Capital
           </span>
@@ -119,18 +99,9 @@ function HeroSection({ onLaunch, headlineIdx }) {
           <a href={SOCIAL_LINKS.docs} target="_blank" rel="noopener noreferrer" className="hover:text-sea transition-colors">Docs</a>
           <a href={SOCIAL_LINKS.x} target="_blank" rel="noopener noreferrer" className="hover:text-txt transition-colors">Articles</a>
         </div>
-        <button
-          onClick={onLaunch}
-          className="group flex items-center gap-1.5 px-4 py-2 rounded-lg
-            border border-border bg-white/5 hover:bg-white/10
-            text-txt text-sm font-body font-medium
-            transition-all duration-300 press-scale
-            hover:border-sea/40"
-          aria-label="Squeeze — launch the app"
-        >
-          Squeeze
-          <span className="text-sea group-hover:translate-x-0.5 transition-transform">↗</span>
-        </button>
+        <ShinyButton size="sm" onClick={onLaunch} ariaLabel="Squeeze — launch the app">
+          Squeeze <span aria-hidden="true">↗</span>
+        </ShinyButton>
       </nav>
 
       {/* Hero center */}
@@ -139,10 +110,9 @@ function HeroSection({ onLaunch, headlineIdx }) {
           initial={{ opacity: 0, scale: 0.6 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-8 text-sea"
-          style={{ filter: 'drop-shadow(0 0 20px rgba(0,255,163,0.4))' }}
+          className="mb-8"
         >
-          <SparkleIcon size={48} />
+          <LimerLogoImage size={120} glow />
         </motion.div>
 
         {/* Auto-rotating headline — fixed width + height container so longer
@@ -180,9 +150,12 @@ function HeroSection({ onLaunch, headlineIdx }) {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.55, duration: 0.6 }}
-          className="mt-10 flex flex-col sm:flex-row items-center gap-4"
+          className="mt-10 flex flex-col sm:flex-row items-center gap-4 sm:gap-5"
         >
-          <LiquidMetalButton label="Squeeze 🍋" onClick={onLaunch} />
+          <ShinyButton onClick={onLaunch} ariaLabel="Squeeze — launch the app">
+            <LimerLogoImage size={20} />
+            Squeeze
+          </ShinyButton>
           <a
             href="#showcase"
             className="px-5 py-2.5 rounded-lg font-body font-medium text-sm
@@ -423,10 +396,9 @@ function CommunitySection({ onJoinWaitlist }) {
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
-          className="mb-8 inline-block text-sea"
-          style={{ filter: 'drop-shadow(0 0 20px rgba(0,255,163,0.4))' }}
+          className="mb-8 inline-block"
         >
-          <SparkleIcon size={44} />
+          <LimerLogoImage size={88} glow />
         </motion.div>
 
         <motion.h2
@@ -454,30 +426,22 @@ function CommunitySection({ onJoinWaitlist }) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-10"
+          className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6"
         >
-          <button
-            onClick={onJoinWaitlist}
-            className="group inline-flex items-center gap-2 px-7 py-3.5 rounded-lg
-              border border-sea/40 bg-sea/5 hover:bg-sea/10 hover:border-sea/60
-              text-sea font-headline font-semibold text-base
-              transition-all duration-300 press-scale neon-glow-primary"
-          >
-            Join the Waitlist
-            <span className="group-hover:translate-x-0.5 transition-transform">↗</span>
-          </button>
+          <ShinyButton onClick={onJoinWaitlist} ariaLabel="Join the Limer's Capital waitlist">
+            Join the Waitlist <span aria-hidden="true">↗</span>
+          </ShinyButton>
 
-          <a
+          <ShinyButton
             href={SOCIAL_LINKS.docs}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg
-              border border-coral/30 bg-coral/5 hover:bg-coral/10 hover:border-coral/50
-              text-coral font-body font-medium text-sm
-              transition-all duration-300 press-scale"
+            tone="coral"
+            size="sm"
+            ariaLabel="Read the Limer's Capital documentation"
           >
-            Read the Docs ↗
-          </a>
+            Read the Docs <span aria-hidden="true">↗</span>
+          </ShinyButton>
         </motion.div>
 
         <motion.div
