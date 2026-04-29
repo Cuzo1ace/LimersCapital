@@ -165,29 +165,24 @@ export async function getUserCount() {
 export async function joinWaitlist({ email, country = null, source = 'website', walletAddress = null }) {
   if (!isSupabaseReady()) return { success: false, error: 'Backend unavailable' };
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('waitlist')
-    .upsert(
-      {
-        email,
-        country,
-        source,
-        wallet_address: walletAddress,
-      },
-      { onConflict: 'email' },
-    )
-    .select()
-    .single();
+    .insert({
+      email,
+      country,
+      source,
+      wallet_address: walletAddress,
+    });
 
   if (error) {
     if (error.code === '23505') {
-      // Already on waitlist
+      // Already on waitlist — duplicate email is a success from the user's POV
       return { success: true, alreadyJoined: true };
     }
     console.warn('[Supabase] joinWaitlist failed:', error.message);
     return { success: false, error: error.message };
   }
-  return { success: true, data };
+  return { success: true };
 }
 
 /**
