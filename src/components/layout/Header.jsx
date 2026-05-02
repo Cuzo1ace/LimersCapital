@@ -27,6 +27,7 @@ const TABS = [
   { id: 'faq',        label: 'New to Digital Assets?', icon: '\u{1F195}' },
   { id: 'learn',      labelKey: 'nav.learn',      icon: '\u{1F4DA}' },
   { id: 'news',       labelKey: 'nav.news',       icon: '\u{1F4F0}' },
+  { id: 'send',       label: 'Send',              iconImg: '/send-juice-icon.png', juice: true },
   { id: 'trade',      labelKey: 'nav.trade',      icon: '\u{1F4B9}' },
   { id: 'ttse',       labelKey: 'nav.ttse',       icon: '\u{1F1F9}\u{1F1F9}', ttse: true },
   { id: 'insights',   labelKey: 'nav.insights',   icon: '\u{1F310}' },
@@ -136,13 +137,18 @@ export default function Header() {
                   ${activeTab === tab.id
                     ? tab.ttse ? 'text-[#FF4D6D] bg-[rgba(200,16,46,.1)]'
                       : tab.pro ? 'text-gold bg-[rgba(212,175,55,.12)]'
+                      : tab.juice ? 'text-[#7ED957] bg-[rgba(126,217,87,.12)]'
                       : 'text-sea bg-sea/12'
                     : tab.pro ? 'text-gold/80 bg-transparent hover:text-gold hover:bg-[rgba(212,175,55,.08)]'
+                      : tab.juice ? 'text-[#7ED957] bg-transparent hover:bg-[rgba(126,217,87,.08)]'
                       : 'text-muted bg-transparent hover:text-txt hover:bg-sea/8'
                   }
                 `}
               >
-                {tab.icon} {tab.label || t(tab.labelKey)}
+                {tab.iconImg
+                  ? <img src={tab.iconImg} alt="" aria-hidden="true" className="inline-block h-4 w-4 mr-1 align-[-3px]" style={{ imageRendering: 'pixelated' }} />
+                  : <>{tab.icon} </>}
+                {tab.label || t(tab.labelKey)}
                 {tab.id === 'news' && hasUnreadNews && activeTab !== 'news' && (
                   <UnreadDot size={6} className="ml-1.5" />
                 )}

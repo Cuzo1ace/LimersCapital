@@ -1,0 +1,22 @@
+[package]
+name = "juice_escrow"
+version = "0.1.0"
+description = "Send Juice savings escrow — locks PUSD/USDC until a maturity date or claim instruction. Bearer-instrument is a Metaplex Core NFT minted by the Send Juice corridor flow."
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "juice_escrow"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+anchor-lang = "0.31.1"
+anchor-spl  = { version = "0.31.1", features = ["token", "token_2022", "associated_token"] }
+mpl-core    = { version = "0.10", features = ["anchor"] }

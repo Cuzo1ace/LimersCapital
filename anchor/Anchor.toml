@@ -7,6 +7,7 @@ skip-lint = false
 [programs.devnet]
 limer = "HuCCEkDvYdm1EMs3EH9wzLYi53aVkE7orkGXma8azhFk"
 limer_amm = "FVk7LzdZ976beSEJkdXD5ww1xRxpZpYjxodN9Kq1Bpwo"
+# juice_escrow = "<run `anchor keys list` after first build to populate>"
 
 [registry]
 url = "https://api.apr.dev"

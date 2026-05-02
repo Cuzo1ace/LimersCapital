@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@theme {
+  --color-night: #0d0e10;
+  --color-night-2: #121316;
+  --color-night-3: #1e2022;
+  --color-sea: #00ffa3;
+  --color-sea-dk: #00ef99;
+  --color-coral: #bf81ff;
+  --color-sun: #FFCA3A;
+  --color-gold: #D4AF37;
+  --color-palm: #2D9B56;
+  --color-up: #00ffa3;
+  --color-down: #ff716c;
+  --color-warn: #fb923c;
+  --color-muted: #ababad;
+  --color-txt: #fdfbfe;
+  --color-txt-2: #ababad;
+  --color-card: rgba(18, 19, 22, 0.85);
+  --color-border: rgba(71, 72, 74, 0.4);
+  --color-pusd: #f4b400;       /* Palm USD brand accent (provisional) */
+  --color-uae:  #ff5e57;       /* UAE corridor accent */
+  --color-carib: #00b8d4;      /* Caribbean corridor accent */
+}
+
+html, body, #root {
+  height: 100%;
+  background: var(--color-night);
+  color: var(--color-txt);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 4px; background: var(--color-night-2); }
+::-webkit-scrollbar-thumb { background: var(--color-night-3); border-radius: 99px; }

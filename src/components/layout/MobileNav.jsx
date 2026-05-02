@@ -15,6 +15,7 @@ const MAIN_TABS = [
   { id: 'faq',        label: 'New to Digital Assets?', icon: '🆕' },
   { id: 'learn',      label: 'Learn',      icon: '📚' },
   { id: 'news',       label: 'News',       icon: '📰' },
+  { id: 'send',       label: 'Send',       iconImg: '/send-juice-icon.png', juice: true },
   { id: 'trade',      label: 'Trade',      icon: '💹' },
   { id: 'ttse',       label: 'TTSE',       icon: '🇹🇹', ttse: true },
   { id: 'insights',   label: 'Insights',   icon: '🌐' },
@@ -114,11 +115,17 @@ export default function MobileNav({ open, onClose, isConnected, displayAddress, 
                     ${activeTab === tab.id
                       ? tab.ttse
                         ? 'text-[#FF4D6D] bg-[rgba(200,16,46,.12)]'
-                        : 'text-sea bg-sea/12'
-                      : 'text-txt-2 bg-white/4 hover:bg-white/8'
+                        : tab.juice
+                          ? 'text-[#7ED957] bg-[rgba(126,217,87,.12)]'
+                          : 'text-sea bg-sea/12'
+                      : tab.juice
+                        ? 'text-[#7ED957] bg-white/4 hover:bg-[rgba(126,217,87,.08)]'
+                        : 'text-txt-2 bg-white/4 hover:bg-white/8'
                     }`}
                 >
-                  <span className="text-base">{tab.icon}</span>
+                  {tab.iconImg
+                    ? <img src={tab.iconImg} alt="" aria-hidden="true" className="h-5 w-5" style={{ imageRendering: 'pixelated' }} />
+                    : <span className="text-base">{tab.icon}</span>}
                   <span>{tab.label}</span>
                 </button>
               ))}

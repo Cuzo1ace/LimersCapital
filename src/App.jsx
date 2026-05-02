@@ -30,6 +30,7 @@ import AboutPage from './pages/AboutPage';
 import FAQPage from './pages/FAQPage';
 import NewsPage from './pages/NewsPage';
 import TerminalPage from './pages/TerminalPage';
+import SendPage from './pages/SendPage';
 import WeeklyDigestModal from './components/news/WeeklyDigestModal';
 import useStore from './store/useStore';
 import LimerBridge from './components/solana/LimerBridge';
@@ -94,6 +95,7 @@ function TabContent() {
     case 'about': return <AboutPage />;
     case 'faq': return <FAQPage />;
     case 'news': return <NewsPage />;
+    case 'send': return <SendPage />;
     case 'terminal': return <TerminalPage />;
     default: return <DashboardPage />;
   }

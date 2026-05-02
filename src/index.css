@@ -35,6 +35,12 @@
   --color-chart-title: #e6f0fe;
   --color-liquidation: #992233;
 
+  /* Send Juice corridor — used by apps/pusd-sundollar/* components imported into /send */
+  --color-pusd:  #f4b400;       /* Palm USD brand accent */
+  --color-uae:   #ff5e57;       /* UAE corridor accent */
+  --color-carib: #00b8d4;       /* Caribbean corridor accent */
+  --color-juice: #7ED957;       /* Send Juice nav + brand green (matches lime icon) */
+
   --font-headline: 'Space Grotesk', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'DM Mono', 'Courier New', monospace;
